@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photonic Fencing - Online 1v1 Neon Fencing Duel | Free Browser Game</title>
+  <meta name="description" content="Photonic Fencing: frame-accurate 1v1 neon fencing. Lunge, dodge and parry. Land a perfect 200 ms parry for bullet time and a free counter. Online duels on an authoritative server, or practice against the bot.">
+  <meta name="keywords" content="photonic fencing, fencing game, 1v1 online, fighting game, parry, browser game, multiplayer, free game">
+  <link rel="canonical" href="https://oicrusher.me/game/photonic_fencing.html">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(ellipse at top, #1b0838 0%, #07020f 70%);
+      min-height: 100vh; color: #e8e8ff;
+      display: flex; flex-direction: column; align-items: center; padding: 16px;
+    }
+    header { text-align: center; margin-bottom: 12px; }
+    header h1 { font-size: 2.2em; letter-spacing: 3px; font-weight: 800; }
+    header h1 .c { color: #00f0ff; text-shadow: 0 0 14px rgba(0,240,255,.7); }
+    header h1 .m { color: #ff2bd6; text-shadow: 0 0 14px rgba(255,43,214,.7); }
+    header p { opacity: .7; margin-top: 4px; }
+
+    .stage {
+      position: relative; width: 100%; max-width: 1280px; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(0,240,255,.35), 0 0 40px rgba(255,43,214,.25), 0 18px 40px rgba(0,0,0,.6);
+      background: #05010c; touch-action: none;
+    }
+    canvas { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+
+    .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(4,1,12,.55); backdrop-filter: blur(2px); padding: 12px; }
+    .overlay.hidden { display: none; }
+    .panel {
+      display: none; width: min(540px, 100%); max-height: 100%; overflow-y: auto;
+      background: rgba(10,4,24,.94); border: 1px solid rgba(0,240,255,.35); border-radius: 12px;
+      padding: 20px 22px; text-align: center; box-shadow: 0 0 30px rgba(255,43,214,.2);
+    }
+    .panel.show { display: block; }
+    .panel h2 { font-size: 1.6em; margin-bottom: 6px; letter-spacing: 1px; }
+    .panel h3 { font-size: .85em; margin: 16px 0 8px; opacity: .7; text-transform: uppercase; letter-spacing: 2px; }
+    .panel p { opacity: .85; line-height: 1.45; }
+    .sub { font-size: .9em; opacity: .7; margin-top: 6px; }
+    .btns { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+    .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+
+    button {
+      font: inherit; font-weight: 700; letter-spacing: .5px; color: #05010c; cursor: pointer;
+      background: #00f0ff; border: none; border-radius: 8px; padding: 10px 18px;
+      box-shadow: 0 0 14px rgba(0,240,255,.45); transition: transform .08s, filter .15s;
+    }
+    button:hover { filter: brightness(1.12); }
+    button:active { transform: translateY(1px); }
+    button.mag { background: #ff2bd6; box-shadow: 0 0 14px rgba(255,43,214,.45); }
+    button.ghost { background: transparent; color: #e8e8ff; border: 1px solid rgba(232,232,255,.35); box-shadow: none; }
+    button:disabled { opacity: .4; cursor: default; }
+    .levels { display: flex; gap: 8px; }
+    .levels button { flex: 1; }
+
+    input[type=text] {
+      font: inherit; color: #e8e8ff; background: rgba(255,255,255,.06); border: 1px solid rgba(0,240,255,.4);
+      border-radius: 8px; padding: 9px 12px; outline: none; text-align: center; width: 220px;
+    }
+    input[type=text]:focus { border-color: #ff2bd6; }
+
+    .list { text-align: left; background: rgba(0,0,0,.3); border-radius: 8px; padding: 6px; max-height: 170px; overflow-y: auto; }
+    .list .item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 8px; border-radius: 6px; }
+    .list .item:nth-child(odd) { background: rgba(255,255,255,.04); }
+    .list .item button { padding: 5px 12px; font-size: .88em; }
+    .list .empty { opacity: .55; text-align: center; padding: 10px; font-size: .92em; line-height: 1.5; }
+    .list .tag { opacity: .7; font-size: .88em; white-space: nowrap; }
+    .list .win { color: #ffe680; }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #39ff88; box-shadow: 0 0 8px #39ff88; margin-right: 8px; }
+    .muted { opacity: .55; font-size: .85em; }
+    .status { margin-top: 12px; min-height: 1.3em; font-size: .95em; opacity: .9; }
+    .error { color: #ff8fb0; }
+    .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.25); border-top-color: #00f0ff; border-radius: 50%; animation: spin .9s linear infinite; vertical-align: -2px; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .invite { display: none; margin-top: 14px; padding: 12px; border-radius: 10px; border: 1px solid #ff2bd6; background: rgba(255,43,214,.12); animation: glow 1s ease-in-out infinite alternate; }
+    .invite.show { display: block; }
+    @keyframes glow { from { box-shadow: 0 0 0 rgba(255,43,214,0); } to { box-shadow: 0 0 20px rgba(255,43,214,.6); } }
+
+    .keys { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; text-align: left; margin: 14px auto 0; width: fit-content; font-size: .9em; }
+    kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); font-family: inherit; font-size: .85em; text-align: center; }
+
+    .topbtns { position: absolute; bottom: 10px; right: 10px; display: flex; gap: 6px; z-index: 2; }
+    .topbtns button { padding: 5px 9px; font-size: .85em; background: rgba(0,0,0,.45); color: #e8e8ff; box-shadow: none; }
+
+    .touch { display: none; width: 100%; max-width: 1280px; margin-top: 10px; gap: 8px; justify-content: space-between; user-select: none; -webkit-user-select: none; }
+    .touch .grp { display: flex; gap: 6px; flex: 1; }
+    .touch .grp:last-child { justify-content: flex-end; }
+    .touch button { flex: 1; min-width: 0; max-width: 84px; height: 56px; padding: 0; font-size: .85em; touch-action: none; background: rgba(255,255,255,.08); color: #e8e8ff; border: 1px solid rgba(0,240,255,.35); box-shadow: none; }
+    .touch button.on { background: rgba(0,240,255,.35); }
+    @media (pointer: coarse) { .touch { display: flex; } }
+
+    .help { margin-top: 12px; max-width: 1280px; width: 100%; text-align: center; opacity: .7; font-size: .9em; line-height: 1.6; }
+    .back { margin-top: 14px; color: #00f0ff; text-decoration: none; opacity: .85; }
+    .back:hover { opacity: 1; text-decoration: underline; }
+    @media (max-width: 640px) {
+      header h1 { font-size: 1.5em; }
+      .panel { padding: 14px; }
+      .topbtns { bottom: 4px; right: 4px; }
+      .topbtns button { padding: 2px 6px; font-size: .72em; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span class="c">PHOTONIC</span> <span class="m">FENCING</span></h1>
+    <p>Lunge. Dodge. Parry. One touch ends the round.</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="game"></canvas>
+    <div class="topbtns">
+      <button id="soundBtn" title="Toggle sound">🔊</button>
+      <button id="menuBtn" title="Menu (Esc)">☰</button>
+    </div>
+
+    <div class="overlay" id="overlay">
+      <div class="panel show" id="pMain">
+        <h2>⚔ Photonic Fencing</h2>
+        <p>First to <b>3</b> touches. Parry a lunge in the last <b>200 ms</b> for bullet time and a free counter-attack.</p>
+        <div class="row"><input type="text" id="nameInput" maxlength="16" placeholder="Your nickname" autocomplete="off"></div>
+        <div class="btns">
+          <button id="btnOnline">🌐 Online Duel</button>
+          <div class="levels">
+            <button class="mag" data-level="easy">Bot · Easy</button>
+            <button class="mag" data-level="normal">Bot · Normal</button>
+            <button class="mag" data-level="hard">Bot · Hard</button>
+          </div>
+        </div>
+        <div class="keys">
+          <span><kbd>A</kbd> <kbd>D</kbd> / <kbd>←</kbd> <kbd>→</kbd></span><span>Advance / retreat</span>
+          <span><kbd>J</kbd> / <kbd>Space</kbd> / <kbd>Z</kbd></span><span>Lunge</span>
+          <span><kbd>K</kbd> / <kbd>X</kbd></span><span>Parry (200 ms window)</span>
+          <span><kbd>L</kbd> / <kbd>Shift</kbd> / <kbd>C</kbd></span><span>Dodge (back-step, i-frames)</span>
+        </div>
+      </div>
+
+      <div class="panel" id="pLobby">
+        <h2>🌐 Online Lobby</h2>
+        <p class="sub">You are <b id="lobbyName">?</b>. Challenge anyone online. Duels run on an authoritative server at 60 Hz.</p>
+        <div class="invite" id="inviteBox">
+          <div>⚔ <b id="inviteFrom"></b> challenges you!</div>
+          <div class="row"><button id="btnAccept">Accept</button><button class="ghost" id="btnDecline">Decline</button></div>
+        </div>
+        <div class="status" id="lobbyStatus"></div>
+        <div class="row" id="cancelRow" style="display:none"><button class="ghost" id="btnCancelInvite">Cancel challenge</button></div>
+        <h3>Online fencers (<span id="onlineCount">0</span>)</h3>
+        <div class="list" id="playerList"><div class="empty">Loading…</div></div>
+        <h3>Recent duels</h3>
+        <div class="list" id="recentList"><div class="empty">—</div></div>
+        <div class="row"><button class="ghost" id="btnLobbyBack">← Back</button></div>
+      </div>
+
+      <div class="panel" id="pConn">
+        <h2>Connecting…</h2>
+        <div class="status"><span class="spinner"></span>Reaching the game server…</div>
+        <div class="row"><button class="ghost" id="btnConnCancel">Cancel</button></div>
+      </div>
+
+      <div class="panel" id="pPause">
+        <h2 id="pauseTitle">Paused</h2>
+        <p class="sub" id="pauseHint"></p>
+        <div class="btns">
+          <button id="btnResume">▶ Resume</button>
+          <button class="ghost" id="btnQuit">Leave</button>
+        </div>
+      </div>
+
+      <div class="panel" id="pOver">
+        <h2 id="overTitle">Match over</h2>
+        <p id="overScore"></p>
+        <div class="status" id="overStatus"></div>
+        <div class="btns">
+          <button id="btnRematch">🔁 Rematch</button>
+          <button class="ghost" id="btnOverBack">← Back</button>
+        </div>
+      </div>
+
+      <div class="panel" id="pMsg">
+        <h2 id="msgTitle">Notice</h2>
+        <p id="msgText"></p>
+        <div class="row"><button id="btnMsgOk">OK</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="touch" id="touch">
+    <div class="grp">
+      <button data-bit="1">◀</button>
+      <button data-bit="2">▶</button>
+    </div>
+    <div class="grp">
+      <button data-bit="8">DODGE</button>
+      <button data-bit="16">PARRY</button>
+      <button data-bit="4">LUNGE</button>
+    </div>
+  </div>
+
+  <div class="help">
+    Lunges telegraph with a charging blade tip. Dodge to slip out of reach, or time a parry right before the blade lands.
+    A whiffed parry or lunge leaves you wide open. After 20 seconds the piste closes in.
+  </div>
+  <a class="back" href="index.html">← Back to Game Portal</a>
+
+  <script src="photonic_fencing/Shared/sim.js?v=2"></script>
+  <script src="photonic_fencing/Client/audio.js?v=2"></script>
+  <script src="photonic_fencing/Client/render.js?v=2"></script>
+  <script src="photonic_fencing/Client/bot.js?v=2"></script>
+  <script src="photonic_fencing/Client/engine.js?v=2"></script>
+  <script src="photonic_fencing/Client/net.js?v=2"></script>
+  <script src="identity.js?v=2"></script>
+  <script src="photonic_fencing/Client/main.js?v=3"></script>
+</body>
+</html>

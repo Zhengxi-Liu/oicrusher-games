@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Aerospace Physics Lab: an airfoil in a wind tunnel - streamlines bending over it and the lift vector -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16325c"/><stop offset="1" stop-color="#081428"/></linearGradient>
+    <linearGradient id="wing" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#b8c6d8"/></linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="13" fill="url(#bg)"/>
+  <g fill="none" stroke="#5fd0ff" stroke-width="2.6" stroke-linecap="round">
+    <path d="M4 22 C 18 22, 24 13, 40 14 S 56 20, 61 21"/>
+    <path d="M4 50 C 20 50, 30 47, 44 47 S 56 46, 61 46"/>
+  </g>
+  <path d="M8 38 C 12 28, 30 25, 58 33 C 36 36, 18 40, 8 38 Z" fill="url(#wing)"/>
+  <g stroke="#ffb02e" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M27 31 V 9"/><path d="M21 15 L 27 8 L 33 15"/>
+  </g>
+</svg>

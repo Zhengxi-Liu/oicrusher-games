@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-L8GMZRR0GY');
+</script>
+<title>Marble Impact</title>
+<style>
+  body { font-family: sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f0f0f0; }
+  #levelDisplay { font-size: 1.2em; font-weight: bold; margin-bottom: 10px; }
+  #gameCanvas { border: 2px solid #333; background-color: #eee; }
+  #controls { margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  #ballSpeedControl { display: flex; gap: 10px; }
+  #instructions { margin-top: 20px; font-size: 0.9em; color: #555; text-align: center; }
+</style>
+</head>
+<body>
+
+<div id="levelDisplay">Level: 1</div>
+<canvas id="gameCanvas" width="480" height="640"></canvas>
+
+<div id="controls">
+  <div id="ballSpeedControl">
+    <label for="ballSpeed">Ball Speed:</label>
+    <input type="range" id="ballSpeed" min="1" max="5" value="2">
+  </div>
+</div>
+
+<div id="instructions">
+  <b>How to Play:</b><br>
+  Use Left/Right arrow keys or mouse to move the paddle.<br>
+  Adjust the slider to change the ball speed.<br>
+  Clear all the blue blocks to advance to the next level.<br>
+  Gray blocks cannot be destroyed.
+</div>
+
+<script>
+	const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  const ballSpeedInput = document.getElementById("ballSpeed");
+  const levelDisplay = document.getElementById("levelDisplay");
+
+  // Game settings
+  const paddleHeight = 10;
+  const paddleWidth = 80;
+  let paddleX = (canvas.width - paddleWidth) / 2;
+  const ballRadius = 8; // Slightly smaller ball
+  let ballX = canvas.width / 2;
+  let ballY = canvas.height - 30;
+  let ballDX = 2;
+  let ballDY = -2;
+  let score = 0;
+  let lives = 3;
+  let currentLevel = 1;
+  let bricks = [];
+  let rightPressed = false;
+  let leftPressed = false;
+  let ballSpeed = 2;
+
+  // Event listeners
+  document.addEventListener("keydown", keyDownHandler);
+  document.addEventListener("keyup", keyUpHandler);
+  document.addEventListener("mousemove", mouseMoveHandler);
+  ballSpeedInput.addEventListener("input", updateBallSpeed);
+
+  function updateBallSpeed() {
+    ballSpeed = parseInt(ballSpeedInput.value);
+    const currentSpeed = Math.sqrt(ballDX * ballDX + ballDY * ballDY);
+    if (currentSpeed > 0) {
+      ballDX = (ballDX / currentSpeed) * ballSpeed;
+      ballDY = (ballDY / currentSpeed) * ballSpeed;
+    } else {
+      ballDX = ballSpeed;
+      ballDY = -ballSpeed;
+    }
+  }
+
+  function keyDownHandler(e) {
+    if (e.key === "Right" || e.key === "ArrowRight") {
+      rightPressed = true;
+    } else if (e.key === "Left" || e.key === "ArrowLeft") {
+      leftPressed = true;
+    }
+  }
+
+  function keyUpHandler(e) {
+    if (e.key === "Right" || e.key === "ArrowRight") {
+      rightPressed = false;
+    } else if (e.key === "Left" || e.key === "ArrowLeft") {
+      leftPressed = false;
+    }
+  }
+
+  function mouseMoveHandler(e) {
+    const relativeX = e.clientX - canvas.offsetLeft;
+    if (relativeX > 0 && relativeX < canvas.width) {
+      paddleX = relativeX - paddleWidth / 2;
+    }
+  }
+
+  function setupLevel(level) {
+    bricks = [];
+    const baseRowCount = 3; // Increased base rows
+    const baseColumnCount = 8; // Increased base columns
+    const rowCount = baseRowCount + Math.floor(level); // Increase rows every level
+    const columnCount = baseColumnCount + Math.floor((level - 1) / 2); // Increase columns every 2 levels
+    const brickWidth = 50; // Smaller brick width
+    const brickHeight = 15; // Smaller brick height
+    const brickPadding = 8; // Adjusted padding
+    const brickOffsetTop = 60;
+    const brickOffsetLeft = 20;
+
+    for (let c = 0; c < columnCount; c++) {
+      bricks[c] = [];
+      for (let r = 0; r < rowCount; r++) {
+        const isIndestructible = Math.random() < 0.15 * level; // Slightly increased chance
+        bricks[c][r] = {
+          x: 0,
+          y: 0,
+          status: 1,
+          indestructible: isIndestructible
+        };
+        if (isIndestructible) {
+          bricks[c][r].status = 2;
+        }
+      }
+    }
+    levelDisplay.textContent = `Level: ${level}`;
+  }
+
+  function collisionDetection() {
+    const brickWidth = 50;
+    const brickHeight = 15;
+    let bricksLeft = 0;
+    for (let c = 0; c < bricks.length; c++) {
+      for (let r = 0; r < bricks[c].length; r++) {
+        const b = bricks[c][r];
+        if (b.status > 0) {
+          if (ballX > b.x && ballX < b.x + brickWidth && ballY > b.y && ballY < b.y + brickHeight) {
+            ballDY = -ballDY; // Always bounce off the brick
+            if (b.status === 1) {
+              b.status = 0;
+              score++;
+            }
+            // No status change for indestructible bricks (status === 2)
+          }
+          if (b.status === 1) {
+            bricksLeft++;
+          }
+        }
+      }
+    }
+
+    if (bricksLeft === 0 && currentLevel <= 10) {
+      currentLevel++;
+      if (currentLevel > 10) {
+        alert("YOU WIN THE ENTIRE GAME, CONGRATULATIONS! Final Score: " + score);
+        document.location.reload();
+      } else {
+        alert(`Congratulations! Proceeding to Level ${currentLevel}`);
+        setupLevel(currentLevel);
+        resetBallPaddle();
+      }
+    } else if (bricksLeft === 0 && currentLevel > 10) {
+      // Keep this in case of any edge cases
+    }
+  }
+
+  function drawBall() {
+    ctx.beginPath();
+    ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+    ctx.fillStyle = "#0095DD";
+    ctx.fill();
+    ctx.closePath();
+  }
+
+  function drawPaddle() {
+    ctx.beginPath();
+    ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+    ctx.fillStyle = "#0095DD";
+    ctx.fill();
+    ctx.closePath();
+  }
+
+  function drawBricks() {
+    if (!bricks || bricks.length === 0) return;
+    const brickWidth = 50;
+    const brickHeight = 15;
+    const brickPadding = 8;
+    const brickOffsetTop = 60;
+    const brickOffsetLeft = 20;
+
+    for (let c = 0; c < bricks.length; c++) {
+      for (let r = 0; r < bricks[c].length; r++) {
+        const b = bricks[c][r];
+        if (b.status > 0) {
+          const brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
+          const brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
+          bricks[c][r].x = brickX;
+          bricks[c][r].y = brickY;
+          ctx.beginPath();
+          ctx.rect(brickX, brickY, brickWidth, brickHeight);
+          if (b.status === 1) {
+            ctx.fillStyle = "#0095DD";
+          } else if (b.status === 2) {
+            ctx.fillStyle = "#888";
+          }
+          ctx.fill();
+          ctx.closePath();
+        }
+      }
+    }
+  }
+
+  function drawScore() {
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "#0095DD";
+    ctx.fillText("Score: " + score, 8, 20);
+  }
+
+  function drawLives() {
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "#0095DD";
+    ctx.fillText("Lives: " + lives, canvas.width - 65, 20);
+  }
+
+  function resetBallPaddle() {
+    ballX = canvas.width / 2;
+    ballY = canvas.height - 30;
+    ballDX = ballSpeed;
+    ballDY = -ballSpeed;
+    paddleX = (canvas.width - paddleWidth) / 2;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBricks();
+    drawBall();
+    drawPaddle();
+    drawScore();
+    drawLives();
+    collisionDetection();
+
+    if (ballX + ballDX > canvas.width - ballRadius || ballX + ballDX < ballRadius) {
+      ballDX = -ballDX;
+    }
+    if (ballY + ballDY < ballRadius) {
+      ballDY = -ballDY;
+    } else if (ballY + ballDY > canvas.height - ballRadius) {
+      if (ballX > paddleX && ballX < paddleX + paddleWidth) {
+        ballDY = -ballDY;
+      } else {
+        lives--;
+        if (lives <= 0) {
+          alert("GAME OVER! Final Score: " + score + ", Reached Level: " + currentLevel);
+          document.location.reload();
+        } else {
+          resetBallPaddle();
+        }
+      }
+    }
+
+    if (rightPressed && paddleX < canvas.width - paddleWidth) {
+      paddleX += 7;
+    } else if (leftPressed && paddleX > 0) {
+      paddleX -= 7;
+    }
+
+    ballX += ballDX;
+    ballY += ballDY;
+    requestAnimationFrame(draw);
+  }
+
+  // Initialize the first level
+  setupLevel(currentLevel);
+  draw();
+</script>
+
+</body>
+</html>

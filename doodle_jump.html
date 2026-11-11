@@ -1,0 +1,3556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Doodle Jump Online - Play Free Spring Platform Game | OICrusher</title>
+  <meta name="description" content="Play Doodle Jump online for free! Jump on platforms, spring to the sky, and compete on the global leaderboard. Classic endless jumping game in your browser!">
+  <meta name="keywords" content="doodle jump, doodle jump online, play doodle jump, jumping game, platform game, spring game, free doodle jump, browser doodle jump, endless jumper, doodle leaderboard">
+  <meta name="author" content="OICrusher Games">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://oicrusher.me/game/doodle_jump.html">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://oicrusher.me/game/doodle_jump.html">
+  <meta property="og:title" content="Doodle Jump Online - Play Free Spring Platform Game">
+  <meta property="og:description" content="Play Doodle Jump online for free! Jump on platforms, spring to the sky, and compete on the global leaderboard.">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://oicrusher.me/game/doodle_jump.html">
+  <meta property="twitter:title" content="Doodle Jump Online - Play Free">
+  <meta property="twitter:description" content="Play Doodle Jump online! Jump on platforms, spring to the sky, and compete on the leaderboard.">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #0a0e27;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+      gap: 20px;
+    }
+    .announcement-box {
+      background: rgba(10, 14, 39, 0.9);
+      border-radius: 8px;
+      padding: 20px;
+      width: 280px;
+      box-shadow: 0 0 30px rgba(100, 200, 255, 0.3);
+      max-height: 700px;
+      overflow-y: auto;
+    }
+    .announcement-box h3 {
+      color: #ffd700;
+      margin-bottom: 15px;
+      font-size: 1.5em;
+      text-align: center;
+    }
+    .announcement-box #announcementContent {
+      color: #fff;
+      line-height: 1.6;
+      font-size: 18px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .double-jump-bar {
+      background: rgba(10, 14, 39, 0.9);
+      border-radius: 8px;
+      padding: 15px;
+      width: 280px;
+      box-shadow: 0 0 30px rgba(100, 200, 255, 0.3);
+      margin-top: 20px;
+    }
+    .double-jump-bar h4 {
+      color: #00ffff;
+      margin: 0 0 10px 0;
+      font-size: 1em;
+      text-align: center;
+    }
+    .cooldown-bar-container {
+      width: 100%;
+      height: 25px;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+      border: 2px solid #fff;
+    }
+    .cooldown-bar-fill {
+      height: 100%;
+      background: #00ff00;
+      transition: width 0.1s linear, background-color 0.1s;
+      border-radius: 3px;
+    }
+    .cooldown-bar-fill.cooling {
+      background: #ff4444;
+    }
+    .cooldown-bar-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #fff;
+      font-weight: bold;
+      font-size: 14px;
+      text-shadow: 1px 1px 2px #000;
+    }
+    .game-wrapper {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    #gameCanvas {
+      border-radius: 8px;
+      box-shadow: 0 0 50px rgba(100, 200, 255, 0.5);
+      cursor: pointer;
+    }
+    .leaderboard {
+      background: rgba(10, 14, 39, 0.9);
+      border-radius: 8px;
+      padding: 20px;
+      width: 280px;
+      box-shadow: 0 0 30px rgba(100, 200, 255, 0.3);
+      max-height: 700px;
+      overflow-y: auto;
+    }
+    .leaderboard h2 {
+      color: #ffd700;
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 24px;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      margin: 8px 0;
+      background: rgba(78, 205, 196, 0.1);
+      border-radius: 5px;
+      border-left: 3px solid #4ecdc4;
+    }
+    .leaderboard-item.top3 {
+      background: rgba(255, 215, 0, 0.15);
+      border-left-color: #ffd700;
+    }
+    .leaderboard-rank {
+      font-size: 20px;
+      font-weight: bold;
+      color: #4ecdc4;
+      min-width: 30px;
+    }
+    .leaderboard-item.top3 .leaderboard-rank {
+      color: #ffd700;
+    }
+    .leaderboard-name {
+      flex: 1;
+      color: #fff;
+      margin: 0 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .leaderboard-score {
+      color: #95e1d3;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .name-input-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+    .name-input-modal.show {
+      display: flex;
+    }
+    .name-input-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 0 50px rgba(102, 126, 234, 0.5);
+    }
+    .name-input-box h2 {
+      color: #ffd700;
+      font-size: 32px;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .name-input-box input {
+      width: 300px;
+      padding: 15px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .name-input-box button {
+      background: #4ecdc4;
+      color: #fff;
+      border: none;
+      padding: 15px 40px;
+      font-size: 18px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: bold;
+    }
+    .name-input-box button:hover {
+      background: #38ada9;
+      transform: scale(1.05);
+    }
+    .volume-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(78, 205, 196, 0.8);
+      border: none;
+      cursor: pointer;
+      font-size: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 0 15px rgba(78, 205, 196, 0.5);
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+    .volume-btn:hover {
+      background: rgba(78, 205, 196, 1);
+      transform: scale(1.1);
+    }
+    .volume-btn.muted {
+      background: rgba(255, 107, 107, 0.8);
+      box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
+    }
+    .volume-btn.muted:hover {
+      background: rgba(255, 107, 107, 1);
+    }
+    
+    /* Admin delete button styles */
+    .admin-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      cursor: pointer;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s;
+      z-index: 100;
+    }
+    .admin-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.1);
+    }
+    
+    /* Toggle Switch Styles */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      color: #fff;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 60px;
+      height: 30px;
+      background: #555;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-right: 15px;
+      flex-shrink: 0;
+    }
+    .toggle-switch.active {
+      background: #4CAF50;
+    }
+    .toggle-circle {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 24px;
+      height: 24px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+    .toggle-switch.active .toggle-circle {
+      transform: translateX(30px);
+    }
+    .toggle-label {
+      font-size: 14px;
+      cursor: pointer;
+    }
+    
+    .delete-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+    .delete-modal.show {
+      display: flex;
+    }
+    .delete-box {
+      background: rgba(30, 30, 30, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 30px;
+      border-radius: 15px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .delete-box h2 {
+      color: #fff;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .delete-box input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 14px;
+    }
+    .delete-box input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .delete-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      margin: 5px 0;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      color: #fff;
+    }
+    .delete-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .delete-item-btn {
+      padding: 5px 15px;
+      background: #ff4444;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .delete-item-btn:hover {
+      background: #ff0000;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .modal-buttons button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    .btn-verify {
+      background: #4CAF50;
+      color: #fff;
+    }
+    .btn-verify:hover {
+      background: #45a049;
+    }
+    .btn-cancel {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    .btn-cancel:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .error-msg {
+      color: #ff4444;
+      text-align: center;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+  <script src="identity.js?v=2"></script>
+</head>
+<body>
+  <button class="volume-btn" id="volumeBtn" title="Toggle Sound">🔊</button>
+  <button class="admin-btn" id="adminBtn" title="Admin">⚙️</button>
+  
+  <!-- Delete Modal -->
+  <div class="delete-modal" id="deleteModal">
+    <div class="delete-box">
+      <h2>🔒 Admin Panel</h2>
+      <input type="password" id="adminPassword" placeholder="Enter admin password">
+      <div class="modal-buttons">
+        <button class="btn-verify" onclick="verifyAdminPassword()">Verify</button>
+        <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+      </div>
+      <div class="error-msg" id="passwordError">Incorrect password</div>
+      
+      <div id="deleteContent" style="display: none;">
+        <h3 style="color: #fff; margin-top: 30px; margin-bottom: 15px;">Cheat Controls</h3>
+        <div style="margin-bottom: 20px;">
+          <div class="toggle-container">
+            <div class="toggle-switch" id="toggleDismount" onclick="toggleSwitch('toggleDismount')">
+              <div class="toggle-circle"></div>
+            </div>
+            <span class="toggle-label" onclick="toggleSwitch('toggleDismount')">Disable 'E' Key (Dismount)</span>
+          </div>
+          <div class="toggle-container">
+            <div class="toggle-switch" id="toggleCheat" onclick="toggleSwitch('toggleCheat')">
+              <div class="toggle-circle"></div>
+            </div>
+            <span class="toggle-label" onclick="toggleSwitch('toggleCheat')">Disable Jetpack Cheat</span>
+          </div>
+          <div class="toggle-container">
+            <div class="toggle-switch" id="_t3" onclick="toggleSwitch('_t3')">
+              <div class="toggle-circle"></div>
+            </div>
+            <span class="toggle-label" onclick="toggleSwitch('_t3')">Block Entries (Special Users)</span>
+          </div>
+          <button onclick="applyCheatSettings()" style="background: #2196F3; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px;">Apply Changes</button>
+        </div>
+        
+        <h3 style="color: #fff; margin-top: 30px; margin-bottom: 15px;">Leaderboard Entries</h3>
+        <div id="deleteList"></div>
+        <h3 style="color: #fff; margin-top: 30px; margin-bottom: 15px;">Announcement</h3>
+        <textarea id="announcementText" style="width: 100%; min-height: 80px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; margin-bottom: 10px; color: #000;"></textarea>
+        <button onclick="updateAnnouncement()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Update Announcement</button>
+        <button onclick="clearAnnouncement()" style="background: #f44336; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-left: 10px;">Clear</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="game-wrapper">
+    <div>
+      <!-- Announcement Box -->
+      <div class="announcement-box" id="announcement" style="display: none;">
+        <h3>📢 Announcement</h3>
+        <div id="announcementContent"></div>
+      </div>
+      
+      <!-- Double Jump Cooldown Bar -->
+      <div class="double-jump-bar">
+        <h4>⚡ Double Jump (Space)</h4>
+        <div class="cooldown-bar-container">
+          <div class="cooldown-bar-fill" id="doubleJumpBar"></div>
+          <div class="cooldown-bar-text" id="doubleJumpText">READY</div>
+        </div>
+      </div>
+    </div>
+    
+    <canvas id="gameCanvas"></canvas>
+    <div class="leaderboard">
+      <h2>🏆 Top 10 Players</h2>
+      <div id="leaderboardList">Loading...</div>
+    </div>
+  </div>
+  
+  <div class="name-input-modal" id="nameInputModal">
+    <div class="name-input-box">
+      <h2>🎉 New High Score!</h2>
+      <p style="color: #fff; font-size: 20px; margin-bottom: 10px;">Score: <span id="newScoreValue">0</span></p>
+      <p style="color: #fff; margin-bottom: 20px;">Enter your name:</p>
+      <input type="text" id="playerNameInput" maxlength="20" placeholder="Your Name">
+      <br>
+      <button onclick="submitScore()">Submit</button>
+    </div>
+  </div>
+  <script>
+    // ========================================
+    // 常量与配置
+    // ========================================
+    const CONFIG = {
+      CANVAS_WIDTH: 450,
+      CANVAS_HEIGHT: 700,
+      
+      // 物理参数
+      GRAVITY: 0.3,
+      JUMP_VELOCITY: -10,
+      AIR_CONTROL: 0.8,
+      GROUND_ACCEL: 1.2,
+      MAX_SPEED_X: 8,
+      FRICTION: 0.88,
+      
+      // 角色参数
+      PLAYER_WIDTH: 50,
+      PLAYER_HEIGHT: 50,
+      PLAYER_START_Y: 500,
+      
+      // 平台参数
+      PLATFORM_WIDTH: 80,
+      PLATFORM_HEIGHT: 15,
+      PLATFORM_START_COUNT: 6,
+      PLATFORM_GAP_MIN: 80,
+      PLATFORM_GAP_MAX: 150,
+      
+      // 移动平台
+      MOVING_PLATFORM_SPEED: 2,
+      MOVING_PLATFORM_RANGE: 100,
+      
+      // 摄像机
+      CAMERA_THRESHOLD: 250,
+      CAMERA_LERP: 0.15,
+      
+      // 视差
+      PARALLAX_SPEED: 0.3,
+      
+      // 粒子
+      PARTICLE_COUNT: 8,
+      PARTICLE_LIFE: 30,
+      
+      // 难度
+      DIFFICULTY_SCALE: 0.0003
+    };
+    
+    // ========================================
+    // 工具函数
+    // ========================================
+    const Utils = {
+      lerp: (a, b, t) => a + (b - a) * t,
+      clamp: (val, min, max) => Math.max(min, Math.min(max, val)),
+      random: (min, max) => Math.random() * (max - min) + min,
+      easeOutQuad: t => t * (2 - t),
+      easeInQuad: t => t * t,
+      hslToRgb: (h, s, l) => {
+        s /= 100;
+        l /= 100;
+        const k = n => (n + h / 30) % 12;
+        const a = s * Math.min(l, 1 - l);
+        const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+        return [255 * f(0), 255 * f(8), 255 * f(4)];
+      }
+    };
+    
+    // ========================================
+    // 输入系统
+    // ========================================
+    const Input = {
+      left: false,
+      right: false,
+      restart: false,
+      jump: false,
+      
+      init() {
+        window.addEventListener('keydown', e => {
+          // Don't handle keys when input or textarea is focused
+          if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
+            return;
+          }
+          
+          if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.left = true;
+          if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.right = true;
+          if (e.key === 'r' || e.key === 'R') this.restart = true;
+          if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+            this.jump = true;
+            e.preventDefault(); // Prevent page scroll
+          }
+          if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.right = true;
+          if (e.key === 'r' || e.key === 'R') this.restart = true;
+          if (e.key === 'e' || e.key === 'E') {
+            if (!window.cheatSettings?.dismountDisabled) this.dismount = true;
+          }
+          const _k = String.fromCharCode(177);
+          const _m1 = e.shiftKey && e.altKey;
+          const _m2 = e.key.charCodeAt(0) === 177;
+          if (_m2 && _m1) {
+            if (!window.cheatSettings?.cheatDisabled) {
+              this.cheat = true;
+              Player._s1 = true;
+              e.preventDefault();
+            }
+          }
+        });
+        
+        window.addEventListener('keyup', e => {
+          if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.left = false;
+          if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.right = false;
+          if (e.key === 'r' || e.key === 'R') this.restart = false;
+          if (e.key === 'e' || e.key === 'E') this.dismount = false;
+          if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') this.jump = false;
+          if (e.key.charCodeAt(0) === 177) this.cheat = false;
+        });
+        
+        // 触屏控制
+        let touchStartX = 0;
+        canvas.addEventListener('touchstart', e => {
+          e.preventDefault();
+          touchStartX = e.touches[0].clientX;
+        });
+        
+        canvas.addEventListener('touchmove', e => {
+          e.preventDefault();
+          const touchX = e.touches[0].clientX;
+          const diff = touchX - touchStartX;
+          this.left = diff < -20;
+          this.right = diff > 20;
+        });
+        
+        canvas.addEventListener('touchend', () => {
+          this.left = false;
+          this.right = false;
+        });
+        
+        canvas.addEventListener('click', () => {
+          if (gameState === 'gameover') {
+            this.restart = true;
+          }
+        });
+      }
+    };
+    
+    // ========================================
+    // 粒子系统
+    // ========================================
+    class Particle {
+      constructor(x, y, vx, vy, color, life) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.color = color;
+        this.life = life;
+        this.maxLife = life;
+        this.size = Utils.random(2, 5);
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.3;
+        this.life--;
+      }
+      
+      draw(ctx, cameraY) {
+        const alpha = this.life / this.maxLife;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y - cameraY, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      
+      isDead() {
+        return this.life <= 0;
+      }
+    }
+    
+    const ParticleSystem = {
+      particles: [],
+      
+      emit(x, y, count, color) {
+        for (let i = 0; i < count; i++) {
+          const angle = (Math.PI * 2 * i) / count;
+          const speed = Utils.random(2, 5);
+          const vx = Math.cos(angle) * speed;
+          const vy = Math.sin(angle) * speed - 2;
+          this.particles.push(new Particle(x, y, vx, vy, color, CONFIG.PARTICLE_LIFE));
+        }
+      },
+      
+      update() {
+        this.particles = this.particles.filter(p => {
+          p.update();
+          return !p.isDead();
+        });
+      },
+      
+      draw(ctx, cameraY) {
+        this.particles.forEach(p => p.draw(ctx, cameraY));
+      }
+    };
+    
+    // ========================================
+    // 炮弹系统
+    // ========================================
+    class Bullet {
+      constructor(x, y, targetX, targetY) {
+        this.x = x;
+        this.y = y;
+        this.size = 8;
+        this.speed = 4.2; // 3 * 1.4 = 4.2
+        
+        // 计算方向
+        const dx = targetX - x;
+        const dy = targetY - y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        this.vx = (dx / dist) * this.speed;
+        this.vy = (dy / dist) * this.speed;
+        
+        this.life = 200; // 炮弹存活时间
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+      }
+      
+      draw(ctx, cameraY) {
+        const screenY = this.y - cameraY;
+        const height = -Player.y; // Get player height for background theme
+        
+        ctx.save();
+        
+        if (height < 3000) {
+          // Tree level - acorn-like bullet (brown with visible edge)
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = '#8B4513';
+          
+          // Acorn body (brown)
+          ctx.fillStyle = '#8B4513';
+          ctx.beginPath();
+          ctx.arc(this.x, screenY, this.size, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Acorn cap (darker brown)
+          ctx.fillStyle = '#654321';
+          ctx.beginPath();
+          ctx.arc(this.x, screenY - this.size * 0.3, this.size * 0.7, 0, Math.PI);
+          ctx.fill();
+          
+          // Highlight
+          ctx.fillStyle = '#A0522D';
+          ctx.beginPath();
+          ctx.arc(this.x - 2, screenY - 1, 3, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (height < 7000) {
+          // Bird level - white feather bullet (easy to see against sky)
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = '#4a90e2';
+          
+          // Feather body (white with blue tint)
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.ellipse(this.x, screenY, this.size, this.size * 1.3, Math.PI / 4, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Blue outline for visibility
+          ctx.strokeStyle = '#4a90e2';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          // Highlight
+          ctx.fillStyle = '#e8f4fd';
+          ctx.beginPath();
+          ctx.arc(this.x - 2, screenY - 2, 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (height < 12000) {
+          // Airplane level - bright yellow missile (high visibility)
+          ctx.shadowBlur = 12;
+          ctx.shadowColor = '#FFD700';
+          
+          // Missile body (bright yellow/gold)
+          ctx.fillStyle = '#FFD700';
+          ctx.beginPath();
+          ctx.arc(this.x, screenY, this.size, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Black tip for contrast
+          ctx.fillStyle = '#333';
+          ctx.beginPath();
+          ctx.arc(this.x + this.size * 0.4, screenY, this.size * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Red stripe for visibility
+          ctx.strokeStyle = '#ff0000';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(this.x, screenY, this.size * 0.6, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          // Highlight
+          ctx.fillStyle = '#FFED4E';
+          ctx.beginPath();
+          ctx.arc(this.x - 2, screenY - 2, 3, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Space level - bright cyan plasma bullet (high visibility)
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = '#00ffff';
+          
+          // Plasma core (bright cyan)
+          ctx.fillStyle = '#00ffff';
+          ctx.beginPath();
+          ctx.arc(this.x, screenY, this.size, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Inner glow (white)
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(this.x, screenY, this.size * 0.6, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Outer ring for visibility
+          ctx.strokeStyle = '#00ffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(this.x, screenY, this.size * 1.3, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          // Highlight
+          ctx.fillStyle = '#e0ffff';
+          ctx.beginPath();
+          ctx.arc(this.x - 2, screenY - 2, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        ctx.restore();
+      }
+      
+      checkCollision(player) {
+        const dx = this.x - (player.x + CONFIG.PLAYER_WIDTH / 2);
+        const dy = this.y - (player.y + CONFIG.PLAYER_HEIGHT / 2);
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        return dist < this.size + 20; // 碰撞半径
+      }
+      
+      isDead() {
+        return this.life <= 0;
+      }
+      
+      isOffScreen(cameraY) {
+        const screenY = this.y - cameraY;
+        return screenY < -100 || screenY > CONFIG.CANVAS_HEIGHT + 100 || 
+               this.x < -100 || this.x > CONFIG.CANVAS_WIDTH + 100;
+      }
+    }
+    
+    class Cannon {
+      constructor(x, y, side) {
+        this.x = x;
+        this.y = y;
+        this.width = 30;
+        this.height = 20;
+        this.side = side; // 'left' or 'right'
+        this.cooldown = 0;
+        this.maxCooldown = 56; // 每56帧发射一次 (90 / 1.6 ≈ 56)
+        this.angle = 0;
+      }
+      
+      update(player, bullets) {
+        this.cooldown--;
+        
+        // 计算瞄准角度
+        const dx = player.x + CONFIG.PLAYER_WIDTH / 2 - this.x;
+        const dy = player.y + CONFIG.PLAYER_HEIGHT / 2 - this.y;
+        this.angle = Math.atan2(dy, dx);
+        
+        // 发射炮弹
+        if (this.cooldown <= 0) {
+          const targetX = player.x + CONFIG.PLAYER_WIDTH / 2;
+          const targetY = player.y + CONFIG.PLAYER_HEIGHT / 2;
+          bullets.push(new Bullet(this.x, this.y, targetX, targetY));
+          this.cooldown = this.maxCooldown;
+          playCannonSound();
+        }
+      }
+      
+      draw(ctx, cameraY) {
+        const screenY = this.y - cameraY;
+        const height = -Player.y; // Get player height for background theme
+        
+        ctx.save();
+        ctx.translate(this.x, screenY);
+        
+        // Determine cannon style based on level
+        if (height < 3000) {
+          // Tree level - wooden cannon with leaves
+          ctx.fillStyle = '#654321';
+          ctx.fillRect(-15, -10, 30, 20);
+          
+          // Add leaves decoration
+          ctx.fillStyle = 'rgba(15, 70, 15, 0.8)';
+          ctx.beginPath();
+          ctx.arc(-18, -12, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(18, -12, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(-18, 12, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(18, 12, 8, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Wooden barrel
+          ctx.rotate(this.angle);
+          ctx.fillStyle = '#8B4513';
+          ctx.fillRect(0, -5, 25, 10);
+        } else if (height < 7000) {
+          // Bird level - cloud cannon
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.beginPath();
+          ctx.arc(-8, 0, 12, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(8, 0, 12, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.rotate(this.angle);
+          ctx.fillStyle = 'rgba(200, 220, 255, 0.9)';
+          ctx.fillRect(0, -5, 25, 10);
+        } else if (height < 12000) {
+          // Airplane level - metal cannon
+          ctx.fillStyle = '#C0C0C0';
+          ctx.fillRect(-15, -10, 30, 20);
+          
+          ctx.rotate(this.angle);
+          ctx.fillStyle = '#A9A9A9';
+          ctx.fillRect(0, -5, 25, 10);
+        } else {
+          // Space level - futuristic cannon
+          ctx.fillStyle = '#001d3d';
+          ctx.fillRect(-15, -10, 30, 20);
+          
+          // Add glowing accents
+          ctx.fillStyle = '#00ffff';
+          ctx.fillRect(-15, -2, 30, 4);
+          
+          ctx.rotate(this.angle);
+          ctx.fillStyle = '#003566';
+          ctx.fillRect(0, -5, 25, 10);
+        }
+        
+        // 炮口
+        ctx.fillStyle = '#222';
+        ctx.beginPath();
+        ctx.arc(25, 0, 6, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 发射警告（冷却时间<30时闪烁）
+        if (this.cooldown < 30 && Math.floor(this.cooldown / 5) % 2 === 0) {
+          ctx.fillStyle = '#ff0000';
+          ctx.beginPath();
+          ctx.arc(25, 0, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        ctx.restore();
+      }
+      
+      isOffScreen(cameraY) {
+        return this.y - cameraY > CONFIG.CANVAS_HEIGHT + 100;
+      }
+    }
+    
+    const CannonManager = {
+      cannons: [],
+      bullets: [],
+      highestCannonY: CONFIG.PLAYER_START_Y,
+      
+      init() {
+        this.cannons = [];
+        this.bullets = [];
+        this.highestCannonY = CONFIG.PLAYER_START_Y;
+      },
+      
+      update(score, player) {
+        // 更新大炮
+        this.cannons.forEach(cannon => {
+          // 只有在屏幕范围内的大炮才发射
+          if (Math.abs(cannon.y - player.y) < CONFIG.CANVAS_HEIGHT) {
+            cannon.update(player, this.bullets);
+          }
+        });
+        
+        // 更新炮弹
+        this.bullets.forEach(bullet => bullet.update());
+        
+        // 检测炮弹碰撞
+        for (let bullet of this.bullets) {
+          if (bullet.checkCollision(player) && gameState === 'playing') {
+            playFallSound();
+            Camera.addShake(20);
+            // 爆炸粒子效果
+            ParticleSystem.emit(player.x + CONFIG.PLAYER_WIDTH / 2, 
+                              player.y + CONFIG.PLAYER_HEIGHT / 2, 
+                              12, '#ff4444');
+            handleGameOver(); // 调用统一的游戏结束处理
+            break;
+          }
+        }
+        
+        // 移除屏幕外的大炮和炮弹
+        this.cannons = this.cannons.filter(c => !c.isOffScreen(camera.y));
+        this.bullets = this.bullets.filter(b => !b.isDead() && !b.isOffScreen(camera.y));
+        
+        // 生成新大炮（根据分数动态调整难度）
+        while (this.highestCannonY > camera.y - CONFIG.CANVAS_HEIGHT - 1200 && score > 1200) {
+          // 根据分数计算难度系数（1200分开始，每1000分增加难度）
+          const difficulty = Math.min((score - 1200) / 1000, 5); // 最高5倍难度
+          
+          // 间距随难度减小（从700-1000降到400-600）
+          const minGap = Math.max(400, 700 - difficulty * 60);
+          const maxGap = Math.max(600, 1000 - difficulty * 80);
+          const spawnGap = Utils.random(minGap, maxGap);
+          this.highestCannonY -= spawnGap;
+          
+          // 生成概率随难度增加（从60%增加到95%）
+          const spawnChance = Math.min(0.95, 0.6 + difficulty * 0.07);
+          if (Math.random() < spawnChance) {
+            // 随机选择左侧或右侧
+            const side = Math.random() < 0.5 ? 'left' : 'right';
+            const x = side === 'left' ? 15 : CONFIG.CANVAS_WIDTH - 15;
+            
+            this.cannons.push(new Cannon(x, this.highestCannonY, side));
+          }
+        }
+      },
+      
+      draw(ctx, cameraY) {
+        this.bullets.forEach(b => b.draw(ctx, cameraY));
+        this.cannons.forEach(c => c.draw(ctx, cameraY));
+      }
+    };
+    
+    // ========================================
+    // 弹簧系统
+    // ========================================
+    class Spring {
+      constructor(x, y, platformWidth) {
+        this.x = x;
+        this.y = y;
+        this.platformWidth = platformWidth;
+        this.height = 31.4; // 11/7 * 20 = 31.4
+        this.maxHeight = 31.4;
+        this.compressed = 0; // 压缩动画状态 0-1
+        this.used = false;
+        
+        // Dimensions
+        this.deckWidth = platformWidth * 0.75;
+        this.deckHeight = this.maxHeight * 0.3; // Half of previous (3/10 of total height)
+        this.blockWidth = platformWidth * 0.4; // Narrower block
+        this.blockHeight = this.maxHeight - this.deckHeight; // Rest for arrow
+        this.width = this.deckWidth; // For collision detection
+      }
+      
+      update() {
+        // 压缩恢复动画
+        if (this.compressed > 0) {
+          this.compressed -= 0.15;
+          if (this.compressed < 0) this.compressed = 0;
+        }
+      }
+      
+      draw(ctx, cameraY) {
+        const screenY = this.y - cameraY;
+        const currentHeight = this.maxHeight * (1 - this.compressed * 0.5);
+        const compressionFactor = 1 - this.compressed * 0.5;
+        
+        ctx.save();
+        
+        // Calculate compressed heights
+        const currentDeckHeight = this.deckHeight * compressionFactor;
+        const currentBlockHeight = this.blockHeight * compressionFactor;
+        
+        // Toxic green color palette
+        const primaryColor = '#84cc16'; // lime green
+        const secondaryColor = '#65a30d'; // dark lime
+        const accentColor = '#a3e635'; // light lime
+        const glowColor = '#bef264'; // bright toxic green
+        
+        // Draw lower vertical block (touches platform)
+        const blockY = screenY;
+        const blockX = this.x - this.blockWidth / 2;
+        
+        // Block gradient
+        const blockGradient = ctx.createLinearGradient(
+          blockX, blockY - currentBlockHeight,
+          blockX + this.blockWidth, blockY
+        );
+        blockGradient.addColorStop(0, primaryColor);
+        blockGradient.addColorStop(1, secondaryColor);
+        
+        ctx.fillStyle = blockGradient;
+        ctx.fillRect(blockX, blockY - currentBlockHeight, this.blockWidth, currentBlockHeight);
+        
+        // Block border
+        ctx.strokeStyle = accentColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(blockX, blockY - currentBlockHeight, this.blockWidth, currentBlockHeight);
+        
+        // Draw large upward arrow on block
+        const arrowMargin = this.blockWidth * 0.15;
+        const arrowWidth = this.blockWidth - arrowMargin * 2;
+        const arrowY = blockY - currentBlockHeight / 2;
+        const arrowHeight = currentBlockHeight * 0.7;
+        
+        ctx.fillStyle = glowColor;
+        ctx.beginPath();
+        
+        // Arrow shaft (thick rectangle)
+        const shaftWidth = arrowWidth * 0.4;
+        const shaftHeight = arrowHeight * 0.5;
+        ctx.rect(
+          this.x - shaftWidth / 2,
+          arrowY + arrowHeight * 0.25,
+          shaftWidth,
+          shaftHeight
+        );
+        
+        // Arrow head (triangle)
+        const headWidth = arrowWidth;
+        const headHeight = arrowHeight * 0.5;
+        ctx.moveTo(this.x, arrowY - arrowHeight * 0.25); // tip
+        ctx.lineTo(this.x - headWidth / 2, arrowY + arrowHeight * 0.25); // left
+        ctx.lineTo(this.x + headWidth / 2, arrowY + arrowHeight * 0.25); // right
+        ctx.closePath();
+        ctx.fill();
+        
+        // Arrow glow
+        if (this.compressed > 0.3) {
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = glowColor;
+          ctx.fill();
+        }
+        
+        // Draw top deck (horizontal platform)
+        const deckY = screenY - currentBlockHeight - currentDeckHeight;
+        const deckX = this.x - this.deckWidth / 2;
+        
+        // Deck gradient
+        const deckGradient = ctx.createLinearGradient(
+          deckX, deckY,
+          deckX, deckY + currentDeckHeight
+        );
+        deckGradient.addColorStop(0, accentColor);
+        deckGradient.addColorStop(1, primaryColor);
+        
+        ctx.fillStyle = deckGradient;
+        ctx.fillRect(deckX, deckY, this.deckWidth, currentDeckHeight);
+        
+        // Deck border with glow
+        ctx.strokeStyle = glowColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(deckX, deckY, this.deckWidth, currentDeckHeight);
+        
+        // Add tech lines on deck
+        ctx.strokeStyle = 'rgba(103, 232, 249, 0.5)';
+        ctx.lineWidth = 1;
+        for (let i = 1; i < 4; i++) {
+          const lineY = deckY + (currentDeckHeight * i / 4);
+          ctx.beginPath();
+          ctx.moveTo(deckX, lineY);
+          ctx.lineTo(deckX + this.deckWidth, lineY);
+          ctx.stroke();
+        }
+        
+        // Glow effect when compressed
+        if (this.compressed > 0.5) {
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = glowColor;
+          ctx.strokeStyle = glowColor;
+          ctx.lineWidth = 3;
+          ctx.strokeRect(deckX - 2, deckY - 2, this.deckWidth + 4, currentDeckHeight + 4);
+          ctx.strokeRect(blockX - 2, blockY - currentBlockHeight - 2, this.blockWidth + 4, currentBlockHeight + 4);
+        }
+        
+        ctx.restore();
+      }
+      
+      compress() {
+        this.compressed = 1;
+        this.used = true;
+      }
+    }
+    
+    // ========================================
+    // 直升机系统
+    // ========================================
+    class Helicopter {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = 40;
+        this.height = 30;
+        this.used = false;
+        this.propellerAngle = 0;
+        this.active = false; // 是否正在飞行
+        this.flyTime = 0; // 飞行时长
+        this.maxFlyTime = 480; // 最大飞行时间（帧数）约8秒，飞行距离约2400分 (480帧 × 5像素/帧)
+      }
+      
+      update() {
+        // 螺旋桨旋转 - only when active
+        if (this.active) {
+          this.propellerAngle += 0.5;
+          if (this.propellerAngle > Math.PI * 2) {
+            this.propellerAngle -= Math.PI * 2;
+          }
+          
+          // 更新飞行时间
+          this.flyTime++;
+          if (this.flyTime >= this.maxFlyTime) {
+            this.active = false;
+          }
+        }
+      }
+      
+      draw(ctx, cameraY) {
+        const screenY = this.y - cameraY;
+        
+        // 闪烁效果（最后1秒）
+        if (this.active && this.flyTime > this.maxFlyTime - 60) {
+          if (Math.floor(this.flyTime / 5) % 2 === 0) return; // 每5帧切换显示/隐藏
+        }
+        
+        ctx.save();
+        ctx.translate(this.x, screenY);
+        
+        // 螺旋桨（顶部）
+        if (!this.used || this.active) {
+          ctx.save();
+          ctx.rotate(this.propellerAngle);
+          ctx.strokeStyle = this.active ? '#fbbf24' : '#94a3b8';
+          ctx.lineWidth = 3;
+          ctx.lineCap = 'round';
+          
+          // 两片螺旋桨叶
+          ctx.beginPath();
+          ctx.moveTo(-20, 0);
+          ctx.lineTo(20, 0);
+          ctx.stroke();
+          
+          ctx.beginPath();
+          ctx.moveTo(0, -4);
+          ctx.lineTo(0, 4);
+          ctx.stroke();
+          ctx.restore();
+          
+          // 螺旋桨中心
+          ctx.fillStyle = '#64748b';
+          ctx.beginPath();
+          ctx.arc(0, 0, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // 机身
+        ctx.fillStyle = this.active ? '#f59e0b' : '#3b82f6';
+        ctx.beginPath();
+        ctx.ellipse(0, 8, 15, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 驾驶舱窗口
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.beginPath();
+        ctx.ellipse(0, 8, 10, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 起落架
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-8, 18);
+        ctx.lineTo(-8, 22);
+        ctx.moveTo(8, 18);
+        ctx.lineTo(8, 22);
+        ctx.stroke();
+        
+        // 发光效果（激活时）
+        if (this.active) {
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = '#fbbf24';
+          ctx.strokeStyle = '#fbbf24';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.ellipse(0, 8, 17, 12, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        
+        ctx.restore();
+      }
+      
+      activate() {
+        this.used = true;
+        this.active = true;
+        this.flyTime = 0;
+      }
+      
+      isFlying() {
+        return this.active;
+      }
+    }
+    
+    // ========================================
+    // 火箭系统
+    // ========================================
+    class Rocket {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = 30;
+        this.height = 50;
+        this.used = false;
+        this.active = false; // 是否正在飞行
+        this.flyTime = 0; // 飞行时长
+        this.maxFlyTime = 163; // 最大飞行时间（帧数）约2.7秒 (490 / 3)
+        this.flameOffset = 0; // 火焰动画
+        this.acceleration = 0.5; // 加速度
+        this.velocity = 0; // 当前速度
+      }
+      
+      update() {
+        // 火焰动画
+        this.flameOffset = Math.sin(Date.now() / 50) * 3;
+        
+        // 更新飞行时间
+        if (this.active) {
+          this.flyTime++;
+          
+          // 前半程：加速，后半程：减速（加速度为原来的一半）
+          const halfTime = this.maxFlyTime / 2;
+          if (this.flyTime < halfTime) {
+            // 加速阶段
+            this.velocity -= this.acceleration;
+          } else if (this.flyTime < this.maxFlyTime - 60) {
+            // 减速阶段（用一半的加速度减速）
+            this.velocity += this.acceleration / 2;
+          } else {
+            // 最后1秒（60帧）：减速到很慢
+            this.velocity += this.acceleration / 1.5;
+          }
+          
+          if (this.flyTime >= this.maxFlyTime) {
+            this.active = false;
+          }
+        }
+      }
+      
+      draw(ctx, cameraY) {
+        const screenY = this.y - cameraY;
+        
+        // 闪烁效果（最后1秒）
+        if (this.active && this.flyTime > this.maxFlyTime - 60) {
+          if (Math.floor(this.flyTime / 5) % 2 === 0) return; // 每5帧切换显示/隐藏
+        }
+        
+        ctx.save();
+        ctx.translate(this.x, screenY);
+        
+        // 火焰（底部，只有激活时才显示）
+        if (this.active) {
+          // 计算当前加速度（前半程加速度大，后半程加速度小）
+          const halfTime = this.maxFlyTime / 2;
+          let currentAccel = this.flyTime < halfTime ? this.acceleration : this.acceleration / 2;
+          // 将加速度映射到火焰长度（基础长度 + 加速度因子）
+          const flameLength = 25 + currentAccel * 40; // 加速度0.5时长45，加速度0.25时长35
+          
+          const flameIntensity = 1.5;
+          
+          // 外层火焰（橙红色）
+          ctx.fillStyle = '#ff4500';
+          ctx.beginPath();
+          ctx.moveTo(-8 * flameIntensity, 20);
+          ctx.quadraticCurveTo(-10 * flameIntensity, 20 + flameLength * 0.6 + this.flameOffset * flameIntensity, 0, 20 + flameLength + this.flameOffset * 2 * flameIntensity);
+          ctx.quadraticCurveTo(10 * flameIntensity, 20 + flameLength * 0.6 + this.flameOffset * flameIntensity, 8 * flameIntensity, 20);
+          ctx.closePath();
+          ctx.fill();
+          
+          // 内层火焰（黄色）
+          ctx.fillStyle = '#ffd700';
+          ctx.beginPath();
+          ctx.moveTo(-5 * flameIntensity, 20);
+          ctx.quadraticCurveTo(-6 * flameIntensity, 20 + flameLength * 0.4 + this.flameOffset * flameIntensity, 0, 20 + flameLength * 0.6 + this.flameOffset * flameIntensity);
+          ctx.quadraticCurveTo(6 * flameIntensity, 20 + flameLength * 0.4 + this.flameOffset * flameIntensity, 5 * flameIntensity, 20);
+          ctx.closePath();
+          ctx.fill();
+        }
+        
+        // 火箭主体（红色）
+        ctx.fillStyle = this.active ? '#ff2d2d' : '#dc2626';
+        ctx.beginPath();
+        ctx.moveTo(0, -25); // 尖顶
+        ctx.lineTo(12, 0);
+        ctx.lineTo(12, 20);
+        ctx.lineTo(-12, 20);
+        ctx.lineTo(-12, 0);
+        ctx.closePath();
+        ctx.fill();
+        
+        // 火箭窗口（圆形）
+        ctx.fillStyle = '#87ceeb';
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#4a4a4a';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 火箭翼（两侧）
+        ctx.fillStyle = this.active ? '#ff6b6b' : '#b91c1c';
+        // 左翼
+        ctx.beginPath();
+        ctx.moveTo(-12, 10);
+        ctx.lineTo(-20, 22);
+        ctx.lineTo(-12, 20);
+        ctx.closePath();
+        ctx.fill();
+        // 右翼
+        ctx.beginPath();
+        ctx.moveTo(12, 10);
+        ctx.lineTo(20, 22);
+        ctx.lineTo(12, 20);
+        ctx.closePath();
+        ctx.fill();
+        
+        // 发光效果（激活时）
+        if (this.active) {
+          ctx.shadowBlur = 25;
+          ctx.shadowColor = '#ff4500';
+          ctx.strokeStyle = '#ff6347';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, -27);
+          ctx.lineTo(14, 2);
+          ctx.lineTo(14, 22);
+          ctx.lineTo(-14, 22);
+          ctx.lineTo(-14, 2);
+          ctx.closePath();
+          ctx.stroke();
+        }
+        
+        ctx.restore();
+      }
+      
+      activate() {
+        this.used = true;
+        this.active = true;
+        this.flyTime = 0;
+        this.velocity = 0; // 从0开始
+      }
+      
+      getVelocity() {
+        return this.velocity;
+      }
+      
+      isFlying() {
+        return this.active;
+      }
+    }
+    
+    // Jetpack类（蓝色喷气背包，用于作弊）
+    class Jetpack {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = 30;
+        this.height = 50;
+        this.used = false;
+        this.active = false;
+        this.flyTime = 0;
+        this.maxFlyTime = 163; // 飞行时间
+        this.flameOffset = 0;
+        this.acceleration = 0.6; // 加速度
+        this.velocity = 0; // 当前速度
+      }
+      
+      update() {
+        this.flameOffset = Math.sin(Date.now() / 50) * 3;
+        
+        if (this.active) {
+          this.flyTime++;
+          
+          // 前半程：加速，后半程：减速（加速度为原来的一半）
+          const halfTime = this.maxFlyTime / 2;
+          if (this.flyTime < halfTime) {
+            // 加速阶段
+            this.velocity -= this.acceleration;
+          } else if (this.flyTime < this.maxFlyTime - 60) {
+            // 减速阶段（用一半的加速度减速）
+            this.velocity += this.acceleration / 2;
+          } else {
+            // 最后1秒（60帧）：减速到很慢
+            this.velocity += this.acceleration / 1.5;
+          }
+          
+          if (this.flyTime >= this.maxFlyTime) {
+            this.active = false;
+          }
+        }
+      }
+      
+      draw(ctx, cameraY) {
+        const screenY = this.y - cameraY;
+        
+        // 闪烁效果（最后1秒）
+        if (this.active && this.flyTime > this.maxFlyTime - 60) {
+          if (Math.floor(this.flyTime / 5) % 2 === 0) return; // 每5帧切换显示/隐藏
+        }
+        
+        ctx.save();
+        ctx.translate(this.x, screenY);
+        
+        // 蓝色火焰（底部，只有激活时才显示）
+        if (this.active) {
+          // 计算当前加速度（前半程加速度大，后半程加速度小）
+          const halfTime = this.maxFlyTime / 2;
+          let currentAccel = this.flyTime < halfTime ? this.acceleration : this.acceleration / 2;
+          // 将加速度映射到火焰长度（基础长度 + 加速度因子）
+          const flameLength = 25 + currentAccel * 40; // 加速度0.6时长49，加速度0.3时长37
+          
+          const flameIntensity = 1.5;
+          
+          // 外层火焰（绿色）
+          ctx.fillStyle = '#00ff00';
+          ctx.beginPath();
+          ctx.moveTo(-8 * flameIntensity, 20);
+          ctx.quadraticCurveTo(-10 * flameIntensity, 20 + flameLength * 0.6 + this.flameOffset * flameIntensity, 0, 20 + flameLength + this.flameOffset * 2 * flameIntensity);
+          ctx.quadraticCurveTo(10 * flameIntensity, 20 + flameLength * 0.6 + this.flameOffset * flameIntensity, 8 * flameIntensity, 20);
+          ctx.closePath();
+          ctx.fill();
+          
+          // 内层火焰（浅绿色）
+          ctx.fillStyle = '#7fff00';
+          ctx.beginPath();
+          ctx.moveTo(-5 * flameIntensity, 20);
+          ctx.quadraticCurveTo(-6 * flameIntensity, 20 + flameLength * 0.4 + this.flameOffset * flameIntensity, 0, 20 + flameLength * 0.6 + this.flameOffset * flameIntensity);
+          ctx.quadraticCurveTo(6 * flameIntensity, 20 + flameLength * 0.4 + this.flameOffset * flameIntensity, 5 * flameIntensity, 20);
+          ctx.closePath();
+          ctx.fill();
+        }
+        
+        // 喷气背包主体（橙色）
+        ctx.fillStyle = this.active ? '#ff8c00' : '#ff7700';
+        ctx.beginPath();
+        ctx.moveTo(0, -25);
+        ctx.lineTo(12, 0);
+        ctx.lineTo(12, 20);
+        ctx.lineTo(-12, 20);
+        ctx.lineTo(-12, 0);
+        ctx.closePath();
+        ctx.fill();
+        
+        // 窗口（圆形）
+        ctx.fillStyle = '#ffd700';
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#4a4a4a';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 喷气背包翼（两侧）
+        ctx.fillStyle = this.active ? '#ffa500' : '#ff6500';
+        // 左翼
+        ctx.beginPath();
+        ctx.moveTo(-12, 10);
+        ctx.lineTo(-20, 22);
+        ctx.lineTo(-12, 20);
+        ctx.closePath();
+        ctx.fill();
+        // 右翼
+        ctx.beginPath();
+        ctx.moveTo(12, 10);
+        ctx.lineTo(20, 22);
+        ctx.lineTo(12, 20);
+        ctx.closePath();
+        ctx.fill();
+        
+        // 发光效果（激活时）
+        if (this.active) {
+          ctx.shadowBlur = 25;
+          ctx.shadowColor = '#ff8c00';
+          ctx.strokeStyle = '#ffa500';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, -27);
+          ctx.lineTo(14, 2);
+          ctx.lineTo(14, 22);
+          ctx.lineTo(-14, 22);
+          ctx.lineTo(-14, 2);
+          ctx.closePath();
+          ctx.stroke();
+        }
+        
+        ctx.restore();
+      }
+      
+      activate() {
+        this.used = true;
+        this.active = true;
+        this.flyTime = 0;
+        this.velocity = 0; // 从0开始
+      }
+      
+      getVelocity() {
+        return this.velocity;
+      }
+      
+      isFlying() {
+        return this.active;
+      }
+    }
+    
+    // ========================================
+    // 平台系统
+    // ========================================
+    class Platform {
+      constructor(x, y, type = 'normal') {
+        this.x = x;
+        this.y = y;
+        this.width = CONFIG.PLATFORM_WIDTH;
+        this.height = CONFIG.PLATFORM_HEIGHT;
+        this.type = type;
+        this.broken = false;
+        this.breaking = false;
+        this.opacity = 1;
+        this.moveOffset = 0;
+        this.moveDirection = 1;
+        this.startX = x;
+        this.spring = null; // 弹簧（可选）
+        this.helicopter = null; // 直升机（可选）
+        this.rocket = null; // 火箭（可选）
+      }
+      
+      update() {
+        // 移动平台和组合平台都会移动
+        if (this.type === 'moving' || this.type === 'combo') {
+          this.moveOffset += CONFIG.MOVING_PLATFORM_SPEED * this.moveDirection;
+          if (Math.abs(this.moveOffset) > CONFIG.MOVING_PLATFORM_RANGE) {
+            this.moveDirection *= -1;
+          }
+          this.x = this.startX + this.moveOffset;
+          
+          // 更新弹簧位置（如果有）
+          if (this.spring) {
+            this.spring.x = this.x + this.width / 2;
+          }
+          // 更新直升机位置（如果有）
+          if (this.helicopter) {
+            this.helicopter.x = this.x + this.width / 2;
+          }
+          // 更新火箭位置（如果有）
+          if (this.rocket) {
+            this.rocket.x = this.x + this.width / 2;
+          }
+        }
+        
+        if (this.broken) {
+          this.opacity -= 0.05;
+        }
+        
+        // 更新弹簧
+        if (this.spring) {
+          this.spring.update();
+        }
+        // 更新直升机
+        if (this.helicopter) {
+          this.helicopter.update();
+        }
+      }
+      
+      draw(ctx, cameraY) {
+        const screenY = this.y - cameraY;
+        
+        ctx.save();
+        ctx.globalAlpha = this.opacity;
+        
+        // 阴影和发光
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = this.getColor();
+        
+        // 渐变填充
+        const gradient = ctx.createLinearGradient(this.x, screenY, this.x, screenY + this.height);
+        const color = this.getColor();
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, this.getDarkColor());
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.roundRect(this.x, screenY, this.width, this.height, 5);
+        ctx.fill();
+        
+        // 高光
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.beginPath();
+        ctx.roundRect(this.x + 5, screenY + 2, this.width - 10, 3, 2);
+        ctx.fill();
+        
+        // 绘制刺（仅对spike平台）
+        if (this.type === 'spike') {
+          ctx.fillStyle = '#000000';
+          const spikeCount = 6;
+          const spikeWidth = this.width / spikeCount;
+          for (let i = 0; i < spikeCount; i++) {
+            ctx.beginPath();
+            ctx.moveTo(this.x + i * spikeWidth, screenY);
+            ctx.lineTo(this.x + i * spikeWidth + spikeWidth / 2, screenY - 8);
+            ctx.lineTo(this.x + (i + 1) * spikeWidth, screenY);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
+        
+        ctx.restore();
+        
+        // 绘制弹簧（如果有）
+        if (this.spring) {
+          this.spring.draw(ctx, cameraY);
+        }
+        // 绘制直升机（如果有）
+        if (this.helicopter) {
+          this.helicopter.draw(ctx, cameraY);
+        }
+        // 绘制火箭（如果有）
+        if (this.rocket) {
+          this.rocket.draw(ctx, cameraY);
+        }
+      }
+      
+      getColor() {
+        switch(this.type) {
+          case 'moving': return '#ff6b6b';
+          case 'fragile': return '#ffd93d';
+          case 'combo': return '#a855f7';
+          case 'spike': return '#000000';
+          default: return '#4ecdc4';
+        }
+      }
+      
+      getDarkColor() {
+        switch(this.type) {
+          case 'moving': return '#c92a2a';
+          case 'fragile': return '#f08c00';
+          case 'combo': return '#6b21a8';
+          case 'spike': return '#000000';
+          default: return '#0b7285';
+        }
+      }
+      
+      isOffScreen(cameraY) {
+        return this.y - cameraY > CONFIG.CANVAS_HEIGHT + 100;
+      }
+    }
+    
+    const PlatformManager = {
+      platforms: [],
+      highestPlatformY: CONFIG.PLAYER_START_Y,
+      
+      init() {
+        this.platforms = [];
+        this.highestPlatformY = CONFIG.PLAYER_START_Y;
+        
+        // 初始平台 - 第一个在玩家脚下
+        const firstX = CONFIG.CANVAS_WIDTH / 2 - CONFIG.PLATFORM_WIDTH / 2;
+        this.platforms.push(new Platform(firstX, CONFIG.PLAYER_START_Y + CONFIG.PLAYER_HEIGHT, 'normal'));
+        
+        for (let i = 1; i < CONFIG.PLATFORM_START_COUNT; i++) {
+          const x = Utils.random(50, CONFIG.CANVAS_WIDTH - 50 - CONFIG.PLATFORM_WIDTH);
+          const y = CONFIG.PLAYER_START_Y + 80 - i * 110;
+          this.platforms.push(new Platform(x, y, 'normal'));
+        }
+      },
+      
+      update(score) {
+        // 更新所有平台
+        this.platforms.forEach(p => p.update());
+        
+        // 移除屏幕外的平台
+        this.platforms = this.platforms.filter(p => !p.isOffScreen(camera.y) && p.opacity > 0);
+        
+        // 生成新平台
+        while (this.highestPlatformY > camera.y - CONFIG.CANVAS_HEIGHT) {
+          const difficulty = score * CONFIG.DIFFICULTY_SCALE;
+          // 限制最大间距，确保玩家能跳上去
+          // 玩家跳跃速度为 -10，约能跳 160 像素高
+          const maxGap = 140; // 安全的最大间距
+          const gap = Utils.random(
+            Math.min(CONFIG.PLATFORM_GAP_MIN + difficulty * 10, maxGap - 20),
+            Math.min(CONFIG.PLATFORM_GAP_MAX + difficulty * 15, maxGap)
+          );
+          
+          this.highestPlatformY -= gap;
+          
+          // 更随机的 x 位置，使用多个随机段
+          const segments = 3;
+          const segment = Math.floor(Math.random() * segments);
+          const segmentWidth = (CONFIG.CANVAS_WIDTH - 100) / segments;
+          const x = 50 + segment * segmentWidth + Utils.random(0, segmentWidth - CONFIG.PLATFORM_WIDTH);
+          
+          // 随机平台类型
+          let type = 'normal';
+          const rand = Math.random();
+          
+          // 检查最后一个平台是否为spike，避免连续生成
+          const lastPlatform = this.platforms[this.platforms.length - 1];
+          const canSpawnSpike = !lastPlatform || lastPlatform.type !== 'spike';
+          
+          // 8000分后不再生成combo平台，增加其他类型概率
+          if (score >= 8000) {
+            if (rand < 0.13 && score > 300) type = 'moving';
+            else if (rand < 0.28 && score > 500) type = 'fragile';
+            else if (rand < 0.42 && score > 1000 && canSpawnSpike) {
+              type = 'spike'; // 黑色带刺平台
+              // 确保spike平台附近有一个安全平台
+              const safeX = x < CONFIG.CANVAS_WIDTH / 2 ? 
+                           x + CONFIG.PLATFORM_WIDTH + 60 : 
+                           x - CONFIG.PLATFORM_WIDTH - 60;
+              const clampedSafeX = Utils.clamp(safeX, 30, CONFIG.CANVAS_WIDTH - CONFIG.PLATFORM_WIDTH - 30);
+              const safeY = this.highestPlatformY + Utils.random(-30, 30);
+              this.platforms.push(new Platform(clampedSafeX, safeY, 'normal'));
+            }
+          } else {
+            if (rand < 0.13 && score > 300) type = 'moving';
+            else if (rand < 0.28 && score > 500) type = 'fragile';
+            else if (rand < 0.38 && score > 800) type = 'combo'; // 紫色组合平台
+            else if (rand < 0.52 && score > 1000 && canSpawnSpike) {
+              type = 'spike'; // 黑色带刺平台
+              // 确保spike平台附近有一个安全平台
+              const safeX = x < CONFIG.CANVAS_WIDTH / 2 ? 
+                           x + CONFIG.PLATFORM_WIDTH + 60 : 
+                           x - CONFIG.PLATFORM_WIDTH - 60;
+              const clampedSafeX = Utils.clamp(safeX, 30, CONFIG.CANVAS_WIDTH - CONFIG.PLATFORM_WIDTH - 30);
+              const safeY = this.highestPlatformY + Utils.random(-30, 30);
+              this.platforms.push(new Platform(clampedSafeX, safeY, 'normal'));
+            }
+          }
+          
+          const newPlatform = new Platform(x, this.highestPlatformY, type);
+          
+          // 为非spike平台随机添加弹簧（16%概率，得分500以上）
+          if (type !== 'spike' && score > 500 && Math.random() < 0.16) {
+            newPlatform.spring = new Spring(
+              newPlatform.x + newPlatform.width / 2,
+              newPlatform.y,  // 放在平台顶部
+              newPlatform.width
+            );
+          }
+          
+          // 为非spike平台随机添加直升机（1.5%概率，不和弹簧同时出现）
+          // 确保下一个平台不会太近（检查最小间距）
+          const lastPlatformWithHelicopter = this.platforms.slice(-3).find(p => p.helicopter);
+          const helicopterGapOk = !lastPlatformWithHelicopter || 
+                                   Math.abs(this.highestPlatformY - lastPlatformWithHelicopter.y) > 150;
+          
+          if (type !== 'spike' && !newPlatform.spring && helicopterGapOk && Math.random() < 0.015) {
+            newPlatform.helicopter = new Helicopter(
+              newPlatform.x + newPlatform.width / 2,
+              newPlatform.y - 30  // 放在平台上方
+            );
+            // 确保下一个平台生成时有足够的垂直间距
+            this.highestPlatformY -= 80; // 额外向上偏移，避免下一个平台生成在直升机上方
+          }
+          
+          // 为非spike平台随机添加火箭（0.5%概率，得分1200以上，不和弹簧、直升机同时出现）
+          if (type !== 'spike' && score > 1200 && !newPlatform.spring && !newPlatform.helicopter && Math.random() < 0.005) {
+            newPlatform.rocket = new Rocket(
+              newPlatform.x + newPlatform.width / 2,
+              newPlatform.y - 20  // 火箭底部在平台上
+            );
+          }
+          
+          this.platforms.push(newPlatform);
+        }
+      },
+      
+      checkCollision(player) {
+        if (player.vy < 0) return null; // 上升时不检测
+        
+        for (let platform of this.platforms) {
+          if (platform.broken) continue;
+          
+          const playerBottom = player.y + CONFIG.PLAYER_HEIGHT;
+          const playerLeft = player.x;
+          const playerRight = player.x + CONFIG.PLAYER_WIDTH;
+          
+          // 先检查弹簧碰撞（弹簧在平台上方）
+          if (platform.spring && !platform.spring.used) {
+            const springCenterX = platform.spring.x;
+            const springLeft = springCenterX - platform.spring.deckWidth / 2;
+            const springRight = springCenterX + platform.spring.deckWidth / 2;
+            const springBottom = platform.spring.y;
+            const springTop = platform.spring.y - platform.spring.height;
+            
+            // 检查弹簧碰撞
+            if (playerBottom >= springTop && 
+                playerBottom <= springBottom + 5 &&
+                playerRight > springLeft && 
+                playerLeft < springRight) {
+              platform.spring.compress();
+              ParticleSystem.emit(springCenterX, springTop, 16, '#bef264');
+              Camera.addShake(10);
+              return { platform, springBoost: true };
+            }
+          }
+          
+          // 再检查平台碰撞
+          if (playerBottom >= platform.y && 
+              playerBottom <= platform.y + platform.height + 5 &&
+              playerRight > platform.x && 
+              playerLeft < platform.x + platform.width) {
+            
+            // 带刺平台：触碰即死亡
+            if (platform.type === 'spike') {
+              playFallSound();
+              Camera.addShake(15);
+              handleGameOver(); // 调用统一的游戏结束处理
+              return null; // 不返回平台，玩家继续下落
+            }
+            
+            // 脆弱平台和组合平台：先返回平台让玩家跳跃，然后标记为破碎
+            if ((platform.type === 'fragile' || platform.type === 'combo') && !platform.breaking) {
+              platform.breaking = true;
+              setTimeout(() => {
+                platform.broken = true;
+              }, 50);
+            }
+            
+            // 检查是否触发直升机
+            if (platform.helicopter && !platform.helicopter.used) {
+              const helicopterCenterX = platform.helicopter.x;
+              const playerCenterX = player.x + CONFIG.PLAYER_WIDTH / 2;
+              
+              // 如果玩家中心位置在直升机范围内
+              if (Math.abs(playerCenterX - helicopterCenterX) < platform.helicopter.width) {
+                platform.helicopter.activate();
+                ParticleSystem.emit(helicopterCenterX, platform.helicopter.y, 16, '#fbbf24');
+                Camera.addShake(8);
+                return { platform, helicopterBoost: true, helicopter: platform.helicopter };
+              }
+            }
+            
+            // 检查是否触发火箭
+            if (platform.rocket && !platform.rocket.used) {
+              const rocketCenterX = platform.rocket.x;
+              const playerCenterX = player.x + CONFIG.PLAYER_WIDTH / 2;
+              
+              // 如果玩家中心位置在火箭范围内
+              if (Math.abs(playerCenterX - rocketCenterX) < platform.rocket.width) {
+                platform.rocket.activate();
+                ParticleSystem.emit(rocketCenterX, platform.rocket.y, 20, '#ff4500');
+                Camera.addShake(12);
+                return { platform, rocketBoost: true, rocket: platform.rocket };
+              }
+            }
+            
+            return platform;
+          }
+        }
+        return null;
+      },
+      
+      draw(ctx, cameraY) {
+        this.platforms.forEach(p => p.draw(ctx, cameraY));
+      }
+    };
+    
+    // ========================================
+    // 角色系统
+    // ========================================
+    const Player = {
+      x: CONFIG.CANVAS_WIDTH / 2 - CONFIG.PLAYER_WIDTH / 2,
+      y: CONFIG.PLAYER_START_Y,
+      vx: 0,
+      vy: 0,
+      width: CONFIG.PLAYER_WIDTH,
+      height: CONFIG.PLAYER_HEIGHT,
+      squash: 1,
+      stretch: 1,
+      trails: [],
+      helicopter: null, // 当前携带的直升机
+      helicopterActive: false, // 直升机是否激活
+      rocket: null, // 当前携带的火箭
+      rocketActive: false, // 火箭是否激活
+      jetpack: null, // 当前携带的喷气背包（作弊用）
+      jetpackActive: false, // 喷气背包是否激活
+      doubleJumpAvailable: true, // 是否可以使用二段跳
+      doubleJumpUsed: false, // 当前跳跃中是否已使用二段跳
+      doubleJumpCooldown: 0, // 二段跳冷却时间（帧数）
+      doubleJumpCooldownMax: 300, // 5秒冷却（60帧/秒 × 5）
+      _s1: false,
+      
+      init() {
+        this.x = CONFIG.CANVAS_WIDTH / 2 - CONFIG.PLAYER_WIDTH / 2;
+        this.y = CONFIG.PLAYER_START_Y;
+        this.vx = 0;
+        this.vy = 1;
+        this.squash = 1;
+        this.stretch = 1;
+        this.trails = [];
+        this.helicopter = null;
+        this.helicopterActive = false;
+        this.rocket = null;
+        this.rocketActive = false;
+        this.jetpack = null;
+        this.jetpackActive = false;
+        this.doubleJumpAvailable = true;
+        this.doubleJumpUsed = false;
+        this.doubleJumpCooldown = 0;
+        this._s1 = false;
+      },
+      
+      update() {
+        // 横向加速度控制
+        const accel = CONFIG.GROUND_ACCEL * (this.vy !== 0 ? CONFIG.AIR_CONTROL : 1);
+        
+        if (Input.left) {
+          this.vx -= accel;
+        }
+        if (Input.right) {
+          this.vx += accel;
+        }
+        
+        // 摩擦力
+        if (!Input.left && !Input.right) {
+          this.vx *= CONFIG.FRICTION;
+        }
+        
+        // 限速
+        this.vx = Utils.clamp(this.vx, -CONFIG.MAX_SPEED_X, CONFIG.MAX_SPEED_X);
+        
+        // 直升机飞行模式
+        if (this.helicopterActive && this.helicopter) {
+          // 检查是否按下E键跳下
+          if (Input.dismount) {
+            this.helicopterActive = false;
+            this.helicopter = null;
+            this.vy = 0; // 停止上升，开始自由落体
+            stopHelicopterSound(); // 停止直升机音效
+            Input.dismount = false; // 重置按键状态
+          } else {
+            // 更新直升机状态（螺旋桨旋转和飞行时间）
+            this.helicopter.update();
+            
+            // 检查直升机是否飞行结束
+            if (!this.helicopter.isFlying()) {
+              this.helicopterActive = false;
+              this.helicopter = null;
+              this.vy = 0; // 停止上升，开始自由落体
+              stopHelicopterSound(); // 停止直升机音效
+            } else {
+              // 直升机持续向上飞
+              this.vy = -5; // 持续上升速度
+            }
+          }
+        }
+        // 火箭飞行模式
+        else if (this.rocketActive && this.rocket) {
+          // 检查是否按下E键跳下
+          if (Input.dismount) {
+            this.rocketActive = false;
+            this.rocket = null;
+            this.vy = -2; // 小幅度向上速度
+            stopRocketSound(); // 停止火箭音效
+            Input.dismount = false; // 重置按键状态
+          } else {
+            // 更新火箭状态
+            this.rocket.update();
+            
+            // 检查火箭是否飞行结束
+            if (!this.rocket.isFlying()) {
+              this.rocketActive = false;
+              this.rocket = null;
+              this.vy = -2; // 小幅度向上速度，让玩家在最高点停留更久
+              stopRocketSound(); // 停止火箭音效
+            } else {
+              // 火箭持续向上飞（使用火箭的动态速度）
+              this.vy = this.rocket.getVelocity();
+            }
+          }
+        }
+        // 喷气背包飞行模式
+        else if (this.jetpackActive && this.jetpack) {
+          // 检查是否按下E键跳下
+          if (Input.dismount) {
+            this.jetpackActive = false;
+            this.jetpack = null;
+            this.vy = -2; // 小幅度向上速度
+            stopRocketSound();
+            Input.dismount = false;
+          } else {
+            // 更新喷气背包状态
+            this.jetpack.update();
+            
+            // 检查喷气背包是否飞行结束
+            if (!this.jetpack.isFlying()) {
+              this.jetpackActive = false;
+              this.jetpack = null;
+              this.vy = -2; // 小幅度向上速度，让玩家在最高点停留更久
+              stopRocketSound();
+            } else {
+              // 喷气背包持续向上飞（使用喷气背包的动态速度）
+              this.vy = this.jetpack.getVelocity();
+            }
+          }
+        } else {
+          // 正常重力
+          this.vy += CONFIG.GRAVITY;
+          
+          // 二段跳逻辑
+          if (Input.jump && !this.doubleJumpUsed && this.doubleJumpAvailable && this.vy > 0) {
+            // 执行二段跳
+            this.vy = CONFIG.JUMP_VELOCITY; // 二段跳力度与普通跳相同
+            this.doubleJumpUsed = true;
+            this.doubleJumpAvailable = false;
+            this.doubleJumpCooldown = this.doubleJumpCooldownMax;
+            this.squash = 0.5;
+            this.stretch = 1.5;
+            
+            // 粒子效果
+            ParticleSystem.emit(
+              this.x + this.width / 2,
+              this.y + this.height,
+              CONFIG.PARTICLE_COUNT * 1.5,
+              '#00ffff' // 青色粒子表示二段跳
+            );
+            
+            Input.jump = false; // 重置跳跃输入
+          }
+        }
+        
+        // 更新二段跳冷却
+        if (this.doubleJumpCooldown > 0) {
+          this.doubleJumpCooldown--;
+          if (this.doubleJumpCooldown === 0) {
+            this.doubleJumpAvailable = true;
+          }
+        }
+        
+        // 应用速度
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // 屏幕穿越
+        if (this.x + this.width < 0) {
+          this.x = CONFIG.CANVAS_WIDTH;
+        } else if (this.x > CONFIG.CANVAS_WIDTH) {
+          this.x = -this.width;
+        }
+        
+        // 平台碰撞（直升机、火箭或喷气背包飞行时不检测碰撞）
+        if (!this.helicopterActive && !this.rocketActive && !this.jetpackActive) {
+          const collisionResult = PlatformManager.checkCollision(this);
+          if (collisionResult) {
+            const platform = collisionResult.platform || collisionResult;
+          const hasSpringBoost = collisionResult.springBoost || false;
+          const hasHelicopterBoost = collisionResult.helicopterBoost || false;
+          const hasRocketBoost = collisionResult.rocketBoost || false;
+          
+          playJumpSound();
+          
+          // 如果是火箭，激活飞行模式
+          if (hasRocketBoost) {
+            this.rocket = collisionResult.rocket;
+            this.rocketActive = true;
+            this.vy = 0; // 从速度0开始
+            this.squash = 0.3;
+            this.stretch = 2.0;
+            playRocketSound();
+          }
+          // 如果是直升机，激活飞行模式
+          else if (hasHelicopterBoost) {
+            this.helicopter = collisionResult.helicopter;
+            this.helicopterActive = true;
+            this.vy = -5; // 开始上升
+            this.squash = 1;
+            this.stretch = 1;
+            playHelicopterSound();
+          }
+          // 如果是弹簧跳跃，给予超强跳跃力
+          else if (hasSpringBoost) {
+            this.vy = CONFIG.JUMP_VELOCITY * 2.05; // 弹簧给予2.05倍跳跃力 (2.275 * 0.9)
+            this.squash = 0.4;
+            this.stretch = 1.8;
+            playSpringSound();
+          } else {
+            this.vy = CONFIG.JUMP_VELOCITY;
+            this.squash = 0.7;
+            this.stretch = 1.3;
+          }
+          
+          this.y = platform.y - this.height;
+          
+          // 重置二段跳
+          this.doubleJumpUsed = false;
+          
+          // 粒子效果
+          ParticleSystem.emit(
+            this.x + this.width / 2,
+            this.y + this.height,
+            (hasSpringBoost || hasHelicopterBoost || hasRocketBoost) ? CONFIG.PARTICLE_COUNT * 2 : CONFIG.PARTICLE_COUNT,
+            hasRocketBoost ? '#ff4500' : (hasHelicopterBoost ? '#fbbf24' : (hasSpringBoost ? '#bef264' : platform.getColor()))
+          );
+          }
+        }
+        
+        // 恢复形变
+        this.squash = Utils.lerp(this.squash, 1, 0.2);
+        this.stretch = Utils.lerp(this.stretch, 1, 0.2);
+        
+        // 运动轨迹
+        if (Math.abs(this.vy) > 8) {
+          this.trails.push({
+            x: this.x + this.width / 2,
+            y: this.y + this.height / 2,
+            life: 10
+          });
+        }
+        
+        this.trails = this.trails.filter(t => {
+          t.life--;
+          return t.life > 0;
+        });
+      },
+      
+      draw(ctx, cameraY) {
+        const screenY = this.y - cameraY;
+        
+        // 运动轨迹
+        this.trails.forEach((trail, i) => {
+          const alpha = trail.life / 10;
+          ctx.globalAlpha = alpha * 0.3;
+          ctx.fillStyle = '#95e1d3';
+          ctx.beginPath();
+          ctx.arc(trail.x, trail.y - cameraY, 15, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+        
+        // 角色主体
+        ctx.save();
+        ctx.translate(this.x + this.width / 2, screenY + this.height / 2);
+        ctx.scale(this.stretch, this.squash);
+        ctx.translate(-(this.x + this.width / 2), -(screenY + this.height / 2));
+        
+        // 发光效果
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#95e1d3';
+        
+        // 渐变填充
+        const gradient = ctx.createRadialGradient(
+          this.x + this.width / 2, screenY + this.height / 2, 0,
+          this.x + this.width / 2, screenY + this.height / 2, this.width / 2
+        );
+        gradient.addColorStop(0, '#95e1d3');
+        gradient.addColorStop(1, '#38ada9');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.roundRect(this.x, screenY, this.width, this.height, 10);
+        ctx.fill();
+        
+        // 眼睛
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#fff';
+        const eyeY = screenY + this.height * 0.3;
+        ctx.beginPath();
+        ctx.arc(this.x + this.width * 0.35, eyeY, 6, 0, Math.PI * 2);
+        ctx.arc(this.x + this.width * 0.65, eyeY, 6, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(this.x + this.width * 0.35, eyeY, 3, 0, Math.PI * 2);
+        ctx.arc(this.x + this.width * 0.65, eyeY, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 嘴巴
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(this.x + this.width / 2, screenY + this.height * 0.5, 10, 0, Math.PI);
+        ctx.stroke();
+        
+        ctx.restore();
+        
+        // 如果携带直升机，在玩家上方绘制
+        if (this.helicopterActive && this.helicopter) {
+          this.helicopter.x = this.x + this.width / 2;
+          this.helicopter.y = this.y - 25;
+          this.helicopter.draw(ctx, cameraY);
+        }
+        
+        // 如果携带火箭，在玩家侧面绘制
+        if (this.rocketActive && this.rocket) {
+          this.rocket.x = this.x + this.width + 15;
+          this.rocket.y = this.y + this.height / 2;
+          this.rocket.draw(ctx, cameraY);
+        }
+        
+        // 如果携带喷气背包，在玩家侧面绘制
+        if (this.jetpackActive && this.jetpack) {
+          this.jetpack.x = this.x + this.width + 15;
+          this.jetpack.y = this.y + this.height / 2;
+          this.jetpack.draw(ctx, cameraY);
+        }
+      }
+    };
+    
+    // ========================================
+    // 摄像机系统
+    // ========================================
+    const Camera = {
+      y: 0,
+      targetY: 0,
+      shake: 0,
+      highestThemeLevel: 0, // Track highest theme reached (0=trees, 1=birds, 2=airplanes, 3=space)
+      
+      init() {
+        this.y = 0;
+        this.targetY = 0;
+        this.shake = 0;
+        this.highestThemeLevel = 0;
+      },
+      
+      update() {
+        // 平滑跟随
+        if (Player.y < this.y + CONFIG.CAMERA_THRESHOLD) {
+          this.targetY = Player.y - CONFIG.CAMERA_THRESHOLD;
+        }
+        
+        this.y = Utils.lerp(this.y, this.targetY, CONFIG.CAMERA_LERP);
+        
+        // 更新最高主题等级（只增不减）
+        const height = -Player.y;
+        let currentThemeLevel = 0;
+        if (height >= 12000) currentThemeLevel = 3;
+        else if (height >= 7000) currentThemeLevel = 2;
+        else if (height >= 3000) currentThemeLevel = 1;
+        
+        if (currentThemeLevel > this.highestThemeLevel) {
+          this.highestThemeLevel = currentThemeLevel;
+        }
+        
+        // 震动衰减
+        if (this.shake > 0) {
+          this.shake *= 0.9;
+          if (this.shake < 0.1) this.shake = 0;
+        }
+      },
+      
+      getShakeOffset() {
+        if (this.shake === 0) return { x: 0, y: 0 };
+        return {
+          x: (Math.random() - 0.5) * this.shake,
+          y: (Math.random() - 0.5) * this.shake
+        };
+      },
+      
+      addShake(amount) {
+        this.shake = amount;
+      }
+    };
+    
+    // ========================================
+    // 渲染系统
+    // ========================================
+    const Renderer = {
+      drawBackground(ctx, cameraY) {
+        const height = -Player.y; // Player's current height
+        const scroll = cameraY * CONFIG.PARALLAX_SPEED;
+        
+        // Use highest theme level reached (prevents flickering when falling)
+        const themeLevel = Camera.highestThemeLevel;
+        
+        if (themeLevel === 0) {
+          // Level 1: Trees filling entire page (0-3000)
+          this.drawTreesLevel(ctx, scroll);
+        } else if (themeLevel === 1) {
+          // Level 2: Shallow sky with birds (3000-7000)
+          this.drawBirdsLevel(ctx, scroll, height);
+        } else if (themeLevel === 2) {
+          // Level 3: Sky with airplanes (7000-12000)
+          this.drawAirplanesLevel(ctx, scroll, height);
+        } else {
+          // Level 4: Space with stars (12000+)
+          this.drawStarsLevel(ctx, scroll, height);
+        }
+      },
+      
+      drawTreesLevel(ctx, scroll) {
+        // Forest cross-section view - simple and stable
+        // Background - darker forest green
+        const gradient = ctx.createLinearGradient(0, 0, 0, CONFIG.CANVAS_HEIGHT);
+        gradient.addColorStop(0, '#1a4d1a'); // Darker green
+        gradient.addColorStop(0.5, '#2d5a2d'); // Medium dark green
+        gradient.addColorStop(1, '#3a6a3a'); // Medium green
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
+        
+        // Draw 2 large trees - left tree at edge, right tree at 0.7
+        const tree1X = 40; // Left edge
+        const tree2X = CONFIG.CANVAS_WIDTH * 0.7;
+        
+        // Tree 1 (left edge)
+        this.drawThickTree(ctx, tree1X);
+        
+        // Tree 2 (right side)
+        this.drawThickTree(ctx, tree2X);
+        
+        // Add some atmospheric depth in background
+        ctx.fillStyle = 'rgba(30, 50, 30, 0.3)';
+        ctx.fillRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
+      },
+      
+      drawThickTree(ctx, centerX) {
+        const trunkWidth = 80;
+        const trunkLeft = centerX - trunkWidth / 2;
+        
+        // Draw thick trunk with gradient
+        const trunkGradient = ctx.createLinearGradient(trunkLeft, 0, trunkLeft + trunkWidth, 0);
+        trunkGradient.addColorStop(0, '#3d2817');
+        trunkGradient.addColorStop(0.3, '#5c3f1f');
+        trunkGradient.addColorStop(0.5, '#6b4a23');
+        trunkGradient.addColorStop(0.7, '#5c3f1f');
+        trunkGradient.addColorStop(1, '#3d2817');
+        ctx.fillStyle = trunkGradient;
+        ctx.fillRect(trunkLeft, 0, trunkWidth, CONFIG.CANVAS_HEIGHT);
+        
+        // Add bark texture
+        ctx.strokeStyle = 'rgba(30, 20, 10, 0.6)';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 15; i++) {
+          const y = i * 50 + 20;
+          ctx.beginPath();
+          ctx.moveTo(trunkLeft + 10, y);
+          ctx.lineTo(trunkLeft + trunkWidth - 10, y + 8);
+          ctx.stroke();
+        }
+        
+        // Draw vertical bark lines
+        ctx.strokeStyle = 'rgba(25, 15, 8, 0.4)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 5; i++) {
+          const x = trunkLeft + 15 + i * 15;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, CONFIG.CANVAS_HEIGHT);
+          ctx.stroke();
+        }
+        
+        // Draw many branches with random angles (some horizontal, some upward)
+        const branchCount = 18;
+        // Pre-defined: 0 = horizontal, negative = upward
+        const branchAngles = [0, -0.6, 0, -0.5, 0, -0.8, -0.7, 0, -0.65, 0, -0.55, 0, -0.75, 0, -0.85, 0, -0.6, 0];
+        
+        for (let i = 0; i < branchCount; i++) {
+          const branchY = (i * 45) + 30;
+          const branchSide = i % 2 === 0 ? 1 : -1; // Alternate sides
+          const branchStartX = centerX + (branchSide * trunkWidth / 2);
+          const branchLength = 100;
+          
+          // Use pre-defined angle (0 for horizontal, negative for upward)
+          const angleValue = branchAngles[i];
+          const angle = angleValue === 0 ? 0 : (-Math.PI / 4 * angleValue * branchSide);
+          const branchEndX = branchStartX + branchLength * Math.cos(angle) * branchSide;
+          const branchEndY = branchY + branchLength * Math.sin(angle);
+          
+          // Draw thicker branch
+          ctx.strokeStyle = '#4a3214';
+          ctx.lineWidth = 20;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(branchStartX, branchY);
+          ctx.lineTo(branchEndX, branchEndY);
+          ctx.stroke();
+          
+          // Add branch details
+          ctx.lineWidth = 16;
+          ctx.beginPath();
+          ctx.moveTo(branchStartX, branchY);
+          ctx.lineTo(branchEndX, branchEndY);
+          ctx.stroke();
+          
+          // Draw fewer leaf clusters along the branch (only 2 clusters)
+          const leafClusters = 2;
+          for (let j = 0; j < leafClusters; j++) {
+            const t = (j + 1) / (leafClusters + 1);
+            const leafX = branchStartX + (branchEndX - branchStartX) * t;
+            const leafY = branchY + (branchEndY - branchY) * t;
+            
+            // Draw small leaf cluster with medium green (original color)
+            const clusterSize = 20;
+            
+            ctx.fillStyle = 'rgba(60, 140, 60, 0.9)';
+            ctx.beginPath();
+            ctx.ellipse(leafX, leafY, clusterSize, clusterSize * 0.7, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'rgba(70, 150, 70, 0.85)';
+            ctx.beginPath();
+            ctx.ellipse(leafX - 8, leafY - 5, clusterSize * 0.6, clusterSize * 0.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(leafX + 8, leafY - 5, clusterSize * 0.6, clusterSize * 0.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          
+          // Draw small leaves at branch end with medium green (original color)
+          ctx.fillStyle = 'rgba(65, 145, 65, 0.95)';
+          ctx.beginPath();
+          ctx.ellipse(branchEndX, branchEndY, 25, 18, 0, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.fillStyle = 'rgba(75, 155, 75, 0.9)';
+          ctx.beginPath();
+          ctx.ellipse(branchEndX - 10, branchEndY - 8, 18, 13, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.ellipse(branchEndX + 10, branchEndY - 8, 18, 13, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      },
+      
+      drawTreeCanopy(ctx, x, y, width, height) {
+        // Draw irregular tree canopy shape
+        ctx.beginPath();
+        ctx.ellipse(x, y, width, height, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Add some bumps for irregular shape
+        ctx.beginPath();
+        ctx.ellipse(x - width * 0.4, y + height * 0.3, width * 0.6, height * 0.6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(x + width * 0.4, y + height * 0.3, width * 0.6, height * 0.6, 0, 0, Math.PI * 2);
+        ctx.fill();
+      },
+      
+      drawBirdsLevel(ctx, scroll, height) {
+        // Shallow sky - light blue gradient
+        const progress = (height - 3000) / 4000;
+        const gradient = ctx.createLinearGradient(0, 0, 0, CONFIG.CANVAS_HEIGHT);
+        gradient.addColorStop(0, '#87CEEB'); // Sky blue
+        gradient.addColorStop(1, `rgb(${135 + progress * 20}, ${206 + progress * 20}, ${235})`);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
+        
+        // Draw light clouds with random distribution
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        const cloudPositions = [
+          {x: 50, y: 80}, {x: 180, y: 150}, {x: 320, y: 100},
+          {x: 120, y: 250}, {x: 280, y: 320}, {x: 70, y: 420},
+          {x: 240, y: 500}, {x: 150, y: 600}, {x: 300, y: 680}
+        ];
+        for (let i = 0; i < cloudPositions.length; i++) {
+          const x = (cloudPositions[i].x + scroll * 0.15) % (CONFIG.CANVAS_WIDTH + 100) - 50;
+          const y = cloudPositions[i].y % CONFIG.CANVAS_HEIGHT;
+          const size1 = 18 + (i % 3) * 5;
+          const size2 = 22 + (i % 4) * 4;
+          
+          ctx.beginPath();
+          ctx.arc(x, y, size1, 0, Math.PI * 2);
+          ctx.arc(x + size1, y, size2, 0, Math.PI * 2);
+          ctx.arc(x + size1 + size2, y, size1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Draw many birds
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 20; i++) {
+          const x = (i * 80 + scroll * (0.25 + (i % 3) * 0.1)) % (CONFIG.CANVAS_WIDTH + 100) - 50;
+          const y = (i * 40 + 50) % CONFIG.CANVAS_HEIGHT;
+          const flap = Math.sin(Date.now() * 0.005 + i) * 3;
+          
+          ctx.beginPath();
+          ctx.arc(x - 6, y + flap, 6, Math.PI, 0, false);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(x + 6, y + flap, 6, Math.PI, 0, false);
+          ctx.stroke();
+        }
+      },
+      
+      drawAirplanesLevel(ctx, scroll, height) {
+        // Higher sky - deeper blue gradient
+        const progress = (height - 7000) / 5000;
+        const gradient = ctx.createLinearGradient(0, 0, 0, CONFIG.CANVAS_HEIGHT);
+        gradient.addColorStop(0, `rgb(${70 - progress * 30}, ${130 - progress * 80}, ${180 - progress * 100})`);
+        gradient.addColorStop(1, '#87CEEB');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
+        
+        // Draw clouds
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        for (let i = 0; i < 12; i++) {
+          const x = (i * 75 + scroll * 0.18) % (CONFIG.CANVAS_WIDTH + 120) - 60;
+          const y = (i * 55 + 40) % CONFIG.CANVAS_HEIGHT;
+          
+          ctx.beginPath();
+          ctx.arc(x, y, 22, 0, Math.PI * 2);
+          ctx.arc(x + 22, y, 28, 0, Math.PI * 2);
+          ctx.arc(x + 50, y, 22, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Draw airplanes
+        for (let i = 0; i < 5; i++) {
+          const x = (i * 150 + scroll * 0.4) % (CONFIG.CANVAS_WIDTH + 120);
+          const y = 80 + i * 100;
+          
+          // Plane body
+          ctx.fillStyle = '#D3D3D3';
+          ctx.beginPath();
+          ctx.ellipse(x, y, 35, 10, 0, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Wings
+          ctx.fillStyle = '#B0B0B0';
+          ctx.fillRect(x - 25, y - 4, 50, 8);
+          
+          // Tail
+          ctx.beginPath();
+          ctx.moveTo(x - 35, y);
+          ctx.lineTo(x - 48, y - 12);
+          ctx.lineTo(x - 35, y - 6);
+          ctx.fill();
+          
+          // Cockpit window
+          ctx.fillStyle = '#4A90A4';
+          ctx.beginPath();
+          ctx.arc(x + 15, y, 5, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Vapor trail
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(x - 35, y);
+          ctx.lineTo(x - 80, y + 2);
+          ctx.stroke();
+        }
+        
+        // Sun getting dimmer
+        ctx.fillStyle = `rgba(255, 255, 150, ${0.5 - progress * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(CONFIG.CANVAS_WIDTH - 100, 100, 50, 0, Math.PI * 2);
+        ctx.fill();
+      },
+      
+      drawStarsLevel(ctx, scroll, height) {
+        // Space - dark gradient
+        const gradient = ctx.createLinearGradient(0, 0, 0, CONFIG.CANVAS_HEIGHT);
+        gradient.addColorStop(0, '#000814');
+        gradient.addColorStop(0.5, '#001d3d');
+        gradient.addColorStop(1, '#003566');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
+        
+        // Draw stars with twinkling effect
+        ctx.fillStyle = '#FFFFFF';
+        for (let i = 0; i < 120; i++) {
+          const x = (i * 137.508) % CONFIG.CANVAS_WIDTH;
+          const y = ((i * 89 + scroll * 0.5) % (CONFIG.CANVAS_HEIGHT + 1000)) - 1000;
+          const size = (i % 3) + 1;
+          const twinkle = Math.sin(Date.now() * 0.001 + i) * 0.5 + 0.5;
+          ctx.globalAlpha = twinkle;
+          ctx.beginPath();
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        
+        // Draw planets
+        for (let i = 0; i < 3; i++) {
+          const x = (i * 150 + 100) % CONFIG.CANVAS_WIDTH;
+          const y = ((i * 200 + scroll * 0.1) % (CONFIG.CANVAS_HEIGHT + 500)) - 200;
+          const radius = 20 + i * 15;
+          const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D'];
+          
+          ctx.fillStyle = colors[i];
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Planet ring (for middle planet)
+          if (i === 1) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.ellipse(x, y, radius + 15, 5, 0, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+        
+        // Shooting stars
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 2; i++) {
+          const x = (i * 300 + scroll * 2) % (CONFIG.CANVAS_WIDTH + 200);
+          const y = (i * 150 + 100) % CONFIG.CANVAS_HEIGHT;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x - 30, y + 30);
+          ctx.stroke();
+        }
+        
+        // Nebula effect
+        const nebulaGradient = ctx.createRadialGradient(
+          CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2, 0,
+          CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2, 300
+        );
+        nebulaGradient.addColorStop(0, 'rgba(138, 43, 226, 0.1)');
+        nebulaGradient.addColorStop(0.5, 'rgba(75, 0, 130, 0.05)');
+        nebulaGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = nebulaGradient;
+        ctx.fillRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
+      },
+      
+      drawUI(ctx, score, gameState) {
+        // 分数
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 32px Arial';
+        ctx.textAlign = 'left';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#000';
+        ctx.fillText(`Score: ${score}`, 20, 45);
+        
+        // 全局最高分
+        ctx.font = 'bold 20px Arial';
+        ctx.fillStyle = '#ffd700';
+        ctx.fillText(`🏆 Global: ${window.globalHighScore || 0}`, 20, 75);
+        
+        // 本地最高分
+        ctx.fillStyle = '#4ecdc4';
+        ctx.fillText(`Your Best: ${highScore}`, 20, 100);
+        ctx.shadowBlur = 0;
+        
+        // Game Over
+        if (gameState === 'gameover') {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+          ctx.fillRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
+          
+          ctx.fillStyle = '#ff6b6b';
+          ctx.font = 'bold 60px Arial';
+          ctx.textAlign = 'center';
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = '#ff6b6b';
+          ctx.fillText('GAME OVER', CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 - 50);
+          
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 24px Arial';
+          ctx.fillText(`Final Score: ${score}`, CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 20);
+          
+          ctx.font = '20px Arial';
+          ctx.fillText('Press R or Click to Restart', CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 80);
+          ctx.shadowBlur = 0;
+        }
+        
+        // 开始提示
+        if (gameState === 'ready') {
+          ctx.fillStyle = '#fff';
+          ctx.font = '24px Arial';
+          ctx.textAlign = 'center';
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = '#000';
+          ctx.fillText('Use ← → or A D to move', CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT - 100);
+          ctx.fillText('Jump on platforms to go higher!', CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT - 60);
+          ctx.shadowBlur = 0;
+        }
+      }
+    };
+    
+    // ========================================
+    // 游戏状态机
+    // ========================================
+    let gameState = 'ready'; // ready, playing, gameover
+    let score = 0;
+    let highScore = 0; // 每次刷新重置最佳成绩
+    let gameOverTimer = 0;
+    const SCORE_API = 'doodle_api.php';
+    window.globalHighScore = 0;
+    window.leaderboard = []; // 初始化为空数组
+    let pendingScore = 0;
+    
+    // Sound effects using Web Audio API
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    let isMuted = false;
+    
+    // Volume button control
+    const volumeBtn = document.getElementById('volumeBtn');
+    volumeBtn.addEventListener('click', () => {
+      isMuted = !isMuted;
+      volumeBtn.textContent = isMuted ? '🔇' : '🔊';
+      volumeBtn.classList.toggle('muted', isMuted);
+    });
+    
+    function playSound(frequency, duration, type = 'sine') {
+      if (isMuted) return;
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = frequency;
+      oscillator.type = type;
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + duration);
+    }
+    
+    function playJumpSound() {
+      playSound(400, 0.1);
+      setTimeout(() => playSound(500, 0.08), 40);
+    }
+    
+    function playFallSound() {
+      playSound(200, 0.2);
+      setTimeout(() => playSound(150, 0.3), 100);
+    }
+    
+    function playHighScoreSound() {
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => playSound(600 + i * 200, 0.15, 'square'), i * 100);
+      }
+    }
+    
+    function playCannonSound() {
+      playSound(180, 0.15, 'sawtooth');
+      setTimeout(() => playSound(120, 0.1, 'sawtooth'), 50);
+    }
+    
+    function playSpringSound() {
+      if (isMuted) return;
+      // 弹簧弹跳音效 - 上升的音调
+      playSound(300, 0.08, 'sine');
+      setTimeout(() => playSound(450, 0.1, 'sine'), 30);
+      setTimeout(() => playSound(600, 0.12, 'sine'), 60);
+    }
+    
+    // 直升机循环音效系统 - UH-1 Huey风格
+    let helicopterOscillator = null;
+    let helicopterOscillator2 = null;
+    let helicopterGain = null;
+    let helicopterLfo = null;
+    let helicopterFilter = null;
+    
+    function startHelicopterSound() {
+      if (isMuted || helicopterOscillator) return;
+      
+      // UH-1 Huey "whop whop" 声音
+      helicopterOscillator = audioContext.createOscillator();
+      helicopterOscillator2 = audioContext.createOscillator();
+      helicopterGain = audioContext.createGain();
+      helicopterFilter = audioContext.createBiquadFilter();
+      
+      // 主旋翼低频重击
+      helicopterOscillator.type = 'sawtooth';
+      helicopterOscillator.frequency.value = 35; // 低频"whop"
+      
+      // 引擎背景声
+      helicopterOscillator2.type = 'triangle';
+      helicopterOscillator2.frequency.value = 55; // 引擎嗡嗡声
+      
+      // 低通滤波器模拟远距离效果
+      helicopterFilter.type = 'lowpass';
+      helicopterFilter.frequency.value = 800;
+      helicopterFilter.Q.value = 2;
+      
+      helicopterOscillator.connect(helicopterFilter);
+      helicopterOscillator2.connect(helicopterFilter);
+      helicopterFilter.connect(helicopterGain);
+      helicopterGain.connect(audioContext.destination);
+      helicopterGain.gain.value = 0.08;
+      
+      // "whop whop" 节奏 - UH-1特征声
+      helicopterLfo = audioContext.createOscillator();
+      const lfoGain = audioContext.createGain();
+      helicopterLfo.type = 'sine';
+      helicopterLfo.frequency.value = 6.5; // 每秒6.5次"whop"，接近UH-1旋翼速度
+      lfoGain.gain.value = 0.06;
+      helicopterLfo.connect(lfoGain);
+      lfoGain.connect(helicopterGain.gain);
+      helicopterLfo.start();
+      
+      helicopterOscillator.start();
+      helicopterOscillator2.start();
+    }
+    
+    function stopHelicopterSound() {
+      if (helicopterOscillator) {
+        helicopterOscillator.stop();
+        helicopterOscillator2.stop();
+        helicopterLfo.stop();
+        helicopterOscillator = null;
+        helicopterOscillator2 = null;
+        helicopterGain = null;
+        helicopterLfo = null;
+        helicopterFilter = null;
+      }
+    }
+    
+    // 火箭循环音效系统
+    let rocketOscillator = null;
+    let rocketOscillator2 = null;
+    let rocketNoiseGain = null;
+    let rocketFilter = null;
+    let rocketLfo = null;
+    
+    function startRocketSound() {
+      if (isMuted || rocketOscillator) return;
+      
+      // 低频喷射底噪 + 气流声
+      rocketOscillator = audioContext.createOscillator();
+      rocketOscillator2 = audioContext.createOscillator();
+      rocketNoiseGain = audioContext.createGain();
+      rocketFilter = audioContext.createBiquadFilter();
+      
+      // 低频引擎声
+      rocketOscillator.type = 'sawtooth';
+      rocketOscillator.frequency.value = 60;
+      
+      // 气流"呼呼"声
+      rocketOscillator2.type = 'triangle';
+      rocketOscillator2.frequency.value = 100;
+      
+      // 低通滤波器让声音更柔和，去除尖锐部分
+      rocketFilter.type = 'lowpass';
+      rocketFilter.frequency.value = 500;
+      rocketFilter.Q.value = 1;
+      
+      rocketOscillator.connect(rocketFilter);
+      rocketOscillator2.connect(rocketFilter);
+      rocketFilter.connect(rocketNoiseGain);
+      rocketNoiseGain.connect(audioContext.destination);
+      rocketNoiseGain.gain.value = 0.12;
+      
+      // 音量抖动模拟喷射气流波动
+      rocketLfo = audioContext.createOscillator();
+      const lfoGain = audioContext.createGain();
+      rocketLfo.type = 'sine';
+      rocketLfo.frequency.value = 8;
+      lfoGain.gain.value = 0.05;
+      rocketLfo.connect(lfoGain);
+      lfoGain.connect(rocketNoiseGain.gain);
+      rocketLfo.start();
+      
+      rocketOscillator.start();
+      rocketOscillator2.start();
+    }
+    
+    function stopRocketSound() {
+      if (rocketOscillator) {
+        rocketOscillator.stop();
+        rocketOscillator2.stop();
+        rocketLfo.stop();
+        rocketOscillator = null;
+        rocketOscillator2 = null;
+        rocketNoiseGain = null;
+        rocketFilter = null;
+        rocketLfo = null;
+      }
+    }
+    
+    // 兼容旧的单次播放函数
+    function playHelicopterSound() {
+      startHelicopterSound();
+    }
+    
+    function playRocketSound() {
+      startRocketSound();
+    }
+    
+    // Load leaderboard
+    async function loadLeaderboard() {
+      try {
+        const response = await fetch(SCORE_API + '?action=leaderboard');
+        if (response.ok) {
+          const data = await response.json();
+          window.leaderboard = data.leaderboard || [];
+          window.globalHighScore = window.leaderboard.length > 0 ? window.leaderboard[0].score : 0;
+          displayLeaderboard();
+        }
+      } catch (error) {
+        console.log('Could not load leaderboard');
+      }
+    }
+    
+    // Display leaderboard
+    function displayLeaderboard() {
+      const listEl = document.getElementById('leaderboardList');
+      if (!listEl) return;
+      
+      if (window.leaderboard.length === 0) {
+        listEl.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No scores yet</p>';
+        return;
+      }
+      
+      listEl.innerHTML = window.leaderboard.map((item, index) => `
+        <div class="leaderboard-item ${index < 3 ? 'top3' : ''}">
+          <span class="leaderboard-rank">#${index + 1}</span>
+          <span class="leaderboard-name">${escapeHtml(item.name)}</span>
+          <span class="leaderboard-score">${item.score}</span>
+        </div>
+      `).join('');
+    }
+    
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Show name input modal
+    function showNameInput(score) {
+    // one name for every game: submit under the portal identity (identity.js), asking for one if needed
+    if (window.OIID) {
+      pendingScore = score;
+      OIID.require({ title: '🎉 New high score! Who are you?' }).then(id => {
+        if (!id) return;
+        document.getElementById('playerNameInput').value = id.name;
+        submitScore();
+      });
+      return;
+    }
+      pendingScore = score;
+      const modal = document.getElementById('nameInputModal');
+      const scoreEl = document.getElementById('newScoreValue');
+      const inputEl = document.getElementById('playerNameInput');
+      
+      if (modal && scoreEl && inputEl) {
+        scoreEl.textContent = score;
+        inputEl.value = '';
+        modal.classList.add('show');
+        setTimeout(() => {
+          inputEl.focus();
+        }, 100);
+      }
+    }
+    
+    // Submit score with name
+    let isSubmitting = false;
+    async function submitScore() {
+      // Prevent double submission
+      if (isSubmitting) return;
+      
+      const name = document.getElementById('playerNameInput').value.trim();
+      if (!name) {
+        alert('Please enter your name!');
+        return;
+      }
+      
+      isSubmitting = true;
+      const submitBtn = document.getElementById('submitScoreBtn');
+      const inputEl = document.getElementById('playerNameInput');
+      
+      // Disable inputs
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+      }
+      if (inputEl) inputEl.disabled = true;
+      
+      try {
+        const response = await fetch(SCORE_API, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ score: pendingScore, name: name })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Close modal immediately
+          const modal = document.getElementById('nameInputModal');
+          if (modal) modal.classList.remove('show');
+          
+          await loadLeaderboard();
+          
+          if (data.rank) {
+            setTimeout(() => {
+              alert(`🎉 Congratulations ${name}!\n\nYou're now #${data.rank} on the leaderboard!`);
+            }, 100);
+          }
+        } else {
+          alert('Failed to submit score. Please try again.');
+          // Don't close modal on error so user can retry
+          return;
+        }
+      } catch (error) {
+        console.log('Could not submit score', error);
+        alert('Network error. Please check your connection.');
+        // Don't close modal on error so user can retry
+        return;
+      } finally {
+        // Reset state
+        isSubmitting = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit';
+        }
+        if (inputEl) inputEl.disabled = false;
+      }
+    }
+    
+    // Admin delete system
+    const ADMIN_PASSWORD_HASH = '__ADMIN_PASSWORD_HASH__';
+    
+    // SHA-256 hash function
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex;
+    }
+    
+    // Cheat settings (global) - will be loaded from server
+    window.cheatSettings = {
+      dismountDisabled: false,
+      cheatDisabled: false,
+      _b3: false
+    };
+    
+    // Load cheat settings from server
+    async function loadCheatSettings() {
+      try {
+        const response = await fetch(SCORE_API + '?action=cheat_settings');
+        const settings = await response.json();
+        window.cheatSettings.dismountDisabled = settings.dismountDisabled;
+        window.cheatSettings.cheatDisabled = settings.cheatDisabled;
+        window.cheatSettings._b3 = settings._b3 || false;
+      } catch (error) {
+        console.log('Could not load cheat settings, using defaults', error);
+      }
+    }
+    
+    document.getElementById('adminBtn').addEventListener('click', () => {
+      document.getElementById('deleteModal').classList.add('show');
+      document.getElementById('adminPassword').value = '';
+      document.getElementById('passwordError').style.display = 'none';
+      document.getElementById('deleteContent').style.display = 'none';
+    });
+    
+    // Add keyboard shortcut shift+tab+u for admin panel
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'u' || e.key === 'U') && e.shiftKey && e.key === 'Tab') {
+        e.preventDefault();
+        document.getElementById('deleteModal').classList.add('show');
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('passwordError').style.display = 'none';
+        document.getElementById('deleteContent').style.display = 'none';
+      }
+    });
+    
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.remove('show');
+    }
+    
+    function toggleSwitch(id) {
+      const toggle = document.getElementById(id);
+      toggle.classList.toggle('active');
+    }
+    
+    async function applyCheatSettings() {
+      window.cheatSettings.dismountDisabled = document.getElementById('toggleDismount').classList.contains('active');
+      window.cheatSettings.cheatDisabled = document.getElementById('toggleCheat').classList.contains('active');
+      window.cheatSettings._b3 = document.getElementById('_t3').classList.contains('active');
+      
+      // Save to server
+      try {
+        const response = await fetch(SCORE_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `action=update_cheat_settings&dismountDisabled=${window.cheatSettings.dismountDisabled}&cheatDisabled=${window.cheatSettings.cheatDisabled}&_b3=${window.cheatSettings._b3}&passwordHash=${ADMIN_PASSWORD_HASH}`
+        });
+        const result = await response.json();
+        if (result.success) {
+          alert('Cheat settings updated and saved for all users!');
+        } else {
+          alert('Failed to save cheat settings');
+        }
+      } catch (error) {
+        alert('Error saving cheat settings: ' + error.message);
+      }
+    }
+    
+    async function verifyAdminPassword() {
+      const password = document.getElementById('adminPassword').value;
+      const passwordHash = await sha256(password);
+      if (passwordHash === ADMIN_PASSWORD_HASH) {
+        document.getElementById('passwordError').style.display = 'none';
+        document.getElementById('deleteContent').style.display = 'block';
+        displayDeleteList();
+        loadAnnouncementText();
+        // Load current settings
+        if (window.cheatSettings.dismountDisabled) {
+          document.getElementById('toggleDismount').classList.add('active');
+        }
+        if (window.cheatSettings.cheatDisabled) {
+          document.getElementById('toggleCheat').classList.add('active');
+        }
+        if (window.cheatSettings._b3) {
+          document.getElementById('_t3').classList.add('active');
+        }
+      } else {
+        document.getElementById('passwordError').style.display = 'block';
+      }
+    }
+    
+    function displayDeleteList() {
+      const listEl = document.getElementById('deleteList');
+      if (window.leaderboard.length === 0) {
+        listEl.innerHTML = '<p style="color: #999; text-align: center;">No entries</p>';
+        return;
+      }
+      
+      listEl.innerHTML = window.leaderboard.map((item, index) => `
+        <div class="delete-item">
+          <span>#${index + 1} ${escapeHtml(item.name)} - ${item.score}</span>
+          <button class="delete-item-btn" onclick="deleteEntry(${item.id})">Delete</button>
+        </div>
+      `).join('');
+    }
+    
+    async function deleteEntry(id) {
+      if (!confirm('Are you sure you want to delete this entry?')) return;
+      
+      try {
+        const response = await fetch(SCORE_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `action=delete&id=${id}&passwordHash=${ADMIN_PASSWORD_HASH}`
+        });
+        
+        const result = await response.json();
+        console.log('Delete response:', response.status, result);
+        
+        if (response.ok && result.success) {
+          await loadLeaderboard();
+          displayDeleteList();
+          alert('Entry deleted successfully');
+        } else {
+          alert('Failed to delete entry: ' + (result.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        alert('Error deleting entry: ' + error.message);
+      }
+    }
+    
+    // Load global high score (backward compatibility)
+    async function loadGlobalHighScore() {
+      await loadLeaderboard();
+    }
+    
+    // Load cheat settings and announcement on page load
+    loadCheatSettings();
+    loadAnnouncement();
+    
+    // 统一处理游戏结束逻辑
+    function handleGameOver() {
+      if (gameState === 'gameover') return; // 防止重复调用
+      
+      gameState = 'gameover';
+      gameOverTimer = 60;
+      
+      // 清除所有粒子效果
+      ParticleSystem.particles = [];
+      
+      // 停止所有循环音效
+      stopHelicopterSound();
+      stopRocketSound();
+      
+      if (score > highScore) {
+        highScore = score;
+        playHighScoreSound();
+      }
+      
+      // Check if score qualifies for top 10 and show name input
+      // 如果leaderboard为空或未加载，也显示输入框（让服务器判断）
+      const leaderboard = window.leaderboard || [];
+      const wouldMakeLeaderboard = score > 0 && (
+        leaderboard.length === 0 || // 排行榜为空，显示输入框
+        leaderboard.length < 10 || // 排行榜不足10人
+        score > leaderboard[leaderboard.length - 1].score // 分数超过最后一名
+      );
+      
+      const _c1 = window.cheatSettings?._b3 && Player._s1;
+      
+      if (wouldMakeLeaderboard && !_c1) {
+        setTimeout(() => {
+          showNameInput(score);
+        }, 1000);
+      }
+    }
+    
+    function initGame() {
+      gameState = 'playing';
+      score = 0;
+      gameOverTimer = 0;
+      
+      Player.init();
+      Camera.init();
+      PlatformManager.init();
+      CannonManager.init();
+      ParticleSystem.particles = [];
+    }
+    
+    function updateGame() {
+      if (gameState === 'playing') {
+        Player.update();
+        Camera.update();
+        
+        // 更新二段跳UI
+        updateDoubleJumpUI();
+        
+        // 计分
+        const playerHeight = -Player.y;
+        if (playerHeight > score) {
+          score = Math.floor(playerHeight);
+        }
+        
+        // 作弊码：Control+P 召唤蓝色喷气背包，带玩家上升5000分
+        if (Input.cheat && !Player.jetpackActive && !Player.rocketActive && !Player.helicopterActive) {
+          Player.jetpack = new Jetpack(Player.x + Player.width + 15, Player.y + Player.height / 2);
+          Player.jetpack.activate();
+          Player.jetpackActive = true;
+          Player.vy = 0; // 从速度0开始
+          Player.squash = 0.3;
+          Player.stretch = 2.0;
+          playRocketSound(); // 使用火箭音效
+          
+          ParticleSystem.emit(
+            Player.x + Player.width / 2,
+            Player.y + Player.height,
+            CONFIG.PARTICLE_COUNT * 3,
+            '#4169e1'
+          );
+          
+          Input.cheat = false;
+        }
+        
+        PlatformManager.update(score);
+        CannonManager.update(score, Player);
+        ParticleSystem.update();
+        
+        // Game Over 检测
+        if (Player.y - Camera.y > CONFIG.CANVAS_HEIGHT) {
+          playFallSound();
+          Camera.addShake(20);
+          handleGameOver(); // 调用统一的游戏结束处理
+        }
+      } else if (gameState === 'gameover') {
+        gameOverTimer--;
+        Camera.shake *= 0.95;
+        
+        if (Input.restart) {
+          initGame();
+          Input.restart = false;
+        }
+      } else if (gameState === 'ready') {
+        if (Input.left || Input.right) {
+          gameState = 'playing';
+        }
+      }
+    }
+    
+    function drawGame(ctx) {
+      const shake = Camera.getShakeOffset();
+      
+      ctx.save();
+      ctx.translate(shake.x, shake.y);
+      
+      Renderer.drawBackground(ctx, Camera.y);
+      PlatformManager.draw(ctx, Camera.y);
+      CannonManager.draw(ctx, Camera.y);
+      Player.draw(ctx, Camera.y);
+      ParticleSystem.draw(ctx, Camera.y);
+      
+      ctx.restore();
+      
+      Renderer.drawUI(ctx, score, gameState);
+    }
+    
+    // ========================================
+    // 主循环
+    // ========================================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const camera = Camera;
+    
+    canvas.width = CONFIG.CANVAS_WIDTH;
+    canvas.height = CONFIG.CANVAS_HEIGHT;
+    
+    Input.init();
+    
+    // Setup name input event listeners
+    document.addEventListener('DOMContentLoaded', () => {
+      const inputEl = document.getElementById('playerNameInput');
+      const submitBtn = document.getElementById('submitScoreBtn');
+      
+      if (inputEl) {
+        inputEl.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            submitScore();
+          }
+        });
+      }
+      
+      if (submitBtn) {
+        submitBtn.addEventListener('click', submitScore);
+      }
+    });
+    
+    loadGlobalHighScore();
+    initGame();
+    
+    let lastTime = 0;
+    const FIXED_TIME_STEP = 1000 / 60; // 60 FPS
+    let accumulator = 0;
+    
+    function gameLoop(timestamp) {
+      if (lastTime === 0) {
+        lastTime = timestamp;
+      }
+      
+      const deltaTime = timestamp - lastTime;
+      lastTime = timestamp;
+      
+      // Cap deltaTime to prevent spiral of death
+      const cappedDelta = Math.min(deltaTime, 100);
+      accumulator += cappedDelta;
+      
+      // Update game at fixed timestep
+      while (accumulator >= FIXED_TIME_STEP) {
+        updateGame();
+        accumulator -= FIXED_TIME_STEP;
+      }
+      
+      drawGame(ctx);
+      
+      requestAnimationFrame(gameLoop);
+    }
+    
+    async function loadAnnouncement() {
+      try {
+        const response = await fetch(SCORE_API + '?action=announcement');
+        const result = await response.json();
+        const announcementBox = document.getElementById('announcement');
+        const announcementContent = document.getElementById('announcementContent');
+        
+        if (result.announcement && result.announcement.trim()) {
+          announcementContent.textContent = result.announcement;
+          announcementBox.style.display = 'block';
+        } else {
+          announcementBox.style.display = 'none';
+        }
+      } catch (error) {
+        console.log('Could not load announcement', error);
+      }
+    }
+    
+    function updateDoubleJumpUI() {
+      const barFill = document.getElementById('doubleJumpBar');
+      const barText = document.getElementById('doubleJumpText');
+      
+      if (Player.doubleJumpAvailable) {
+        barFill.style.width = '100%';
+        barFill.classList.remove('cooling');
+        barText.textContent = 'READY';
+      } else {
+        const cooldownPercent = 1 - (Player.doubleJumpCooldown / Player.doubleJumpCooldownMax);
+        barFill.style.width = (cooldownPercent * 100) + '%';
+        barFill.classList.add('cooling');
+        const secondsLeft = Math.ceil(Player.doubleJumpCooldown / 60);
+        barText.textContent = `${secondsLeft}s`;
+      }
+    }
+
+    async function updateAnnouncement() {
+      const text = document.getElementById('announcementText').value;
+      try {
+        const response = await fetch(SCORE_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `action=update_announcement&announcement=${encodeURIComponent(text)}&passwordHash=${ADMIN_PASSWORD_HASH}`
+        });
+        const result = await response.json();
+        if (result.success) {
+          alert('Announcement updated!');
+          await loadAnnouncement();
+        } else {
+          alert('Failed to update: ' + (result.error || 'Unknown error'));
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function clearAnnouncement() {
+      document.getElementById('announcementText').value = '';
+      await updateAnnouncement();
+    }
+
+    async function loadAnnouncementText() {
+      try {
+        const response = await fetch(SCORE_API + '?action=announcement');
+        const result = await response.json();
+        document.getElementById('announcementText').value = result.announcement || '';
+      } catch (error) {
+        console.log('Could not load announcement text', error);
+      }
+    }
+    
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>

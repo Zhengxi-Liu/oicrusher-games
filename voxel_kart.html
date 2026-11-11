@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Voxel Kart Racing - Blocky Multiplayer Kart Racer in the Browser</title>
+  <meta name="description" content="Voxel Kart Racing: a blocky 3D multiplayer kart racer. Drift for mini-turbos, grab mystery boxes, throw shells and bananas, race up to 8 players and bots on three voxel tracks. Free in the browser.">
+  <meta name="keywords" content="voxel kart, kart racing, multiplayer racing game, browser game, mario kart, minecraft, drift, three.js, voxel racing">
+  <link rel="canonical" href="https://oicrusher.me/game/voxel_kart.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --ink: #fff; --shadow: #3f3f3f; --panel: #c6c6c6; --dark: #373737; --grass: #5fa83a; --gold: #ffd23a; }
+    body { font-family: 'Press Start 2P', monospace; background: #6fb8ff linear-gradient(#6fb8ff, #bfe6ff 60%, #5fa83a 60%, #4f9430);
+           color: var(--ink); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px; image-rendering: pixelated; }
+    header { text-align: center; margin-bottom: 10px; }
+    header h1 { font-size: 1.6em; letter-spacing: 2px; color: #fff; text-shadow: 3px 3px 0 #3f3f3f, 6px 6px 0 rgba(0,0,0,.2); }
+    header h1 span { color: var(--gold); }
+    header p { font-size: .55em; margin-top: 8px; color: #fff; text-shadow: 2px 2px 0 #3f3f3f; }
+    .stage { position: relative; width: min(1280px, 100%); aspect-ratio: 16 / 9; border: 4px solid #000; box-shadow: 0 0 0 4px #fff, 0 10px 30px rgba(0,0,0,.4);
+             background: #000; overflow: hidden; user-select: none; }
+    #view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .err { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; text-align: center; padding: 30px; font-size: .7em; line-height: 1.8; }
+
+    /* ---------- HUD */
+    #hud { position: absolute; inset: 0; pointer-events: none; display: none; }
+    #hud.show { display: block; }
+    .txt { color: #fff; text-shadow: 3px 3px 0 #000; }
+    #pos { position: absolute; right: 2.5%; top: 3%; font-size: clamp(28px, 5.5vw, 72px); }
+    #pos small { font-size: .45em; }
+    #lap { position: absolute; left: 2.5%; top: 4%; font-size: clamp(12px, 1.6vw, 22px); line-height: 1.6; }
+    #lap .t { font-size: .7em; color: #ffe; }
+    #itemBox { position: absolute; left: 50%; top: 3%; transform: translateX(-50%); width: clamp(54px, 7vw, 92px); aspect-ratio: 1; background: rgba(0,0,0,.45);
+               border: 4px solid #fff; box-shadow: 0 0 0 4px #000; display: flex; align-items: center; justify-content: center; }
+    #itemBox img { width: 80%; image-rendering: pixelated; }
+    #itemBox .n { position: absolute; right: 2px; bottom: 0; font-size: 12px; color: #fff; text-shadow: 2px 2px 0 #000; }
+    #itemName { position: absolute; left: 50%; top: calc(3% + clamp(66px, 8.2vw, 104px)); transform: translateX(-50%); font-size: clamp(7px, .8vw, 11px); white-space: nowrap; }
+    #speedo { position: absolute; right: 2.5%; bottom: 4%; text-align: right; font-size: clamp(16px, 2.4vw, 32px); }
+    #speedo small { font-size: .4em; }
+    #speedBar { width: clamp(120px, 14vw, 200px); height: 10px; background: rgba(0,0,0,.5); border: 2px solid #fff; margin-top: 6px; margin-left: auto; }
+    #speedFill { height: 100%; width: 0; background: var(--gold); }
+    #driftMeter { margin-top: 6px; height: 8px; width: clamp(120px, 14vw, 200px); margin-left: auto; background: rgba(0,0,0,.4); border: 2px solid #fff; visibility: hidden; }
+    #driftFill { height: 100%; width: 0; }
+    #minimap { position: absolute; left: 1.5%; bottom: 3%; width: clamp(110px, 15vw, 200px); height: auto; background: rgba(0,0,0,.35); border: 3px solid rgba(255,255,255,.8); }
+    #standings { position: absolute; left: 1.5%; top: 18%; font-size: clamp(7px, .75vw, 10px); line-height: 1.9; }
+    #standings div { padding: 0 6px; background: rgba(0,0,0,.35); margin-bottom: 2px; white-space: nowrap; }
+    #standings div.me { background: rgba(255,210,58,.55); }
+    #standings i { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border: 1px solid #000; }
+    #center { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); font-size: clamp(36px, 8vw, 110px); text-align: center; white-space: nowrap; }
+    #center small { display: block; font-size: .2em; margin-top: 14px; }
+    #feed { position: absolute; right: 2.5%; top: 20%; font-size: clamp(6px, .7vw, 9px); text-align: right; line-height: 2.2; }
+    #feed div { background: rgba(0,0,0,.4); padding: 0 6px; margin-bottom: 2px; }
+    #flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+    #hurt { position: absolute; inset: 0; box-shadow: inset 0 0 120px rgba(255,40,40,.9); opacity: 0; }
+    #netInfo { position: absolute; left: 1.5%; bottom: 1%; font-size: 7px; opacity: .6; }
+    #results { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,.72); border: 4px solid #fff; padding: 18px 22px;
+               display: none; font-size: clamp(8px, .9vw, 12px); min-width: 50%; }
+    #results.show { display: block; }
+    #results h3 { text-align: center; margin-bottom: 14px; color: var(--gold); font-size: 1.3em; }
+    #results table { width: 100%; border-collapse: collapse; }
+    #results td { padding: 6px 8px; }
+    #results tr.me td { background: rgba(255,210,58,.35); }
+    #results .sub { text-align: center; margin-top: 12px; font-size: .8em; opacity: .85; }
+    #touch { position: absolute; inset: 0; pointer-events: none; display: none; }
+    #touch.show { display: block; }
+    #touch button { pointer-events: auto; position: absolute; bottom: 5%; width: 13%; aspect-ratio: 1; font: inherit; font-size: 10px; color: #fff; background: rgba(0,0,0,.35);
+                    border: 3px solid rgba(255,255,255,.7); border-radius: 0; }
+    #touch button.on { background: rgba(255,210,58,.6); }
+
+    /* ---------- menus (Minecraft-ish stone panels) */
+    .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.35); }
+    .overlay.hidden { display: none; }
+    .panel { display: none; width: min(92%, 760px); max-height: 94%; overflow: auto; background: #c6c6c6; color: #3f3f3f; padding: 18px 22px;
+             border: 4px solid #000; box-shadow: inset 4px 4px 0 #fff, inset -4px -4px 0 #555; font-size: 10px; line-height: 1.8; }
+    .panel.show { display: block; }
+    .panel h2 { text-align: center; font-size: 18px; margin-bottom: 10px; color: #fff; text-shadow: 3px 3px 0 #3f3f3f; }
+    .panel h3 { font-size: 10px; margin: 14px 0 6px; color: #222; }
+    .panel p { margin-bottom: 8px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: center; margin: 8px 0; }
+    button, input, select { font: inherit; }
+    .mc { cursor: pointer; font-size: 10px; color: #fff; padding: 10px 16px; background: #7d7d7d; border: 3px solid #000; text-shadow: 2px 2px 0 #3f3f3f;
+          box-shadow: inset 3px 3px 0 #aaa, inset -3px -3px 0 #555; min-width: 150px; }
+    .mc:hover { background: #8b9bd6; box-shadow: inset 3px 3px 0 #b8c4ff, inset -3px -3px 0 #4a5a99; }
+    .mc.big { font-size: 13px; padding: 14px 30px; min-width: 260px; }
+    .mc.small { min-width: 0; padding: 6px 10px; }
+    .mc:disabled { opacity: .5; cursor: default; }
+    input[type=text], select { background: #000; color: #fff; border: 3px solid #a0a0a0; padding: 9px; font-size: 10px; }
+    #colors { display: flex; gap: 6px; }
+    #colors button { width: 30px; height: 30px; border: 3px solid #000; cursor: pointer; }
+    #colors button.on { outline: 3px solid #fff; outline-offset: 1px; }
+    .tracks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .track { cursor: pointer; border: 3px solid #000; padding: 8px; background: #8a8a8a; color: #fff; text-shadow: 2px 2px 0 #333; text-align: center; font-size: 8px; line-height: 1.7; }
+    .track.on { background: #5fa83a; outline: 3px solid #fff; }
+    .track canvas { width: 100%; height: auto; background: rgba(0,0,0,.25); display: block; margin-bottom: 6px; image-rendering: auto; }
+    .track b { font-size: 9px; display: block; }
+    .stars { color: var(--gold); }
+    .list { background: #000; color: #fff; border: 3px solid #555; min-height: 60px; max-height: 190px; overflow: auto; }
+    .list .item { display: flex; align-items: center; gap: 10px; padding: 8px; border-bottom: 2px solid #222; font-size: 8px; }
+    .list .item span { flex: 1; }
+    .list .empty { padding: 14px; text-align: center; opacity: .7; font-size: 8px; }
+    .muted { opacity: .7; }
+    .keys { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 8px; margin-top: 10px; }
+    kbd { background: #fff; color: #222; border: 2px solid #000; padding: 1px 5px; font-family: inherit; font-size: 8px; }
+    .status { text-align: center; color: #a01010; min-height: 1em; }
+    .spinner { display: inline-block; width: 12px; height: 12px; background: #5fa83a; margin-right: 8px; animation: sp .6s steps(4) infinite; }
+    @keyframes sp { to { transform: rotate(360deg); } }
+    .topbtns { position: absolute; right: 8px; top: 8px; z-index: 5; }
+    .topbtns button { font: inherit; font-size: 10px; background: rgba(0,0,0,.5); color: #fff; border: 2px solid #fff; padding: 4px 6px; cursor: pointer; }
+    .help { max-width: 1280px; margin-top: 14px; font-size: 8px; line-height: 2; color: #fff; text-shadow: 2px 2px 0 #333; text-align: center; }
+    a.back { margin-top: 10px; color: #fff; font-size: 9px; text-shadow: 2px 2px 0 #333; }
+    @media (max-width: 700px) { .tracks { grid-template-columns: 1fr; } header h1 { font-size: 1.1em; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>VOXEL <span>KART</span> RACING</h1>
+    <p>Blocky kart battle racing · drift · mystery boxes · shells · up to 8 racers online</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="view"></canvas>
+    <div class="err" id="webglError">WebGL is not available in this browser, so the 3D view cannot start.</div>
+
+    <div id="hud">
+      <div id="lap" class="txt"></div>
+      <div id="pos" class="txt"></div>
+      <div id="itemBox"><img id="itemImg" alt=""><span class="n" id="itemCount"></span></div>
+      <div id="itemName" class="txt"></div>
+      <div id="standings" class="txt"></div>
+      <div id="feed" class="txt"></div>
+      <div id="center" class="txt"></div>
+      <canvas id="minimap" width="200" height="200"></canvas>
+      <div id="speedo" class="txt"><span id="speed">0</span> <small>km/h</small>
+        <div id="speedBar"><div id="speedFill"></div></div>
+        <div id="driftMeter"><div id="driftFill"></div></div>
+      </div>
+      <div id="netInfo" class="txt"></div>
+      <div id="hurt"></div>
+      <div id="flash"></div>
+      <div id="results"></div>
+    </div>
+    <div id="touch">
+      <button data-key="LEFT" style="left:3%">◀</button>
+      <button data-key="RIGHT" style="left:18%">▶</button>
+      <button data-key="ITEM" style="right:33%">ITEM</button>
+      <button data-key="DRIFT" style="right:18%">DRIFT</button>
+      <button data-key="UP" style="right:3%">GAS</button>
+    </div>
+
+    <div class="topbtns"><button id="soundBtn" title="Sound">🔊</button></div>
+
+    <div class="overlay" id="overlay">
+      <div class="panel show" id="pMain">
+        <h2>VOXEL KART RACING</h2>
+        <p>Race blocky karts on three voxel tracks against up to 7 other players or bots. Hold <b>drift</b> through corners until the sparks turn
+           <span style="color:#1e6fd0">blue</span> → <span style="color:#d07000">orange</span> → <span style="color:#9020d0">purple</span>, then let go for a mini-turbo.
+           Smash <b>? blocks</b> for shells, bananas, mushrooms and lightning. 3 laps.</p>
+        <div class="row"><input type="text" id="nameInput" maxlength="16" placeholder="Your name" autocomplete="off"></div>
+        <div class="row"><span>Kart:</span><div id="colors"></div></div>
+        <div class="row"><button class="mc big" id="btnPlay">▶ PLAY ONLINE</button></div>
+        <div class="keys">
+          <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / arrows</span><span>Drive, steer, brake / reverse</span>
+          <span><kbd>Shift</kbd> / <kbd>Space</kbd></span><span>Hop + drift (hold while steering, release for a turbo)</span>
+          <span><kbd>E</kbd> / <kbd>X</kbd> / <kbd>Ctrl</kbd></span><span>Use item (hold <kbd>S</kbd> to throw shells backwards)</span>
+          <span><kbd>B</kbd> · <kbd>Tab</kbd> · <kbd>Esc</kbd></span><span>Look back · standings · menu</span>
+        </div>
+      </div>
+
+      <div class="panel" id="pLobby">
+        <h2>RACES</h2>
+        <p style="text-align:center">Driver <b id="lobbyName">?</b>. A race holds 8 karts; bots fill the empty slots and step aside when a player joins.</p>
+        <h3>Open races</h3>
+        <div class="list" id="roomList"><div class="empty">Loading…</div></div>
+        <h3>Start a new race</h3>
+        <div class="tracks" id="trackCards"></div>
+        <div class="row">
+          <select id="botsSelect"><option value="7" selected>7 bots (full grid)</option><option value="3">3 bots</option><option value="1">1 bot</option><option value="0">No bots - wait for friends</option></select>
+          <select id="botLevel"><option value="easy">easy bots</option><option value="normal" selected>normal bots</option><option value="hard">hard bots</option></select>
+        </div>
+        <div class="row"><button class="mc big" id="btnCreate">CREATE RACE</button></div>
+        <div class="status" id="lobbyStatus"></div>
+        <div class="row"><button class="mc small" id="btnLobbyBack">← Back</button></div>
+      </div>
+
+      <div class="panel" id="pConn">
+        <h2>CONNECTING</h2>
+        <p style="text-align:center"><span class="spinner"></span>Reaching the game server…</p>
+        <div class="row"><button class="mc small" id="btnConnCancel">Cancel</button></div>
+      </div>
+
+      <div class="panel" id="pPause">
+        <h2>PAUSED</h2>
+        <p style="text-align:center" id="pauseInfo"></p>
+        <p style="text-align:center" class="muted">(the race keeps going on the server)</p>
+        <div class="row"><button class="mc big" id="btnResume">▶ RESUME</button></div>
+        <div class="row"><button class="mc small" id="btnAddBot">+ add bot</button><button class="mc small" id="btnKickBot">− remove bot</button></div>
+        <div class="row"><button class="mc" id="btnLeave">Leave race</button></div>
+      </div>
+
+      <div class="panel" id="pMsg">
+        <h2 id="msgTitle">NOTICE</h2>
+        <p id="msgText" style="text-align:center"></p>
+        <div class="row"><button class="mc" id="btnMsgOk">OK</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="help">
+    Drifting is the secret: a purple mini-turbo out of every corner beats a clean line. Bananas go behind you, green shells fly straight and bounce,
+    red shells chase the kart in front, lightning shrinks everyone ahead. Fall off the track and a cloud brings you back.
+  </div>
+  <a class="back" href="index.html">← Back to Game Portal</a>
+
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+  <script src="identity.js?v=2"></script>
+  <script src="voxel_kart/shared/Constants.js?v=1"></script>
+  <script src="voxel_kart/shared/Tracks.js?v=2"></script>
+  <script src="voxel_kart/shared/KartPhysics.js?v=1"></script>
+  <script type="module" src="voxel_kart/client/main.js?v=3"></script>
+</body>
+</html>

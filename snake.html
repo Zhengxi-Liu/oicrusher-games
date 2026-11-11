@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game Online - Play Free Classic Snake with Leaderboard | OICrusher</title>
+  <meta name="description" content="Play the classic Snake game online for free! Control the snake, eat food, grow longer and compete on the global leaderboard. No download needed, play now in your browser!">
+  <meta name="keywords" content="snake game, snake game online, play snake, classic snake, snake io, free snake game, browser snake, arcade snake, retro snake game, snake leaderboard">
+  <meta name="author" content="OICrusher Games">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://oicrusher.me/game/snake.html">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://oicrusher.me/game/snake.html">
+  <meta property="og:title" content="Snake Game Online - Play Free Classic Snake">
+  <meta property="og:description" content="Play the classic Snake game online! Control the snake, eat food, grow longer and compete on the global leaderboard.">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://oicrusher.me/game/snake.html">
+  <meta property="twitter:title" content="Snake Game Online - Play Free Classic Snake">
+  <meta property="twitter:description" content="Play the classic Snake game online! Control the snake, eat food, and compete on the leaderboard.">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: #fff;
+    }
+    .game-wrapper {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .container {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    }
+    h1 {
+      margin-bottom: 20px;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    canvas {
+      background: #1a1a2e;
+      display: block;
+      margin: 20px auto;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    }
+    .score-board {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+      font-size: 1.2em;
+    }
+    .score-item {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 10px 20px;
+      border-radius: 10px;
+    }
+    .controls {
+      margin-top: 20px;
+      font-size: 0.9em;
+      opacity: 0.8;
+    }
+    .game-over {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      z-index: 1000;
+    }
+    .game-over.show {
+      display: block;
+    }
+    .game-over h2 {
+      font-size: 3em;
+      margin-bottom: 20px;
+      color: #ff6b6b;
+    }
+    .announcement-box {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 20px;
+      width: 280px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      max-height: 700px;
+      overflow-y: auto;
+    }
+    .announcement-box h3 {
+      color: #ffd700;
+      margin-bottom: 15px;
+      font-size: 1.5em;
+      text-align: center;
+    }
+    .announcement-box #announcementContent {
+      color: #fff;
+      line-height: 1.6;
+      font-size: 18px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .game-over button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.2em;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .game-over button:hover {
+      transform: scale(1.05);
+    }
+    .leaderboard {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 20px;
+      width: 280px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      max-height: 700px;
+      overflow-y: auto;
+    }
+    .leaderboard h2 {
+      color: #ffd700;
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 24px;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      margin: 8px 0;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      border-left: 3px solid #00ff88;
+    }
+    .leaderboard-item.top3 {
+      background: rgba(255, 215, 0, 0.2);
+      border-left-color: #ffd700;
+    }
+    .leaderboard-rank {
+      font-size: 18px;
+      font-weight: bold;
+      color: #00ff88;
+      min-width: 30px;
+    }
+    .leaderboard-item.top3 .leaderboard-rank {
+      color: #ffd700;
+    }
+    .leaderboard-name {
+      flex: 1;
+      color: #fff;
+      margin: 0 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .leaderboard-score {
+      color: #00ff88;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .name-input-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+    .name-input-modal.show {
+      display: flex;
+    }
+    .name-input-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 0 50px rgba(102, 126, 234, 0.5);
+    }
+    .name-input-box h2 {
+      color: #ffd700;
+      font-size: 32px;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .name-input-box input {
+      width: 300px;
+      padding: 15px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .name-input-box button {
+      background: #00ff88;
+      color: #1a1a2e;
+      border: none;
+      padding: 15px 40px;
+      font-size: 18px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: bold;
+    }
+    .name-input-box button:hover {
+      background: #00cc66;
+      transform: scale(1.05);
+    }
+    
+    /* Admin delete button styles */
+    .admin-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      cursor: pointer;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s;
+      z-index: 100;
+    }
+    .admin-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.1);
+    }
+    
+    .delete-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+    .delete-modal.show {
+      display: flex;
+    }
+    .delete-box {
+      background: rgba(30, 30, 30, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 30px;
+      border-radius: 15px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .delete-box h2 {
+      color: #fff;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .delete-box input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 14px;
+    }
+    .delete-box input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .delete-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      margin: 5px 0;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      color: #fff;
+    }
+    .delete-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .delete-item-btn {
+      padding: 5px 15px;
+      background: #ff4444;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .delete-item-btn:hover {
+      background: #ff0000;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .modal-buttons button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    .btn-verify {
+      background: #4CAF50;
+      color: #fff;
+    }
+    .btn-verify:hover {
+      background: #45a049;
+    }
+    .btn-cancel {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    .btn-cancel:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .error-msg {
+      color: #ff4444;
+      text-align: center;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+  <script src="identity.js?v=2"></script>
+</head>
+<body>
+  <button class="admin-btn" id="adminBtn" title="Admin">⚙️</button>
+  
+  <!-- Delete Modal -->
+  <div class="delete-modal" id="deleteModal">
+    <div class="delete-box">
+      <h2>🔒 Admin Panel</h2>
+      <input type="password" id="adminPassword" placeholder="Enter admin password">
+      <div class="modal-buttons">
+        <button class="btn-verify" onclick="verifyAdminPassword()">Verify</button>
+        <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+      </div>
+      <div class="error-msg" id="passwordError">Incorrect password</div>
+      
+      <div id="deleteContent" style="display: none;">
+        <h3 style="color: #fff; margin-top: 30px; margin-bottom: 15px;">Leaderboard Entries</h3>
+        <div id="deleteList"></div>
+        
+        <h3 style="color: #fff; margin-top: 30px; margin-bottom: 15px;">📢 Announcement</h3>
+        <textarea id="announcementText" placeholder="Enter announcement text..." style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 2px solid rgba(255,255,255,0.3); font-size: 14px; min-height: 100px; resize: vertical;"></textarea>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button onclick="updateAnnouncement()" style="flex: 1; padding: 10px; background: #4CAF50; border: none; border-radius: 8px; color: #fff; cursor: pointer;">Update</button>
+          <button onclick="clearAnnouncement()" style="flex: 1; padding: 10px; background: #ff4444; border: none; border-radius: 8px; color: #fff; cursor: pointer;">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="game-wrapper">
+  <!-- Announcement Box -->
+  <div class="announcement-box" id="announcement" style="display: none;">
+    <h3>📢 Announcement</h3>
+    <div id="announcementContent"></div>
+  </div>
+  
+  <div class="container">
+    <h1>🐍 Snake Game</h1>
+    <div class="score-board">
+      <div class="score-item">
+        <strong>Score:</strong> <span id="score">0</span>
+      </div>
+      <div class="score-item">
+        <strong>Your Best:</strong> <span id="highScore">0</span>
+      </div>
+      <div class="score-item">
+        <strong>🏆 Global Best:</strong> <span id="globalHighScore">Loading...</span>
+      </div>
+    </div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div class="controls">
+      <p>🎮 Use Arrow Keys or WASD to control</p>
+      <p>Press SPACE to pause</p>
+    </div>
+  </div>
+
+  <div class="leaderboard">
+    <h2>🏆 Top 10 Players</h2>
+    <div id="leaderboardList">Loading...</div>
+  </div>
+  </div>
+
+  <div class="name-input-modal" id="nameInputModal">
+    <div class="name-input-box">
+      <h2>🎉 New High Score!</h2>
+      <p style="color: #fff; font-size: 20px; margin-bottom: 10px;">Score: <span id="newScoreValue">0</span></p>
+      <p style="color: #fff; margin-bottom: 20px;">Enter your name:</p>
+      <input type="text" id="playerNameInput" maxlength="20" placeholder="Your Name">
+      <br>
+      <button onclick="submitScore()">Submit</button>
+    </div>
+  </div>
+
+  <div class="game-over" id="gameOver">
+    <h2>Game Over!</h2>
+    <p style="font-size: 1.5em; margin-bottom: 20px;">Final Score: <span id="finalScore">0</span></p>
+    <button onclick="restartGame()">Play Again</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score');
+    const highScoreElement = document.getElementById('highScore');
+    const globalHighScoreElement = document.getElementById('globalHighScore');
+    const gameOverElement = document.getElementById('gameOver');
+    const finalScoreElement = document.getElementById('finalScore');
+
+    // Game constants
+    const GRID_SIZE = 20;
+    const TILE_COUNT = canvas.width / GRID_SIZE;
+    const SCORE_API = 'snake_api.php';
+    
+    // Game state
+    let snake = [{x: 10, y: 10}, {x: 9, y: 10}, {x: 8, y: 10}];
+    let food = {x: 15, y: 15};
+    let dx = 0;
+    let dy = 0;
+    let score = 0;
+    let highScore = localStorage.getItem('snakeHighScore') || 0;
+    let globalHighScore = 0;
+    let gameRunning = false;
+    let gamePaused = false;
+    let gameSpeed = 100;
+    let leaderboard = [];
+    let pendingScore = 0;
+
+    // Sound effects using Web Audio API
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playSound(frequency, duration, type = 'sine') {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = frequency;
+      oscillator.type = type;
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + duration);
+    }
+    
+    function playEatSound() {
+      playSound(600, 0.1, 'square');
+      setTimeout(() => playSound(800, 0.08, 'square'), 50);
+    }
+    
+    function playGameOverSound() {
+      setTimeout(() => playSound(300, 0.15), 0);
+      setTimeout(() => playSound(250, 0.15), 100);
+      setTimeout(() => playSound(200, 0.2), 200);
+      setTimeout(() => playSound(150, 0.3), 300);
+    }
+
+    highScoreElement.textContent = highScore;
+    
+    // Load leaderboard
+    loadLeaderboard();
+    loadAnnouncement();    loadAnnouncement();
+
+    // Initialize game
+    function init() {
+      snake = [{x: 10, y: 10}, {x: 9, y: 10}, {x: 8, y: 10}];
+      dx = 0;
+      dy = 0;
+      score = 0;
+      gameRunning = false;
+      gamePaused = false;
+      gameSpeed = 100;
+      scoreElement.textContent = score;
+      spawnFood();
+      gameOverElement.classList.remove('show');
+      draw();
+    }
+
+    // Spawn food at random location
+    function spawnFood() {
+      food.x = Math.floor(Math.random() * TILE_COUNT);
+      food.y = Math.floor(Math.random() * TILE_COUNT);
+      
+      // Make sure food doesn't spawn on snake
+      for (let segment of snake) {
+        if (segment.x === food.x && segment.y === food.y) {
+          spawnFood();
+          return;
+        }
+      }
+    }
+
+    // Draw game elements
+    function draw() {
+      // Clear canvas
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw grid
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= TILE_COUNT; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * GRID_SIZE, 0);
+        ctx.lineTo(i * GRID_SIZE, canvas.height);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i * GRID_SIZE);
+        ctx.lineTo(canvas.width, i * GRID_SIZE);
+        ctx.stroke();
+      }
+
+      // Draw snake
+      snake.forEach((segment, index) => {
+        const gradient = ctx.createLinearGradient(
+          segment.x * GRID_SIZE, segment.y * GRID_SIZE,
+          (segment.x + 1) * GRID_SIZE, (segment.y + 1) * GRID_SIZE
+        );
+        if (index === 0) {
+          gradient.addColorStop(0, '#00ff88');
+          gradient.addColorStop(1, '#00cc66');
+        } else {
+          gradient.addColorStop(0, '#00dd77');
+          gradient.addColorStop(1, '#00aa55');
+        }
+        ctx.fillStyle = gradient;
+        ctx.fillRect(
+          segment.x * GRID_SIZE + 1,
+          segment.y * GRID_SIZE + 1,
+          GRID_SIZE - 2,
+          GRID_SIZE - 2
+        );
+        
+        // Draw eyes on head
+        if (index === 0) {
+          ctx.fillStyle = '#fff';
+          const eyeSize = 3;
+          if (dx !== 0) {
+            ctx.fillRect(segment.x * GRID_SIZE + 5, segment.y * GRID_SIZE + 5, eyeSize, eyeSize);
+            ctx.fillRect(segment.x * GRID_SIZE + 5, segment.y * GRID_SIZE + 12, eyeSize, eyeSize);
+          } else {
+            ctx.fillRect(segment.x * GRID_SIZE + 5, segment.y * GRID_SIZE + 5, eyeSize, eyeSize);
+            ctx.fillRect(segment.x * GRID_SIZE + 12, segment.y * GRID_SIZE + 5, eyeSize, eyeSize);
+          }
+        }
+      });
+
+      // Draw food with glow effect
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = '#ff6b6b';
+      ctx.fillStyle = '#ff6b6b';
+      ctx.beginPath();
+      ctx.arc(
+        food.x * GRID_SIZE + GRID_SIZE / 2,
+        food.y * GRID_SIZE + GRID_SIZE / 2,
+        GRID_SIZE / 2 - 2,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    // Update game state
+    function update() {
+      if (!gameRunning || gamePaused) return;
+
+      // Don't move if no direction is set
+      if (dx === 0 && dy === 0) return;
+
+      // Calculate new head position
+      const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+
+      // Check wall collision
+      if (head.x < 0 || head.x >= TILE_COUNT || head.y < 0 || head.y >= TILE_COUNT) {
+        endGame();
+        return;
+      }
+
+      // Check self collision
+      for (let segment of snake) {
+        if (segment.x === head.x && segment.y === head.y) {
+          endGame();
+          return;
+        }
+      }
+
+      // Add new head
+      snake.unshift(head);
+
+      // Check food collision
+      if (head.x === food.x && head.y === food.y) {
+        playEatSound();
+        score += 10;
+        scoreElement.textContent = score;
+        spawnFood();
+        
+        // Increase speed slightly
+        gameSpeed = Math.max(50, gameSpeed - 2);
+        
+        // Update high score
+        if (score > highScore) {
+          highScore = score;
+          highScoreElement.textContent = highScore;
+          localStorage.setItem('snakeHighScore', highScore);
+        }
+      } else {
+        // Remove tail if no food eaten
+        snake.pop();
+      }
+    }
+
+    // Game loop
+    function gameLoop() {
+      update();
+      draw();
+      
+      if (gameRunning) {
+        setTimeout(gameLoop, gameSpeed);
+      }
+    }
+
+    // Load leaderboard
+    async function loadLeaderboard() {
+      try {
+        const response = await fetch(SCORE_API + '?action=leaderboard&t=' + Date.now());
+        if (response.ok) {
+          const data = await response.json();
+          leaderboard = data.leaderboard || [];
+          window.leaderboard = leaderboard; // Store globally for admin panel
+          globalHighScore = leaderboard.length > 0 ? leaderboard[0].score : 0;
+          globalHighScoreElement.textContent = globalHighScore;
+          console.log('Leaderboard loaded:', leaderboard.length, 'entries');
+          displayLeaderboard();
+        } else {
+          console.error('Failed to load leaderboard:', response.status);
+          globalHighScoreElement.textContent = '0';
+        }
+      } catch (error) {
+        console.error('Could not load leaderboard:', error);
+        globalHighScoreElement.textContent = '0';
+      }
+    }
+    
+    // Display leaderboard
+    function displayLeaderboard() {
+      const listEl = document.getElementById('leaderboardList');
+      console.log('displayLeaderboard: element exists?', !!listEl, 'leaderboard array:', leaderboard);
+      if (!listEl) return;
+      
+      if (leaderboard.length === 0) {
+        listEl.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No scores yet</p>';
+        return;
+      }
+      
+      listEl.innerHTML = leaderboard.map((item, index) => `
+        <div class="leaderboard-item ${index < 3 ? 'top3' : ''}">
+          <span class="leaderboard-rank">#${index + 1}</span>
+          <span class="leaderboard-name">${escapeHtml(item.name)}</span>
+          <span class="leaderboard-score">${item.score}</span>
+        </div>
+      `).join('');
+      console.log('displayLeaderboard: Rendered', leaderboard.length, 'items to DOM');
+    }
+    
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Show name input modal
+    function showNameInput(score) {
+    // one name for every game: submit under the portal identity (identity.js), asking for one if needed
+    if (window.OIID) {
+      pendingScore = score;
+      OIID.require({ title: '🎉 New high score! Who are you?' }).then(id => {
+        if (!id) return;
+        document.getElementById('playerNameInput').value = id.name;
+        submitScore();
+      });
+      return;
+    }
+      pendingScore = score;
+      const modal = document.getElementById('nameInputModal');
+      const scoreEl = document.getElementById('newScoreValue');
+      const inputEl = document.getElementById('playerNameInput');
+      
+      if (modal && scoreEl && inputEl) {
+        scoreEl.textContent = score;
+        inputEl.value = '';
+        modal.classList.add('show');
+        setTimeout(() => {
+          inputEl.focus();
+        }, 100);
+      }
+    }
+    
+    // Submit score with name
+    let isSubmitting = false;
+    async function submitScore() {
+      // Prevent double submission
+      if (isSubmitting) return;
+      
+      const name = document.getElementById('playerNameInput').value.trim();
+      if (!name) {
+        alert('Please enter your name!');
+        return;
+      }
+      
+      isSubmitting = true;
+      const modal = document.getElementById('nameInputModal');
+      const inputEl = document.getElementById('playerNameInput');
+      
+      try {
+        const response = await fetch(SCORE_API, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ score: pendingScore, name: name })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Score submitted:', data);
+          
+          // Close modal and reset input
+          if (modal) modal.classList.remove('show');
+          if (inputEl) inputEl.value = '';
+          
+          // Reload leaderboard
+          await loadLeaderboard();
+          console.log('Leaderboard reloaded');
+          
+          if (data.rank) {
+            setTimeout(() => {
+              alert(`🎉 Congratulations ${name}!\n\nYou're now #${data.rank} on the leaderboard!`);
+            }, 100);
+          }
+        } else {
+          alert('Failed to submit score. Please try again.');
+          return;
+        }
+      } catch (error) {
+        console.log('Could not submit score', error);
+        alert('Network error. Please check your connection.');
+        return;
+      } finally {
+        isSubmitting = false;
+      }
+    }
+    
+    // Admin delete system
+    const ADMIN_PASSWORD_HASH = '__ADMIN_PASSWORD_HASH__';
+    
+    // SHA-256 hash function
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex;
+    }
+    
+    document.getElementById('adminBtn').addEventListener('click', () => {
+      document.getElementById('deleteModal').classList.add('show');
+      document.getElementById('adminPassword').value = '';
+      document.getElementById('passwordError').style.display = 'none';
+      document.getElementById('deleteContent').style.display = 'none';
+    });
+    
+    // Add keyboard shortcut shift+tab+u for admin panel
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'u' || e.key === 'U') && e.shiftKey && e.key === 'Tab') {
+        e.preventDefault();
+        document.getElementById('deleteModal').classList.add('show');
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('passwordError').style.display = 'none';
+        document.getElementById('deleteContent').style.display = 'none';
+      }
+    });
+    
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.remove('show');
+    }
+    
+    async function verifyAdminPassword() {
+      const password = document.getElementById('adminPassword').value;
+      const passwordHash = await sha256(password);
+      if (passwordHash === ADMIN_PASSWORD_HASH) {
+        document.getElementById('passwordError').style.display = 'none';
+        document.getElementById('deleteContent').style.display = 'block';
+        displayDeleteList();
+        loadAnnouncementText();
+      } else {
+        document.getElementById('passwordError').style.display = 'block';
+      }
+    }
+    
+    function displayDeleteList() {
+      const listEl = document.getElementById('deleteList');
+      if (window.leaderboard.length === 0) {
+        listEl.innerHTML = '<p style="color: #999; text-align: center;">No entries</p>';
+        return;
+      }
+      
+      listEl.innerHTML = window.leaderboard.map((item, index) => `
+        <div class="delete-item">
+          <span>#${index + 1} ${escapeHtml(item.name)} - ${item.score}</span>
+          <button class="delete-item-btn" onclick="deleteEntry(${item.id})">Delete</button>
+        </div>
+      `).join('');
+    }
+    
+    async function deleteEntry(id) {
+      if (!confirm('Are you sure you want to delete this entry?')) return;
+      
+      try {
+        const response = await fetch(SCORE_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `action=delete&id=${id}&passwordHash=${ADMIN_PASSWORD_HASH}`
+        });
+        
+        const result = await response.json();
+        console.log('Delete response:', response.status, result);
+        
+        if (response.ok && result.success) {
+          await loadLeaderboard();
+          displayDeleteList();
+          alert('Entry deleted successfully');
+        } else {
+          alert('Failed to delete entry: ' + (result.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        alert('Error deleting entry: ' + error.message);
+      }
+    }
+
+    async function loadAnnouncement() {
+      try {
+        const response = await fetch(SCORE_API + '?action=announcement');
+        const result = await response.json();
+        const announcementBox = document.getElementById('announcement');
+        const announcementContent = document.getElementById('announcementContent');
+        
+        if (result.announcement && result.announcement.trim()) {
+          announcementContent.textContent = result.announcement;
+          announcementBox.style.display = 'block';
+        } else {
+          announcementBox.style.display = 'none';
+        }
+      } catch (error) {
+        console.log('Could not load announcement', error);
+      }
+    }
+
+    async function updateAnnouncement() {
+      const text = document.getElementById('announcementText').value;
+      try {
+        const response = await fetch(SCORE_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `action=update_announcement&announcement=${encodeURIComponent(text)}&passwordHash=${ADMIN_PASSWORD_HASH}`
+        });
+        const result = await response.json();
+        if (result.success) {
+          alert('Announcement updated!');
+          await loadAnnouncement();
+        } else {
+          alert('Failed to update: ' + (result.error || 'Unknown error'));
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function clearAnnouncement() {
+      document.getElementById('announcementText').value = '';
+      await updateAnnouncement();
+    }
+
+    // End game
+    function endGame() {
+      gameRunning = false;
+      playGameOverSound();
+      finalScoreElement.textContent = score;
+      gameOverElement.classList.add('show');
+      
+      // Update local high score
+      if (score > highScore) {
+        highScore = score;
+        highScoreElement.textContent = highScore;
+        localStorage.setItem('snakeHighScore', highScore);
+      }
+      
+      // Check if score qualifies for top 10 and show name input
+      const wouldMakeLeaderboard = leaderboard.length < 10 || 
+        (leaderboard.length > 0 && score > leaderboard[leaderboard.length - 1].score);
+      
+      if (wouldMakeLeaderboard) {
+        setTimeout(() => {
+          showNameInput(score);
+        }, 1000);
+      }
+    }
+
+    // Restart game
+    function restartGame() {
+      init();
+    }
+
+    // Keyboard controls
+    let lastDirection = {dx: 0, dy: 0};
+    
+    document.addEventListener('keydown', (e) => {
+      // Don't handle keys when input or textarea is focused
+      if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
+        return;
+      }
+      
+      // Prevent default scrolling for game keys
+      if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', ' '].includes(e.key)) {
+        e.preventDefault();
+      }
+
+      // Start game on first key press (direction key)
+      if (!gameRunning && !gameOverElement.classList.contains('show')) {
+        if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'].includes(e.key)) {
+          gameRunning = true;
+          gameLoop();
+        } else {
+          return;
+        }
+      }
+
+      // Pause/unpause
+      if (e.key === ' ') {
+        if (gameRunning) {
+          gamePaused = !gamePaused;
+          if (!gamePaused) gameLoop();
+        }
+        return;
+      }
+
+      // Direction controls - prevent reverse direction
+      switch(e.key) {
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+          if (dy === 0) {
+            dx = 0;
+            dy = -1;
+          }
+          break;
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+          if (dy === 0) {
+            dx = 0;
+            dy = 1;
+          }
+          break;
+        case 'ArrowLeft':
+        case 'a':
+        case 'A':
+          if (dx === 0) {
+            dx = -1;
+            dy = 0;
+          }
+          break;
+        case 'ArrowRight':
+        case 'd':
+        case 'D':
+          if (dx === 0) {
+            dx = 1;
+            dy = 0;
+          }
+          break;
+      }
+    });
+
+    // Touch controls for mobile
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+    });
+
+    canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+      
+      const diffX = touchEndX - touchStartX;
+      const diffY = touchEndY - touchStartY;
+
+      // Start game on first swipe
+      if (!gameRunning && !gameOverElement.classList.contains('show')) {
+        gameRunning = true;
+        gameLoop();
+      }
+
+      if (!gameRunning) return;
+
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        // Horizontal swipe
+        if (diffX > 0 && dx === 0) {
+          dx = 1;
+          dy = 0;
+        } else if (diffX < 0 && dx === 0) {
+          dx = -1;
+          dy = 0;
+        }
+      } else {
+        // Vertical swipe
+        if (diffY > 0 && dy === 0) {
+          dx = 0;
+          dy = 1;
+        } else if (diffY < 0 && dy === 0) {
+          dx = 0;
+          dy = -1;
+        }
+      }
+    });
+
+    async function loadAnnouncementText() {
+      try {
+        const response = await fetch(SCORE_API + '?action=announcement');
+        const result = await response.json();
+        document.getElementById('announcementText').value = result.announcement || '';
+      } catch (error) {
+        console.log('Could not load announcement text', error);
+      }
+    }
+
+    // Initial draw
+    init();
+  </script>
+</body>
+</html>

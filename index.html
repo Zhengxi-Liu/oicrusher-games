@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Free Classic Games Online - Snake, Tetris, Doodle Jump | Play Now</title>
+  <meta name="description" content="Play free classic games online! Enjoy Snake, Tetris, and Doodle Jump with global leaderboards. No download required, play instantly in your browser.">
+  <meta name="keywords" content="free games, online games, snake game, tetris game, doodle jump, classic games, browser games, arcade games, retro games, play free">
+  <meta name="author" content="OICrusher Games">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://oicrusher.me/game/">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://oicrusher.me/game/">
+  <meta property="og:title" content="Free Classic Games Online - Play Snake, Tetris, Doodle Jump">
+  <meta property="og:description" content="Play free classic games online! Enjoy Snake, Tetris, and Doodle Jump with global leaderboards. No download required.">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://oicrusher.me/game/">
+  <meta property="twitter:title" content="Free Classic Games Online - Play Snake, Tetris, Doodle Jump">
+  <meta property="twitter:description" content="Play free classic games online! Enjoy Snake, Tetris, and Doodle Jump with global leaderboards.">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #fff;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 50px;
+      animation: fadeInDown 0.8s ease;
+    }
+    
+    header h1 {
+      font-size: 3.5em;
+      margin-bottom: 10px;
+      text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(45deg, #fff, #f0f0f0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    header p {
+      font-size: 1.2em;
+      opacity: 0.9;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
+    
+    .top-link { text-align: center; margin-bottom: 18px; }
+    .top-link a { display: inline-block; text-decoration: none; font-weight: 700; padding: 8px 18px; border-radius: 999px; background: #ffe066; color: #3b2a6b; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+    .top-link a:hover { background: #fff; }
+
+    /* ---------- account bar + "Playing now" */
+    .account { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; margin: -30px 0 26px; font-size: 1.05em; }
+    .account .who { background: rgba(0,0,0,.22); padding: 8px 16px; border-radius: 999px; }
+    .account .who b { color: #ffe066; }
+    .account .tag { font-size: .8em; padding: 2px 8px; border-radius: 999px; margin-left: 6px; background: rgba(105,219,124,.3); }
+    .account .tag.guest { background: rgba(255,212,59,.28); }
+    .account button { font: inherit; font-size: .9em; padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.5); background: rgba(255,255,255,.15); color: #fff; cursor: pointer; }
+    .account button.main { background: #ffe066; color: #3b2a6b; border-color: #ffe066; font-weight: 700; }
+    .account button:hover { background: rgba(255,255,255,.3); } .account button.main:hover { background: #fff; }
+    .live { background: rgba(0,0,0,.2); border: 1px solid rgba(255,255,255,.18); border-radius: 18px; padding: 16px 20px; margin-bottom: 10px; }
+    .live h2 { font-size: 1.25em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .live h2 .dot { width: 10px; height: 10px; border-radius: 50%; background: #69db7c; box-shadow: 0 0 10px #69db7c; animation: blink 1.6s infinite; }
+    @keyframes blink { 50% { opacity: .35; } }
+    .live h2 small { font-weight: 400; opacity: .75; font-size: .7em; }
+    .live-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+    .live-item { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.1); border-radius: 12px; padding: 8px 12px; }
+    .live-item.me { outline: 2px solid #ffe066; }
+    .live-item .ic { font-size: 1.7em; width: 1.4em; text-align: center; }
+    .live-item .tx { flex: 1; min-width: 0; line-height: 1.3; }
+    .live-item .tx b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .live-item .tx span { font-size: .82em; opacity: .85; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .live-item .ok { color: #69db7c; font-size: .85em; }
+    .live-item a { text-decoration: none; font-weight: 700; font-size: .85em; padding: 6px 12px; border-radius: 999px; background: #ffe066; color: #3b2a6b; white-space: nowrap; }
+    .live-empty { opacity: .8; font-size: .95em; }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 30px;
+      margin-top: 40px;
+    }
+    
+    .game-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      text-decoration: none;
+      color: #fff;
+      transition: all 0.3s ease;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+      animation: fadeInUp 0.8s ease;
+    }
+    
+    .game-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .game-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .game-card:hover::before {
+      opacity: 1;
+    }
+    
+    .game-icon {
+      font-size: 4em;
+      margin-bottom: 15px;
+      display: block;
+      filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+    }
+    
+    .game-title {
+      font-size: 1.8em;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    
+    .game-description {
+      font-size: 1em;
+      opacity: 0.85;
+      line-height: 1.5;
+      margin-bottom: 15px;
+    }
+    
+    .game-badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      margin-top: 10px;
+    }
+    
+    .new-badge {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      animation: pulse 2s infinite;
+    }
+
+    .hot-badge {
+      background: linear-gradient(135deg, #ff6a00 0%, #ee0979 100%);
+      animation: pulse 1.4s infinite;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 2.5em;
+      }
+      
+      .games-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      .game-card {
+        padding: 25px;
+      }
+    }
+    
+    footer {
+      text-align: center;
+      margin-top: 60px;
+      padding: 20px;
+      opacity: 0.7;
+      font-size: 0.9em;
+    }
+
+    .like-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(0, 0, 0, 0.2);
+      color: #fff;
+      font-size: 0.95em;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease;
+    }
+    .like-btn:hover { background: rgba(0, 0, 0, 0.32); transform: scale(1.06); }
+    .like-btn .heart { font-size: 1.1em; filter: grayscale(1) brightness(1.6); transition: filter 0.2s ease; }
+    .like-btn.liked { background: rgba(245, 87, 108, 0.45); border-color: rgba(255, 180, 190, 0.8); cursor: default; }
+    .like-btn.liked:hover { transform: none; }
+    .like-btn.liked .heart { filter: none; }
+    .like-btn.pop .heart { animation: likePop 0.45s ease; }
+    @keyframes likePop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.6); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-link">
+      <a href="https://forms.gle/C8NhHvG6F1ApWonG9" target="_blank" rel="noopener">📝 Suggestion Form</a>
+    </div>
+    <header>
+      <h1>🎮 Game Portal</h1>
+      <p>Classic Games Collection - Play & Compete!</p>
+    </header>
+
+    <div class="account" id="account"></div>
+    <section class="live" id="live">
+      <h2><span class="dot"></span>Playing now <small id="liveCount"></small></h2>
+      <div class="live-list" id="liveList"><div class="live-empty">Loading…</div></div>
+    </section>
+    
+    <div class="games-grid">
+      <a href="tj_hide_seek.html" class="game-card">
+        <span class="game-icon">🏫</span>
+        <h2 class="game-title">TJ Hide and Seek</h2>
+        <p class="game-description">
+          Walk both floors of a 3D Thomas Jefferson High School built from the real floor plans. Hide a MacBook, a TI-84 or a Hydro Flask with a note - it stays in the shared online school until someone finds it.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">3D · Online · Persistent world</span>
+      </a>
+
+      <a href="flight_sim.html" class="game-card">
+        <span class="game-icon">🛩️</span>
+        <h2 class="game-title">Skyward Dynamics</h2>
+        <p class="game-description">
+          3D flight simulator with real aerodynamics: lift, drag, stalls and crosswind. Free flight with aerobatics, graded precision landings and a canyon ring race with online leaderboards.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">3D · Online leaderboards</span>
+      </a>
+
+      <a href="bomb_arena.html" class="game-card">
+        <span class="game-icon">💣</span>
+        <h2 class="game-title">Bomb Arena 3D</h2>
+        <p class="game-description">
+          A bright 3D bomber battle for up to 8 players. Blast crates, grab Bomb Up, Fire Up, Speed and Kick power-ups, trap your rivals in chain reactions and be the last one standing. Bots fill the empty slots.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Online · up to 8</span>
+      </a>
+
+      <a href="voxel_kart.html" class="game-card">
+        <span class="game-icon">🏎️</span>
+        <h2 class="game-title">Voxel Kart Racing</h2>
+        <p class="game-description">
+          Blocky 3D kart racing for up to 8 players. Drift for blue, orange and purple mini-turbos, smash ? blocks for shells, bananas, mushrooms and lightning on three voxel tracks. Bots fill the grid.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Online · up to 8</span>
+      </a>
+
+      <a href="rooftop_tag.html" class="game-card">
+        <span class="game-icon">🏙️</span>
+        <h2 class="game-title">Rooftop Tag</h2>
+        <p class="game-description">
+          3D parkour capture the flag on rainy neon school rooftops. Slide down ramps, wall-run, grapple the amber beams and bounce off jump pads to steal the enemy flag. 1v1 or 2v2, bots included.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Online · 1v1 / 2v2</span>
+      </a>
+
+      <a href="hl_deathmatch.html" class="game-card">
+        <span class="game-icon">🔫</span>
+        <h2 class="game-title">Half-Life Web Deathmatch</h2>
+        <p class="game-description">
+          3D first-person deathmatch for up to 10 players. Crowbar, .357, MP5 grenades, shotgun, crossbow and RPG rocket jumps in a Black Mesa style test chamber. Bots fill empty slots.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Online · 10 players</span>
+      </a>
+
+      <a href="element_core.html" class="game-card">
+        <span class="game-icon">🔮</span>
+        <h2 class="game-title">Element Core</h2>
+        <p class="game-description">
+          Top-down roguelike mage duel. Blast through crumbling cover and draft spell cards every 45 s until the arena turns into a bullet hell. Best of 3, online or vs bot.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Online 1v1</span>
+      </a>
+
+      <a href="photonic_fencing.html" class="game-card">
+        <span class="game-icon">⚔️</span>
+        <h2 class="game-title">Photonic Fencing</h2>
+        <p class="game-description">
+          Frame-accurate neon fencing. Lunge, dodge, and land a 100 ms perfect parry for bullet time. Online 1v1 on a live game server, or practice vs bot.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Online 1v1</span>
+      </a>
+
+      <a href="hook_tug.html" class="game-card">
+        <span class="game-icon">🪝</span>
+        <h2 class="game-title">Hook &amp; Tug</h2>
+        <p class="game-description">
+          Two trucks tied by an elastic rope on a crumbling island over lava. Reel in, slack off and slingshot your rival into the lava. Online P2P 1v1, local 2P or vs bot.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Online 1v1</span>
+      </a>
+
+      <a href="skyline_evade.html" class="game-card">
+        <span class="game-icon">🛩️</span>
+        <h2 class="game-title">Skyline Evade: 100 Seconds</h2>
+        <p class="game-description">
+          Bullet-hell survival: dodge asteroids, homing missiles, splitter shots and ring barrages for 100 seconds as the sky gets deadlier.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Action</span>
+        <span class="game-badge">Global Leaderboard</span>
+      </a>
+
+      <a href="descent.html" class="game-card">
+        <span class="game-icon">⬇️</span>
+        <h2 class="game-title">Descent: 100 Floors</h2>
+        <p class="game-description">
+          Drop down through 100 floors of spikes, conveyor belts, springs and crumbling platforms before the spiked ceiling catches you. Faster every 10 floors.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Action</span>
+        <span class="game-badge">Global Leaderboard</span>
+      </a>
+
+      <a href="power_wash.html" class="game-card">
+        <span class="game-icon">🚿</span>
+        <h2 class="game-title">PowerWash Simulator</h2>
+        <p class="game-description">
+          Blast mud, grime and moss off a rally car, a cottage and a playground slide. Switch nozzles, watch every part hit 100% and enjoy the fireworks.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Relaxing</span>
+      </a>
+
+      <a href="oxygen_colony.html" class="game-card">
+        <span class="game-icon">🫧</span>
+        <h2 class="game-title">Oxygen Colony</h2>
+        <p class="game-description">
+          Keep your Duplicants breathing deep inside an asteroid. Dig, build oxygen diffusers, wire up power and cook mush bars, with live gas, water and heat simulation.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Colony Sim</span>
+        <span class="game-badge">Global Leaderboard</span>
+      </a>
+
+      <a href="crash_it.html" class="game-card">
+        <span class="game-icon">🏎️</span>
+        <h2 class="game-title">Crash It</h2>
+        <p class="game-description">
+          One-button car battle on a floating island. Flip, crash and land on your friend's head, or knock them into the water. First to 5 wins!
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">1-2 Players</span>
+      </a>
+
+      <a href="hotelling.html" class="game-card">
+        <span class="game-icon">🍦</span>
+        <h2 class="game-title">Ice Cream Stand Showdown</h2>
+        <p class="game-description">
+          Hotelling's Law on a beach. Pick your stand's spot, out-guess rival AIs, and discover Nash equilibria, skewed crowds and no-vending zones. 6 levels.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Game Theory</span>
+      </a>
+
+      <a href="byzantine.html" class="game-card">
+        <span class="game-icon">🛡️</span>
+        <h2 class="game-title">Byzantine Commander</h2>
+        <p class="game-description">
+          Broadcast orders across a hostile network, arm cryptographic signatures, reach a 2f+1 quorum and unmask the traitors before your army splits. 8 levels.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Strategy</span>
+        <span class="game-badge">Global Leaderboard</span>
+      </a>
+
+      <a href="rb_tree_defense.html" class="game-card">
+        <span class="game-icon">🌳</span>
+        <h2 class="game-title">Red-Black Tree Defense</h2>
+        <p class="game-description">
+          Data packets invade your binary search tree. Rotate and recolor nodes in real time to keep it a valid red-black tree before latency spikes and stack overflows crash the server.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Strategy</span>
+        <span class="game-badge">Global Leaderboard</span>
+      </a>
+
+      <a href="pipeline.html" class="game-card">
+        <span class="game-icon">🚦</span>
+        <h2 class="game-title">Pipeline &amp; Traffic Flow</h2>
+        <p class="game-description">
+          Route packets with pipes, rate limiters, load balancers and buffer queues. Survive the DDoS, don't get OOM-killed, stay inside your error budget.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Strategy</span>
+        <span class="game-badge">Global Leaderboard</span>
+      </a>
+
+      <a href="logic_gate.html" class="game-card">
+        <span class="game-icon">🔌</span>
+        <h2 class="game-title">Logic Gate Labyrinth</h2>
+        <p class="game-description">
+          Place AND / OR / XOR / NOT gates and wire them up so every terminal lights for every switch combination. 10 levels, up to a full adder.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Puzzle</span>
+      </a>
+
+      <a href="flip_sizzle.html" class="game-card">
+        <span class="game-icon">🥞</span>
+        <h2 class="game-title">Flip &amp; Sizzle</h2>
+        <p class="game-description">
+          Toss food out of a cast iron skillet, spin it once, twice, thrice, and catch it face-up. Chain perfect flips for a sizzling streak!
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Physics</span>
+        <span class="game-badge">Global Leaderboard</span>
+      </a>
+
+      <a href="mud_runner.html" class="game-card">
+        <span class="game-icon">🚙</span>
+        <h2 class="game-title">Mud Runner 2D</h2>
+        <p class="game-description">
+          Physics off-road crawler. Real suspension, deformable mud, open vs locked diffs, and a winch that can snap. Feather the throttle or dig yourself in!
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Physics</span>
+      </a>
+
+      <a href="wordle.html" class="game-card">
+        <span class="game-icon">🟩</span>
+        <h2 class="game-title">Daily Wordle</h2>
+        <p class="game-description">
+          Guess the hidden 5-letter word in 6 tries. A new word every day, and one game per day, just like the NYT classic.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Daily Puzzle</span>
+      </a>
+
+      <a href="cannon_duel.html" class="game-card">
+        <span class="game-icon">💥</span>
+        <h2 class="game-title">Cannon Duel</h2>
+        <p class="game-description">
+          Artillery duel on two randomly generated battlefields. Hold to charge, release to fire. Bot on 3 difficulties or duel a friend.
+        </p>
+        <span class="game-badge hot-badge">🔥 HOT</span>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">1-2 Players</span>
+      </a>
+
+      <a href="geometry_dash.html" class="game-card">
+        <span class="game-icon">◆</span>
+        <h2 class="game-title">Geometry Dash</h2>
+        <p class="game-description">
+          Jump, fly and flip gravity through 4 rhythm-platformer levels with smooth physics and practice mode.
+        </p>
+        <span class="game-badge hot-badge">🔥 HOT</span>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Global Leaderboard</span>
+      </a>
+
+      <a href="waste_time.html" class="game-card">
+        <span class="game-icon">⏳</span>
+        <h2 class="game-title">Waste Your Time</h2>
+        <p class="game-description">
+          Hold the button for as long as you can and climb the global leaderboard. The world's most pointless competition.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Global Leaderboard</span>
+      </a>
+
+      <a href="snake.html" class="game-card">
+        <span class="game-icon">🐍</span>
+        <h2 class="game-title">Snake Game</h2>
+        <p class="game-description">
+          Control the snake, eat food, and grow longer. Avoid hitting walls and yourself!
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Global Leaderboard</span>
+      </a>
+      
+      <a href="doodle_jump.html" class="game-card">
+        <span class="game-icon">🦘</span>
+        <h2 class="game-title">Doodle Jump</h2>
+        <p class="game-description">
+          Jump from platform to platform and reach for the sky! Smooth controls and gorgeous effects.
+        </p>
+        <span class="game-badge new-badge">NEW</span>
+        <span class="game-badge">Arcade</span>
+      </a>
+      
+      <a href="tetris.html" class="game-card">
+        <span class="game-icon">🧱</span>
+        <h2 class="game-title">Tetris</h2>
+        <p class="game-description">
+          Arrange falling blocks to create complete lines. Classic puzzle game!
+        </p>
+        <span class="game-badge">Classic</span>
+      </a>
+      
+      <a href="2048.html" class="game-card">
+        <span class="game-icon">🔢</span>
+        <h2 class="game-title">2048</h2>
+        <p class="game-description">
+          Combine tiles with the same numbers to reach 2048. Strategic and addictive!
+        </p>
+        <span class="game-badge">Puzzle</span>
+      </a>
+
+      <a href="soduku.html" class="game-card">
+        <span class="game-icon">🔢</span>
+        <h2 class="game-title">Sudoku</h2>
+        <p class="game-description">
+          Fill the grid with numbers. Classic logic puzzle game!
+        </p>
+        <span class="game-badge">Brain Training</span>
+      </a>
+    </div>
+    
+    <footer>
+      <p>🎯 All games are free to play | 🏆 Compete for high scores | 💾 Progress saved locally</p>
+    </footer>
+  </div>
+  
+  <script src="identity.js?v=2" data-badge="off"></script>
+  <script>
+    // ---------- one name for every game (identity.js) + who is playing what (presence_api.php)
+    (function () {
+      const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const acc = document.getElementById('account');
+      function renderAccount(id) {
+        if (id) {
+          acc.innerHTML = `<span class="who">👤 Playing as <b>${esc(id.name)}</b><span class="tag ${id.registered ? '' : 'guest'}">${id.registered ? '✓ registered' : 'guest'}</span></span>
+            <button id="accBtn">${id.registered ? 'Account' : 'Register this name'}</button>`;
+          document.getElementById('accBtn').onclick = () => OIID.open({ tab: id.registered ? 'account' : 'register' });
+        } else {
+          acc.innerHTML = `<span class="who">👋 Pick a name for all games and leaderboards</span>
+            <button class="main" data-t="register">Register</button><button data-t="login">Log in</button><button data-t="guest">Play as guest</button>`;
+          acc.querySelectorAll('button').forEach(b => { b.onclick = () => OIID.open({ tab: b.dataset.t }); });
+        }
+      }
+      OIID.me().then(renderAccount);
+      OIID.onChange(id => { renderAccount(id); loadLive(); });
+
+      const icons = {};
+      document.querySelectorAll('a.game-card').forEach(a => {
+        const g = (a.getAttribute('href') || '').replace(/\.html$/, '');
+        const ic = a.querySelector('.game-icon');
+        if (g && ic) icons[g] = ic.textContent.trim();
+      });
+      async function loadLive() {
+        let players = [];
+        try { players = (await (await fetch('presence_api.php', { cache: 'no-store' })).json()).players || []; } catch (e) { return; }
+        const list = document.getElementById('liveList');
+        document.getElementById('liveCount').textContent = players.length ? `${players.length} online` : '';
+        const me = (OIID.name || '').toLowerCase();
+        list.innerHTML = players.length ? players.map(p => {
+          const isMe = p.name.toLowerCase() === me;
+          const mins = p.mins < 1 ? 'just now' : p.mins + ' min';
+          return `<div class="live-item ${isMe ? 'me' : ''}"><span class="ic">${esc(icons[p.game] || '🎮')}</span>
+            <div class="tx"><b>${esc(p.name)} ${p.registered ? '<span class="ok">✓</span>' : ''}</b>
+            <span>${esc(p.title)}${p.status ? ' · ' + esc(p.status) : ''} · ${mins}</span></div>
+            ${isMe ? '' : `<a href="${esc(p.join)}">${/[?&](join|challenge)=/.test(p.join) ? 'Join' : 'Play too'}</a>`}</div>`;
+        }).join('') : '<div class="live-empty">Nobody is in a game right now. Start one - you will show up here and friends can join you.</div>';
+      }
+      loadLive();
+      setInterval(() => { if (document.visibilityState === 'visible') loadLive(); }, 10000);
+    })();
+  </script>
+  <script>
+    // Add subtle animation to cards on scroll
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, index) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+          }, index * 100);
+        }
+      });
+    }, observerOptions);
+    
+    document.querySelectorAll('.game-card').forEach((card) => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+      card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      observer.observe(card);
+    });
+
+    // ❤️ likes: one per game per browser, counts shared by everyone
+    (function () {
+      const API = 'https://oicrusher.me/game/likes_api.php';
+      let client = '';
+      try {
+        client = localStorage.getItem('gameLikeClient') || '';
+        if (!/^[a-f0-9]{32}$/.test(client)) {
+          client = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+          localStorage.setItem('gameLikeClient', client);
+        }
+      } catch (e) { /* storage blocked: likes still show, but this browser can't be remembered */ }
+
+      const buttons = {};
+      document.querySelectorAll('.game-card').forEach((card) => {
+        const m = (card.getAttribute('href') || '').match(/^([a-z0-9_]+)\.html$/);
+        if (!m) return;
+        const game = m[1];
+        const btn = document.createElement('span');
+        btn.className = 'like-btn';
+        btn.setAttribute('role', 'button');
+        btn.setAttribute('tabindex', '0');
+        btn.title = 'Like this game';
+        btn.innerHTML = '<span class="heart">❤️</span><span class="like-count">0</span>';
+        const onLike = (e) => { e.preventDefault(); e.stopPropagation(); like(game); };
+        btn.addEventListener('click', onLike);
+        btn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') onLike(e); });
+        card.appendChild(btn);
+        buttons[game] = btn;
+      });
+
+      function render(game, count, liked) {
+        const btn = buttons[game];
+        if (!btn) return;
+        if (count !== undefined) btn.querySelector('.like-count').textContent = count;
+        if (liked) { btn.classList.add('liked'); btn.title = 'You liked this game'; }
+      }
+
+      async function like(game) {
+        const btn = buttons[game];
+        if (!client || btn.classList.contains('liked') || btn.dataset.busy) return;
+        btn.dataset.busy = '1';
+        const countEl = btn.querySelector('.like-count');
+        const before = +countEl.textContent || 0;
+        render(game, before + 1, true);           // optimistic
+        btn.classList.add('pop');
+        setTimeout(() => btn.classList.remove('pop'), 500);
+        try {
+          const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game, client }) });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || res.status);
+          render(game, data.count, true);
+        } catch (e) {
+          btn.classList.remove('liked');
+          btn.title = 'Like this game';
+          countEl.textContent = before;
+        } finally {
+          delete btn.dataset.busy;
+        }
+      }
+
+      fetch(API + '?client=' + encodeURIComponent(client), { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((data) => {
+          const counts = data.counts || {}, mine = new Set(data.mine || []);
+          Object.keys(buttons).forEach((g) => render(g, counts[g] || 0, mine.has(g)));
+        })
+        .catch(() => {});
+    })();
+  </script>
+</body>
+</html>

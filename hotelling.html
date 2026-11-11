@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-L8GMZRR0GY');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ice Cream Stand Showdown</title>
+<meta name="description" content="Ice Cream Stand Showdown: a game-theory strategy game based on Hotelling's Law. Pick your stand's spot on a 1-D beach, out-guess rival AIs, and discover Nash equilibria, the median-voter effect and zoning rules.">
+<link rel="canonical" href="https://oicrusher.me/game/hotelling.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* Layout: beach canvas on the left, data dashboard on the right; stacks under 960px. Light summer look by design. */
+  :root {
+    --bg: #fff8ec;
+    --bg2: #e7f8fb;
+    --panel: #ffffff;
+    --line: #f0e2c6;
+    --ink: #1f3b4d;
+    --muted: #6b7f8c;
+    --accent: #ff4f79;
+    --sea: #33bcd6;
+    --sand: #f7e2b2;
+    --good: #0ca678;
+    --bad: #e03131;
+    --display: 'Fredoka', 'Segoe UI', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--display);
+    color: var(--ink);
+    background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 340px);
+    min-height: 100vh;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  .top {
+    max-width: 1320px; margin: 0 auto; padding: 16px 16px 8px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .back { color: var(--muted); text-decoration: none; font-weight: 500; white-space: nowrap; }
+  .back:hover { color: var(--ink); }
+  .brand { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .logo { font-size: 34px; filter: drop-shadow(0 3px 4px rgba(0,0,0,.12)); }
+  .brand h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.01em; line-height: 1.1; }
+  .brand p { color: var(--muted); font-size: .85rem; }
+  .layout {
+    max-width: 1320px; margin: 0 auto; padding: 8px 16px 32px;
+    display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 16px;
+  }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: 0 6px 20px rgba(31,59,77,.06);
+  }
+  .stage { padding: 14px; min-width: 0; }
+  .stage-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 10px; }
+  .stage-head strong { font-size: 1.15rem; font-weight: 600; }
+  .tag { background: var(--ink); color: #fff; border-radius: 999px; padding: 2px 10px; font-size: .8rem; font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+  .chip { background: #fff3d6; border: 1px solid #f3d99b; color: #8a5a00; border-radius: 999px; padding: 2px 9px; font-size: .75rem; font-weight: 500; }
+  .chip.warn { background: #ffe8ec; border-color: #ffc2cd; color: #b4234a; }
+  .chip.blue { background: #e3f4ff; border-color: #b6defc; color: #1864ab; }
+  .day { font-family: var(--mono); font-size: .85rem; color: var(--muted); }
+  .slider-row { display: flex; align-items: center; gap: 12px; padding: 4px 4px 8px; }
+  .slider-row label { font-weight: 600; font-size: .9rem; white-space: nowrap; }
+  .slider-row output { font-family: var(--mono); font-weight: 600; min-width: 52px; text-align: right; color: var(--accent); }
+  input[type=range] { flex: 1; accent-color: var(--accent); height: 22px; }
+  input[type=range]:disabled { opacity: .45; }
+  .canvas-wrap { position: relative; width: 100%; border-radius: 14px; overflow: hidden; }
+  #beach { display: block; width: 100%; touch-action: none; cursor: crosshair; }
+  .hint { color: var(--muted); font-size: .85rem; padding: 10px 4px 0; }
+  .hint kbd { font-family: var(--mono); font-size: .75rem; background: #f4efe4; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; }
+
+  .side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .side .card { padding: 14px; }
+  .side h3 { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; margin-bottom: 10px; }
+  .controls { display: flex; flex-direction: column; gap: 8px; }
+  .btn {
+    border: none; border-radius: 12px; padding: 12px 14px; font-size: 1rem; font-weight: 600;
+    transition: transform .08s ease, box-shadow .15s ease, background .15s ease, opacity .15s;
+  }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn.primary { background: var(--accent); color: #fff; box-shadow: 0 4px 0 #c9335a; }
+  .btn.primary:hover:not(:disabled) { background: #ff3a6a; }
+  .btn.secondary { background: var(--sea); color: #fff; box-shadow: 0 4px 0 #1f8ea3; }
+  .btn.secondary.on { background: #ff922b; box-shadow: 0 4px 0 #c9661b; }
+  .btn.ghost { background: #f6f0e3; color: var(--ink); padding: 9px 12px; font-size: .9rem; }
+  .btn.ghost:hover { background: #efe5d0; }
+  .btn.toggle { background: #f6f0e3; color: var(--ink); padding: 9px 12px; font-size: .9rem; }
+  .btn.toggle.on { background: #ffe0e8; color: #b4234a; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pie-row { display: flex; align-items: center; gap: 14px; }
+  #pie { width: 120px; height: 120px; flex: none; }
+  .legend { list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: .88rem; flex: 1; min-width: 0; }
+  .legend li { display: flex; align-items: center; gap: 7px; }
+  .legend .sw { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+  .legend .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .legend .v { font-family: var(--mono); font-size: .82rem; }
+  .bars { display: flex; flex-direction: column; gap: 8px; }
+  .bar-row { display: grid; grid-template-columns: 78px 1fr 46px; align-items: center; gap: 8px; font-size: .82rem; }
+  .bar-row .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { background: #f5efe2; border-radius: 6px; height: 14px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; width: 0; }
+  .bar-row .v { font-family: var(--mono); text-align: right; }
+  table.ledger { width: 100%; border-collapse: collapse; font-size: .84rem; }
+  .ledger th { text-align: left; font-weight: 500; color: var(--muted); font-size: .72rem; padding: 0 0 6px; }
+  .ledger th:not(:first-child), .ledger td:not(:first-child) { text-align: right; }
+  .ledger td { padding: 5px 0; border-top: 1px solid #f4ecdb; font-family: var(--mono); }
+  .ledger td:first-child { font-family: var(--display); }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+  .insight p { font-size: .9rem; line-height: 1.45; }
+  .insight p + p { margin-top: 6px; }
+  .insight b { font-weight: 600; }
+  .insight .mono { font-family: var(--mono); font-size: .85em; }
+
+  /* modal */
+  .modal { position: fixed; inset: 0; background: rgba(20,40,55,.45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; backdrop-filter: blur(3px); }
+  .modal.hidden { display: none; }
+  .modal-card { background: var(--panel); border-radius: 22px; width: min(640px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 22px; box-shadow: 0 24px 60px rgba(0,0,0,.25); animation: pop .25s ease; }
+  @keyframes pop { from { transform: translateY(14px) scale(.98); opacity: 0; } to { transform: none; opacity: 1; } }
+  .kicker { font-family: var(--mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .modal-card h2 { font-size: 1.6rem; font-weight: 700; margin: 4px 0 8px; }
+  .modal-card h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 18px 0 8px; font-weight: 600; }
+  .modal-card p { line-height: 1.5; }
+  .modal-card ul.notes { padding-left: 18px; line-height: 1.5; }
+  .modal-card ul.notes li + li { margin-top: 4px; }
+  .modal-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+  .stars { font-size: 1.8rem; letter-spacing: 4px; color: #f5b700; }
+  .stars .off { color: #e6ddc8; }
+  .headline { font-size: 1.08rem; font-weight: 500; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+  .stat { background: #fbf6ea; border-radius: 12px; padding: 10px; }
+  .stat .k { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .stat .val { font-family: var(--mono); font-weight: 600; font-size: 1.1rem; margin-top: 2px; }
+  #repChart { width: 100%; display: block; background: #fffaf0; border-radius: 12px; }
+  .goal { background: #e3f4ff; color: #1864ab; border-radius: 12px; padding: 10px 12px; margin-top: 12px; font-size: .95rem; }
+  .tipbox { background: #fff3d6; color: #7a4f00; border-radius: 12px; padding: 10px 12px; margin-top: 10px; font-size: .95rem; }
+  .lv-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
+  .lv { text-align: left; background: #fbf6ea; border: 2px solid transparent; border-radius: 14px; padding: 12px; color: var(--ink); }
+  .lv:hover:not(:disabled) { border-color: var(--accent); }
+  .lv:disabled { opacity: .45; cursor: not-allowed; }
+  .lv .num { font-family: var(--mono); font-size: .72rem; color: var(--muted); }
+  .lv .t { font-weight: 600; font-size: 1rem; margin: 2px 0; }
+  .lv .s { color: #f5b700; letter-spacing: 2px; }
+  .lv .s .off { color: #e6ddc8; }
+
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: 1fr; }
+    .side { display: grid; grid-template-columns: 1fr 1fr; }
+    .side .controls { grid-column: 1 / -1; }
+  }
+  @media (max-width: 600px) {
+    .brand h1 { font-size: 1.15rem; }
+    .brand p { display: none; }
+    .logo { font-size: 26px; }
+    .side { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .lv-grid { grid-template-columns: 1fr; }
+    .stage { padding: 10px; }
+  }
+</style>
+  <script src="identity.js?v=2"></script>
+</head>
+<body>
+<header class="top">
+  <a href="index.html" class="back">← Games</a>
+  <div class="brand">
+    <span class="logo">🍦</span>
+    <div>
+      <h1>Ice Cream Stand Showdown</h1>
+      <p>Hotelling's Location Game · spatial competition on a 1-D beach</p>
+    </div>
+  </div>
+  <button id="btnLevels" class="btn ghost">Levels</button>
+</header>
+
+<main class="layout">
+  <section class="stage card">
+    <div class="stage-head">
+      <span id="lvlTag" class="tag">Level 1</span>
+      <strong id="lvlName"></strong>
+      <div id="chips" class="chips"></div>
+      <span class="day" id="dayLabel">Day 1 / 5</span>
+    </div>
+    <div class="slider-row">
+      <label for="posSlider">Your spot</label>
+      <input type="range" id="posSlider" min="0" max="100" step="0.5" value="50">
+      <output id="posOut">50.0</output>
+    </div>
+    <div class="canvas-wrap" id="wrap"><canvas id="beach" aria-label="Beach with ice cream stands"></canvas></div>
+    <div class="hint" id="hint"></div>
+  </section>
+
+  <aside class="side">
+    <div class="card controls">
+      <button id="btnLock" class="btn primary">🔒 Lock Position</button>
+      <button id="btnFF" class="btn secondary" disabled>⏩ Fast Forward</button>
+      <div class="row2">
+        <button id="btnLens" class="btn toggle">🔍 Insight Lens</button>
+        <button id="btnRestart" class="btn ghost">↺ Restart</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3 id="pieTitle">Market share · today</h3>
+      <div class="pie-row"><canvas id="pie"></canvas><ul class="legend" id="legend"></ul></div>
+    </div>
+    <div class="card">
+      <h3>Customers served (live)</h3>
+      <div class="bars" id="bars"></div>
+    </div>
+    <div class="card">
+      <h3>Season ledger</h3>
+      <table class="ledger" id="ledger"></table>
+    </div>
+    <div class="card insight">
+      <h3>Strategy insight</h3>
+      <div id="insight"></div>
+    </div>
+  </aside>
+</main>
+
+<div id="modal" class="modal hidden"><div class="modal-card" id="modalCard"></div></div>
+
+<script>
+(() => {
+'use strict';
+
+// ---------- constants ----------
+const COLORS = ['#ff4f79', '#2f80ed', '#0ca678', '#f08c00'];
+const NAMES  = ['You', 'Gelato Bot', 'Mint Max', 'Sorbet Sam'];
+const PRICE = 2.5;            // profit per cone ($)
+const DAY_MS = 6500;          // simulated length of one business day
+const REVEAL_MS = 900;
+const N = 2000;               // resolution of the crowd CDF
+const STORE_KEY = 'icecream_hotelling_v1';
+
+const DENSITY = {
+  uniform:  () => 1,
+  resort:   x => 0.25 + 1.5 * Math.exp(-(((x - 18) / 13) ** 2)) + 0.6 * Math.exp(-(((x - 82) / 9) ** 2)),
+  festival: x => 0.3 + 1.3 * Math.exp(-(((x - 60) / 10) ** 2)) + 0.8 * Math.exp(-(((x - 22) / 8) ** 2)),
+};
+
+const LEVELS = [
+  {
+    name: 'Two Stalls, One Beach', n: 2, density: 'uniform', bans: [], starts: [50, 25], startSigma: 0,
+    ai: { react: .75, anticipate: 0, nash: .25, sigma: 2 }, lens: true,
+    chips: [['2 stalls', 'blue'], ['Uniform crowd', '']],
+    story: '1,000 sunbathers are spread evenly along the beach from 0 to 100. Every one of them walks to the <b>nearest</b> stand (ties split 50/50). Our scouts say <b>Gelato Bot</b> opens tomorrow near <b>25</b>.',
+    tip: 'Stand right next to a rival, on their bigger side, and every customer beyond you is yours. But tomorrow the rival will react…',
+    ne: { lines: [50], label: 'Nash equilibrium: both at 50' },
+    lesson: '<b>Hotelling\'s Law (1929).</b> When customers go to the nearest seller, each seller keeps inching toward the rival\'s bigger side until both sit at the median, 50. At (50, 50) neither stand gains by moving: that is the <b>Nash equilibrium</b>. It\'s why rival shops cluster on the same corner and why two-party politics drifts to the median voter. It\'s also wasteful: the average walk is 25 units, while stands at 25 and 75 would halve it, but neither seller would stay there.',
+  },
+  {
+    name: 'Hotel vs. Surf Club', n: 2, density: 'resort', bans: [], starts: [50, 70],
+    ai: { react: .55, anticipate: .2, nash: .25, sigma: 3 },
+    landmarks: [{ x: 18, icon: '🏨', label: 'Grand Hotel' }, { x: 82, icon: '🏄', label: 'Surf Club' }],
+    chips: [['2 stalls', 'blue'], ['Skewed crowd', '']],
+    story: 'A big resort hotel floods the left side of the beach with guests, while a smaller surf club draws a crowd on the right. The crowd is no longer uniform. Look at the shaded density curve.',
+    tip: 'The geographic center (50) is no longer special. Where is the customer who has exactly half the crowd on each side?',
+    ne: { median: true, label: 'Nash equilibrium: both at the median' },
+    lesson: '<b>Median, not middle.</b> With an uneven crowd the equilibrium is the <b>median customer</b>, the point with half the crowd on each side (here ≈ {m}). Whoever stands at the median can never be beaten head-to-head: any rival gets at most half. Chasing the "middle of the beach" at 50 hands the busy hotel side to your rival.',
+  },
+  {
+    name: 'Three\'s a Crowd', n: 3, density: 'uniform', bans: [], starts: [50, 30, 70],
+    ai: { react: .6, anticipate: .15, nash: .25, sigma: 3 },
+    chips: [['3 stalls', 'blue'], ['Uniform crowd', '']],
+    story: 'Mint Max joins the beach. Now three stands fight over the same 1,000 sunbathers, and being stuck in the middle is dangerous: the middle stand only gets the gap between its neighbours.',
+    tip: 'Squeezed in the middle? Leapfrog to the outside of a neighbour. But so can everyone else.',
+    ne: { band: [25, 75], label: 'Mixed equilibrium: randomize over [25, 75]' },
+    lesson: '<b>No pure equilibrium.</b> With three sellers on a line there is <b>no</b> pure-strategy Nash equilibrium: the stand squeezed in the middle always wants to leapfrog out, which reopens a gap for someone else, and the cycle never settles. The only equilibrium is <b>mixed</b>: each seller randomizes uniformly over [25, 75] (Shaked, 1982). Being hard to predict is part of the strategy.',
+  },
+  {
+    name: 'Beach Patrol', n: 2, density: 'uniform', bans: [[38, 63]], starts: [80, 70],
+    ai: { react: .45, anticipate: .25, nash: .3, sigma: 2.5 },
+    chips: [['2 stalls', 'blue'], ['Uniform crowd', ''], ['No-vending zone 38–63', 'warn']],
+    story: 'The beach patrol has banned vending between <b>38 and 63</b>, right on top of the median. Stands must sit at or outside the zone\'s edges. Customers can still walk through it.',
+    tip: 'The ideal spot (50) is illegal. Which legal spot is closest to the median, and does 1 unit of asymmetry matter?',
+    ne: { lines: [38], label: 'Nash equilibrium: both at 38' },
+    lesson: '<b>Constraints move the equilibrium.</b> With the median banned, the equilibrium is the legal spot <b>closest to the median</b>: 38 is 12 units away, 63 is 13. If your rival is at 38, joining them splits 50/50, while jumping to 63 earns only 37 + 12.5 = 49.5%. One unit of asymmetry in a regulation decides where the whole market clusters.',
+  },
+  {
+    name: 'Four-Way Scoop War', n: 4, density: 'uniform', bans: [], starts: [50, 20, 45, 80],
+    ai: { react: .6, anticipate: .15, nash: .25, sigma: 3 },
+    chips: [['4 stalls', 'blue'], ['Uniform crowd', '']],
+    story: 'Sorbet Sam rolls in. Four stands, one beach. The fair share is now only 25%. Watch how the stands pair up.',
+    tip: 'With four sellers, being an outermost stand with no partner is a liability. Look for a buddy to stand back-to-back with.',
+    ne: { lines: [25, 75], label: 'Nash equilibrium: pairs at 25 and 75' },
+    lesson: '<b>Clusters, plural.</b> With four sellers the equilibrium is <b>two pairs</b>: two stands back-to-back at 25 and two at 75, each with 25% (Eaton & Lipsey, 1975). Each stand owns one quarter of the beach. The edge is defended by pairing, and the middle is split down the center. Clustering survives; it just splits into groups.',
+  },
+  {
+    name: 'Boardwalk Boss', n: 3, density: 'festival', bans: [[12, 20], [52, 64]], starts: [30, 45, 75],
+    ai: { react: .45, anticipate: .3, nash: .25, sigma: 3 },
+    landmarks: [{ x: 22, icon: '🏐', label: 'Volleyball' }, { x: 60, icon: '🎡', label: 'Pier Festival' }],
+    chips: [['3 stalls', 'blue'], ['Lumpy crowd', ''], ['2 no-vending zones', 'warn']],
+    story: 'The finale. A pier festival packs the crowd near 60, volleyball courts draw a second crowd near 22, and the patrol has banned vending in two zones, including the festival itself.',
+    tip: 'Use the Insight Lens, but remember the rivals see yesterday too. Some will chase, some will predict, some will play it safe.',
+    ne: { median: true, label: 'Crowd median' },
+    lesson: '<b>Real markets combine everything.</b> Lumpy demand, zoning, and several rivals rarely give a neat equilibrium. The winners read the <b>best-response landscape</b> every day, stay near the crowd\'s median when things get chaotic, and anticipate how rivals will react to yesterday\'s layout. That last part is the psychological game.',
+  },
+];
+
+// ---------- DOM ----------
+const $ = id => document.getElementById(id);
+const cv = $('beach'), ctx = cv.getContext('2d'), wrap = $('wrap');
+const pieCv = $('pie'), pctx = pieCv.getContext('2d');
+const slider = $('posSlider');
+
+// ---------- market model ----------
+let L = LEVELS[0];
+let CDF = new Float64Array(N + 1), DMAX = 1, MEDIAN = 50, LEGAL = [], LEGAL1 = [];
+
+function buildMarket() {
+  const f = DENSITY[L.density];
+  let acc = 0; DMAX = 0;
+  CDF[0] = 0;
+  for (let i = 0; i < N; i++) {
+    const v = f((i + .5) * 100 / N);
+    DMAX = Math.max(DMAX, v);
+    acc += v; CDF[i + 1] = acc;
+  }
+  for (let i = 0; i <= N; i++) CDF[i] /= acc;
+  MEDIAN = Math.round(quantile(.5) * 10) / 10;
+  LEGAL = []; LEGAL1 = [];
+  for (let i = 0; i <= 200; i++) if (isLegal(i / 2)) LEGAL.push(i / 2);
+  for (let i = 0; i <= 100; i++) if (isLegal(i)) LEGAL1.push(i);
+}
+function cdfAt(x) {
+  if (x <= 0) return 0;
+  if (x >= 100) return 1;
+  const f = x / 100 * N, i = Math.floor(f);
+  return CDF[i] + (CDF[i + 1] - CDF[i]) * (f - i);
+}
+function quantile(u) {
+  let lo = 0, hi = N;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (CDF[mid] < u) lo = mid; else hi = mid; }
+  const a = CDF[lo], b = CDF[hi];
+  return (lo + (b > a ? (u - a) / (b - a) : 0)) * 100 / N;
+}
+function isLegal(x) {
+  return x >= 0 && x <= 100 && !L.bans.some(([a, b]) => x > a + 1e-9 && x < b - 1e-9);
+}
+function legalize(x) {
+  x = Math.round(Math.min(100, Math.max(0, x)) * 2) / 2;
+  for (const [a, b] of L.bans) if (x > a && x < b) x = (x - a <= b - x) ? a : b;
+  return x;
+}
+// Voronoi cells on the line; stalls on the same spot share their cell.
+function groups(pos) {
+  const order = pos.map((p, i) => i).sort((a, b) => pos[a] - pos[b]);
+  const gs = [];
+  for (const i of order) {
+    const g = gs[gs.length - 1];
+    if (g && Math.abs(g.p - pos[i]) < 1e-9) g.m.push(i); else gs.push({ p: pos[i], m: [i] });
+  }
+  gs.forEach((g, k) => {
+    g.l = k === 0 ? 0 : (gs[k - 1].p + g.p) / 2;
+    g.r = k === gs.length - 1 ? 100 : (g.p + gs[k + 1].p) / 2;
+    g.mass = cdfAt(g.r) - cdfAt(g.l);
+  });
+  return gs;
+}
+function shares(pos) {
+  const s = new Array(pos.length).fill(0);
+  for (const g of groups(pos)) for (const i of g.m) s[i] = g.mass / g.m.length;
+  return s;
+}
+function bestResponse(i, assumed, prev) {
+  let best = -1, bx = prev;
+  const p = assumed.slice();
+  for (const x of LEGAL) {
+    p[i] = x;
+    const s = shares(p)[i];
+    if (s > best + 1e-9 || (Math.abs(s - best) <= 1e-9 && Math.abs(x - prev) < Math.abs(bx - prev))) { best = s; bx = x; }
+  }
+  return { x: bx, s: best };
+}
+// Safest spot for AI i: maximize its worst-case share against any reply by the player.
+function maximin(i, last) {
+  let best = -1, bx = last[i];
+  const p = last.slice();
+  for (const x of LEGAL1) {
+    p[i] = x;
+    let mn = 1;
+    for (const y of LEGAL1) {
+      p[0] = y;
+      const s = shares(p)[i];
+      if (s < mn) { mn = s; if (mn <= best) break; }
+    }
+    if (mn > best + 1e-9 || (Math.abs(mn - best) <= 1e-9 && Math.abs(x - last[i]) < Math.abs(bx - last[i]))) { best = mn; bx = x; }
+  }
+  return bx;
+}
+function gauss() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+const pct = (v, d = 1) => (v * 100).toFixed(d) + '%';
+const fmt$ = v => '$' + Math.round(v).toLocaleString('en-US');
+const fpos = v => v.toFixed(1);
+
+// ---------- progress ----------
+function loadProgress() {
+  try { const p = JSON.parse(localStorage.getItem(STORE_KEY)); if (p && Array.isArray(p.stars)) return p; } catch (e) {}
+  return { stars: LEVELS.map(() => 0) };
+}
+function saveProgress(p) { try { localStorage.setItem(STORE_KEY, JSON.stringify(p)); } catch (e) {} }
+let progress = loadProgress();
+
+// ---------- game state ----------
+let S = null;
+let lensPref = null;   // null = follow level default
+
+function startLevel(idx, brief = true) {
+  L = LEVELS[idx];
+  buildMarket();
+  S = {
+    lvl: idx, day: 0, days: 5, visitors: 1000,
+    phase: 'place', player: legalize(L.starts[0]),
+    ghost: L.starts.slice(1), pos: null, from: null,
+    hist: [], money: new Array(L.n).fill(0), served: new Array(L.n).fill(0),
+    lens: lensPref ?? !!L.lens, speed: S ? S.speed : 1, t: 0, hover: null,
+    dots: makeDots(), pops: [], modes: [], lensCache: null,
+  };
+  slider.value = S.player;
+  computeLens();
+  syncUI();
+  if (brief) openBrief();
+}
+
+function makeDots() {
+  const D = 240, dots = [];
+  for (let i = 0; i < D; i++) {
+    dots.push({ x: quantile((i + Math.random()) / D), yr: Math.random(), stall: -1, t0: 0, tt: 0, arrived: false, jx: (Math.random() - .5), jy: Math.random() });
+  }
+  return dots;
+}
+
+function computeLens() {
+  const assumed = [S.player, ...S.ghost];
+  const curve = LEGAL.map(x => { assumed[0] = x; return shares(assumed)[0]; });
+  let bi = 0;
+  curve.forEach((v, i) => { if (v > curve[bi] + 1e-9) bi = i; });
+  S.lensCache = { curve, bx: LEGAL[bi], bs: curve[bi], max: Math.max(...curve) };
+}
+function lensShareAt(x) {
+  const i = LEGAL.indexOf(x);
+  return i >= 0 ? S.lensCache.curve[i] : null;
+}
+
+function setPlayer(x) {
+  if (S.phase !== 'place') return;
+  S.player = legalize(x);
+  slider.value = S.player;
+  syncUI();
+}
+
+function decideAI() {
+  const pos = [S.player], modes = [null];
+  const last = S.day === 0 ? null : S.hist[S.day - 1].pos;
+  for (let i = 1; i < L.n; i++) {
+    let x, mode;
+    if (!last) {
+      mode = 'open';
+      x = L.starts[i] + gauss() * (L.startSigma ?? L.ai.sigma * .5);
+    } else {
+      const r = Math.random(), a = L.ai;
+      mode = r < a.react ? 'react' : r < a.react + a.anticipate ? 'anticipate' : 'nash';
+      let target;
+      if (mode === 'react') target = bestResponse(i, last, last[i]).x;
+      else if (mode === 'anticipate') {
+        const pred = last.slice();
+        pred[0] = bestResponse(0, last, last[0]).x;
+        target = bestResponse(i, pred, last[i]).x;
+      } else target = maximin(i, last);
+      x = target + gauss() * a.sigma;
+    }
+    pos.push(legalize(x)); modes.push(mode);
+  }
+  return { pos, modes };
+}
+
+function lock() {
+  if (S.phase !== 'place') return;
+  const d = decideAI();
+  S.pos = d.pos; S.modes = d.modes;
+  S.from = [S.player, ...S.ghost];
+  S.served = new Array(L.n).fill(0);
+  S.pops = [];
+  // assign each sunbather to the nearest stand (random among exact ties)
+  for (const dot of S.dots) {
+    let mn = Infinity, cand = [];
+    S.pos.forEach((p, i) => {
+      const dd = Math.abs(p - dot.x);
+      if (dd < mn - 1e-9) { mn = dd; cand = [i]; } else if (Math.abs(dd - mn) <= 1e-9) cand.push(i);
+    });
+    dot.stall = cand[Math.floor(Math.random() * cand.length)];
+    dot.t0 = Math.random() * .42 * DAY_MS;
+    dot.tt = (.07 + .18 * Math.min(1, mn / 60)) * DAY_MS;
+    dot.arrived = false;
+  }
+  S.phase = 'reveal'; S.t = 0;
+  syncUI();
+}
+
+function endDay() {
+  const sh = shares(S.pos);
+  const cust = sh.map(s => Math.round(s * S.visitors));
+  cust.forEach((c, i) => S.money[i] += c * PRICE);
+  const others = S.pos.slice();
+  const hind = bestResponse(0, others, S.player);
+  const prevPlayer = S.day === 0 ? legalize(L.starts[0]) : S.hist[S.day - 1].pos[0];
+  S.hist.push({ pos: S.pos.slice(), shares: sh, cust, modes: S.modes.slice(), hind, ghost: S.ghost.slice(), prevPlayer });
+  S.served = cust.slice();
+  S.phase = 'dayEnd';
+  syncUI();
+}
+
+function nextDay() {
+  if (S.phase !== 'dayEnd') return;
+  if (S.day + 1 >= S.days) { showReport(); return; }
+  S.day++;
+  S.ghost = S.hist[S.day - 1].pos.slice(1);
+  S.phase = 'place';
+  S.pos = null;
+  S.served = new Array(L.n).fill(0);
+  for (const d of S.dots) { d.stall = -1; d.arrived = false; }
+  S.pops = [];
+  computeLens();
+  syncUI();
+}
+
+function primaryAction() {
+  if (!$('modal').classList.contains('hidden')) return;
+  if (S.phase === 'place') lock();
+  else if (S.phase === 'dayEnd') nextDay();
+}
+
+// ---------- UI sync ----------
+function syncUI() {
+  $('lvlTag').textContent = 'Level ' + (S.lvl + 1);
+  $('lvlName').textContent = L.name;
+  $('chips').innerHTML = L.chips.map(([t, c]) => `<span class="chip ${c}">${t}</span>`).join('');
+  $('dayLabel').textContent = `Day ${S.day + 1} / ${S.days}`;
+  $('posOut').textContent = fpos(S.player);
+  slider.disabled = S.phase !== 'place';
+  const lockBtn = $('btnLock');
+  if (S.phase === 'place') { lockBtn.textContent = '🔒 Lock Position'; lockBtn.disabled = false; }
+  else if (S.phase === 'dayEnd') { lockBtn.textContent = S.day + 1 >= S.days ? '📊 Season Report' : '▶ Next Day'; lockBtn.disabled = false; }
+  else { lockBtn.textContent = '🍦 Serving…'; lockBtn.disabled = true; }
+  const ff = $('btnFF');
+  ff.disabled = !(S.phase === 'reveal' || S.phase === 'business');
+  ff.classList.toggle('on', S.speed > 1);
+  ff.textContent = S.speed > 1 ? '▶ Normal Speed' : '⏩ Fast Forward';
+  $('btnLens').classList.toggle('on', S.lens);
+  $('hint').innerHTML = S.phase === 'place'
+    ? 'Click or drag on the beach (or use the slider, <kbd>←</kbd> <kbd>→</kbd>, <kbd>Shift</kbd> for big steps) to pick your spot. Rivals choose <b>at the same time</b>; faded stands show where they were ' + (S.day === 0 ? 'scouted' : 'yesterday') + '. <kbd>Enter</kbd> locks in.'
+    : S.phase === 'dayEnd' ? 'Day closed. Read the insight panel, then <kbd>Enter</kbd> for the next day.'
+    : 'Sunbathers walk to their nearest stand. <kbd>F</kbd> toggles fast forward.';
+  renderLedger();
+  renderInsight();
+  renderCharts();
+}
+
+function liveShares() {
+  if (S.phase === 'dayEnd') return S.hist[S.day].shares;
+  if (S.phase === 'business' || S.phase === 'reveal') {
+    const tot = S.served.reduce((a, b) => a + b, 0);
+    return tot > 0 ? S.served.map(v => v / tot) : null;
+  }
+  return S.day > 0 ? S.hist[S.day - 1].shares : null;
+}
+
+function renderCharts() {
+  const vals = liveShares();
+  $('pieTitle').textContent = S.phase === 'place' ? (S.day > 0 ? 'Market share · yesterday' : 'Market share · awaiting day 1') : 'Market share · today';
+  drawPie(vals);
+  $('legend').innerHTML = NAMES.slice(0, L.n).map((nm, i) =>
+    `<li><span class="sw" style="background:${COLORS[i]}"></span><span class="nm">${nm}</span><span class="v">${vals ? pct(vals[i]) : '—'}</span></li>`).join('');
+  const max = Math.max(S.visitors / L.n * 1.6, ...S.served);
+  const bars = $('bars');
+  if (bars.childElementCount !== L.n) {
+    bars.innerHTML = NAMES.slice(0, L.n).map((nm, i) =>
+      `<div class="bar-row"><span class="nm"><span class="dot" style="background:${COLORS[i]}"></span>${nm}</span><div class="bar-track"><div class="bar-fill" style="background:${COLORS[i]}"></div></div><span class="v">0</span></div>`).join('');
+  }
+  [...bars.children].forEach((row, i) => {
+    row.querySelector('.bar-fill').style.width = (S.served[i] / max * 100).toFixed(1) + '%';
+    row.querySelector('.v').textContent = Math.round(S.served[i]);
+  });
+}
+
+function drawPie(vals) {
+  const dpr = window.devicePixelRatio || 1, sz = 120;
+  if (pieCv.width !== sz * dpr) { pieCv.width = sz * dpr; pieCv.height = sz * dpr; }
+  pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  pctx.clearRect(0, 0, sz, sz);
+  const c = sz / 2, R = 56, r = 33;
+  if (!vals) {
+    pctx.beginPath(); pctx.arc(c, c, R, 0, Math.PI * 2); pctx.arc(c, c, r, 0, Math.PI * 2, true);
+    pctx.fillStyle = '#f2ead8'; pctx.fill();
+  } else {
+    let a = -Math.PI / 2;
+    vals.forEach((v, i) => {
+      if (v <= 0) return;
+      const b = a + v * Math.PI * 2;
+      pctx.beginPath(); pctx.moveTo(c, c); pctx.arc(c, c, R, a, b); pctx.closePath();
+      pctx.fillStyle = COLORS[i]; pctx.fill();
+      pctx.strokeStyle = '#fff'; pctx.lineWidth = 2; pctx.stroke();
+      a = b;
+    });
+    pctx.beginPath(); pctx.arc(c, c, r, 0, Math.PI * 2); pctx.fillStyle = '#fff'; pctx.fill();
+  }
+  pctx.fillStyle = '#1f3b4d'; pctx.textAlign = 'center'; pctx.textBaseline = 'middle';
+  pctx.font = '600 15px JetBrains Mono, monospace';
+  pctx.fillText(vals ? pct(vals[0], 0) : '—', c, c - 4);
+  pctx.font = '500 10px Fredoka, sans-serif'; pctx.fillStyle = '#6b7f8c';
+  pctx.fillText('you', c, c + 12);
+}
+
+function renderLedger() {
+  const today = S.phase === 'dayEnd' ? S.hist[S.day] : null;
+  const rows = NAMES.slice(0, L.n).map((nm, i) => {
+    let spot;
+    if (S.phase === 'place') spot = i === 0 ? fpos(S.player) : '?';
+    else spot = fpos(S.pos[i]);
+    return `<tr><td><span class="dot" style="background:${COLORS[i]}"></span>${nm}</td><td>${spot}</td><td>${today ? pct(today.shares[i]) : '—'}</td><td>${fmt$(S.money[i])}</td></tr>`;
+  }).join('');
+  $('ledger').innerHTML = `<tr><th>Stand</th><th>Spot</th><th>Today</th><th>Season</th></tr>${rows}`;
+}
+
+const MODE_TEXT = {
+  open: 'opened at its planned spot',
+  react: 'chased yesterday\'s layout with a best reply',
+  anticipate: 'predicted your best reply and tried to undercut it',
+  nash: 'played it safe at its maximin spot',
+};
+
+function renderInsight() {
+  const el = $('insight');
+  if (S.phase === 'place') {
+    const lc = S.lensCache, mine = lensShareAt(S.player);
+    let h = `<p>${L.tip}</p>`;
+    if (S.lens && lc) h += `<p>Lens: if rivals stayed put, <b>${fpos(S.player)}</b> would earn <b class="mono">${pct(mine)}</b>; the best reply is <b class="mono">${fpos(lc.bx)} → ${pct(lc.bs)}</b>. They won't stay put.</p>`;
+    el.innerHTML = h;
+  } else if (S.phase === 'dayEnd') {
+    const h = S.hist[S.day], me = h.shares[0], fair = 1 / L.n;
+    const verdict = me >= fair + .005 ? '✅ Above' : me >= fair - .005 ? '➖ At' : '❌ Below';
+    let out = `<p><b>Day ${S.day + 1}:</b> ${h.cust[0]} customers, <b class="mono">${pct(me)}</b> share. ${verdict} your fair share of ${pct(fair, 0)}.</p>`;
+    out += h.hind.s - me < .004
+      ? `<p>🎯 Perfect read: that was the best reply to today's actual layout.</p>`
+      : `<p>Hindsight: knowing rivals' spots, <b class="mono">${fpos(h.hind.x)}</b> would have earned <b class="mono">${pct(h.hind.s)}</b>.</p>`;
+    out += '<p>' + h.modes.slice(1).map((m, k) => `<span class="dot" style="background:${COLORS[k + 1]}"></span>${NAMES[k + 1]} ${MODE_TEXT[m]}.`).join('<br>') + '</p>';
+    el.innerHTML = out;
+  } else {
+    el.innerHTML = '<p>Customers are choosing their nearest stand. Shaded territories show each stand\'s catchment; dashed lines are the midpoints between neighbours.</p>';
+  }
+}
+
+// ---------- canvas ----------
+let W = 800, H = 440, G = {};
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  W = wrap.clientWidth;
+  H = Math.round(Math.max(360, Math.min(470, W * .52)));
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  cv.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const m = Math.max(22, W * .035);
+  G = { m, sky: H * .13, sea: H * .25, lensT: H * .30, lensB: H * .45, base: H * .64, crowdT: H * .70, crowdB: H * .85, axis: H * .91 };
+}
+const X = p => G.m + p / 100 * (W - 2 * G.m);
+const P = px => (px - G.m) / (W - 2 * G.m) * 100;
+
+function rr(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+const ease = t => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+
+function drawScene(now) {
+  ctx.clearRect(0, 0, W, H);
+  // sky
+  let g = ctx.createLinearGradient(0, 0, 0, G.sky);
+  g.addColorStop(0, '#9fe3f5'); g.addColorStop(1, '#d6f4fb');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, G.sky + 2);
+  // sun
+  ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.arc(W - 46, G.sky * .5, Math.min(22, G.sky * .32), 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,212,59,.25)'; ctx.beginPath(); ctx.arc(W - 46, G.sky * .5, Math.min(32, G.sky * .46), 0, Math.PI * 2); ctx.fill();
+  // sea
+  g = ctx.createLinearGradient(0, G.sky, 0, G.sea);
+  g.addColorStop(0, '#2bb3d0'); g.addColorStop(1, '#63d3e6');
+  ctx.fillStyle = g; ctx.fillRect(0, G.sky, W, G.sea - G.sky + 8);
+  // sand
+  g = ctx.createLinearGradient(0, G.sea, 0, H);
+  g.addColorStop(0, '#fbecc6'); g.addColorStop(1, '#f2d79c');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.moveTo(0, H);
+  for (let x = 0; x < W + 8; x += 8) ctx.lineTo(x, G.sea + Math.sin(x * .03 + now * .0015) * 3);
+  ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+  // surf foam
+  ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 2.5; ctx.beginPath();
+  for (let x = 0; x < W + 8; x += 8) { const y = G.sea + Math.sin(x * .03 + now * .0015) * 3; x ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.lineWidth = 1.5; ctx.beginPath();
+  for (let x = 0; x < W + 8; x += 8) { const y = G.sky + (G.sea - G.sky) * .45 + Math.sin(x * .05 - now * .001) * 2; x ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.stroke();
+
+  // landmarks
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const lm of L.landmarks || []) {
+    ctx.font = `${Math.round(G.sky * .42)}px serif`;
+    ctx.fillText(lm.icon, X(lm.x), G.sky * .42);
+    ctx.font = '600 11px Fredoka, sans-serif'; ctx.fillStyle = '#1f3b4d';
+    ctx.fillText(lm.label, X(lm.x), G.sky * .85);
+  }
+
+  // crowd density silhouette
+  const f = DENSITY[L.density], ch = (G.crowdB - G.crowdT) * .95;
+  ctx.beginPath(); ctx.moveTo(X(0), G.crowdB);
+  for (let p = 0; p <= 100; p += .5) ctx.lineTo(X(p), G.crowdB - f(p) / DMAX * ch);
+  ctx.lineTo(X(100), G.crowdB); ctx.closePath();
+  ctx.fillStyle = 'rgba(214,160,70,.22)'; ctx.fill();
+  ctx.beginPath();
+  for (let p = 0; p <= 100; p += .5) { const y = G.crowdB - f(p) / DMAX * ch; p ? ctx.lineTo(X(p), y) : ctx.moveTo(X(p), y); }
+  ctx.strokeStyle = 'rgba(176,120,40,.45)'; ctx.lineWidth = 1.2; ctx.stroke();
+  ctx.fillStyle = 'rgba(122,90,42,.75)'; ctx.font = '600 10px JetBrains Mono, monospace'; ctx.textAlign = 'left';
+  if (S.phase === 'place') ctx.fillText('▲ CROWD DENSITY', X(0), G.crowdB + 9);
+
+  // no-vending zones
+  for (const [a, b] of L.bans) {
+    const x0 = X(a), x1 = X(b), y0 = G.sea + 4, y1 = G.crowdB;
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,59,92,.09)'; ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    ctx.beginPath(); ctx.rect(x0, y0, x1 - x0, y1 - y0); ctx.clip();
+    ctx.strokeStyle = 'rgba(224,49,49,.22)'; ctx.lineWidth = 2;
+    for (let k = x0 - (y1 - y0); k < x1; k += 12) { ctx.beginPath(); ctx.moveTo(k, y1); ctx.lineTo(k + (y1 - y0), y0); ctx.stroke(); }
+    ctx.restore();
+    ctx.setLineDash([5, 4]); ctx.strokeStyle = 'rgba(224,49,49,.7)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0, y1); ctx.moveTo(x1, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#c92a2a'; ctx.font = '600 11px Fredoka, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(x1 - x0 > 90 ? '🚓 NO VENDING' : '🚓', (x0 + x1) / 2, G.lensB + 18);
+  }
+
+  // territories
+  const showTerr = S.phase === 'business' || S.phase === 'dayEnd' || (S.phase === 'reveal' && S.t > REVEAL_MS * .8);
+  if (showTerr) {
+    const gs = groups(S.pos), sh = shares(S.pos);
+    for (const gr of gs) {
+      const x0 = X(gr.l), x1 = X(gr.r), y0 = G.base + 4;
+      gr.m.forEach((i, k) => {
+        const hh = (G.crowdB - y0) / gr.m.length;
+        ctx.fillStyle = COLORS[i] + '22';
+        ctx.fillRect(x0, y0 + k * hh, x1 - x0, hh);
+      });
+      ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(31,59,77,.35)'; ctx.lineWidth = 1;
+      if (gr.l > 0) { ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0, G.crowdB); ctx.stroke(); }
+      ctx.setLineDash([]);
+      if (x1 - x0 > 34) {
+        ctx.fillStyle = COLORS[gr.m[0]]; ctx.font = '600 12px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+        const label = gr.m.length > 1 ? gr.m.map(i => pct(sh[i], 0)).join(' / ') : pct(sh[gr.m[0]]);
+        ctx.fillText(label, (x0 + x1) / 2, G.crowdB + 8);
+      }
+    }
+  }
+
+  // axis
+  ctx.strokeStyle = 'rgba(90,60,20,.55)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(X(0), G.axis); ctx.lineTo(X(100), G.axis); ctx.stroke();
+  ctx.fillStyle = '#7a5a2a'; ctx.font = '11px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+  for (let p = 0; p <= 100; p += 5) {
+    const major = p % 10 === 0;
+    ctx.beginPath(); ctx.moveTo(X(p), G.axis); ctx.lineTo(X(p), G.axis + (major ? 6 : 3)); ctx.stroke();
+    if (major && (W > 520 || p % 20 === 0)) ctx.fillText(p, X(p), G.axis + 15);
+  }
+
+  // hover guide
+  if (S.phase === 'place' && S.hover !== null) {
+    const hp = legalize(S.hover);
+    ctx.strokeStyle = 'rgba(255,79,121,.35)'; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(X(hp), G.sea + 6); ctx.lineTo(X(hp), G.axis); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  if (S.phase === 'place' && S.lens) drawLens();
+
+  // stalls
+  const stalls = [];
+  if (S.phase === 'place') {
+    S.ghost.forEach((p, k) => stalls.push({ i: k + 1, p, a: .38, tag: S.day === 0 ? 'scouted' : 'yesterday' }));
+    stalls.push({ i: 0, p: S.player, a: 1 });
+  } else {
+    const k = S.phase === 'reveal' ? ease(S.t / REVEAL_MS) : 1;
+    S.pos.forEach((p, i) => stalls.push({ i, p: S.from[i] + (p - S.from[i]) * k, a: 1 }));
+  }
+  stalls.sort((a, b) => a.a - b.a || b.i - a.i);
+  for (const s of stalls) drawStall(X(s.p), G.base, COLORS[s.i], s.a);
+
+  // customers
+  drawDots();
+
+  // labels, staggered so overlapping stands stay readable
+  const labs = stalls.map(s => ({ ...s, x: X(s.p) })).sort((a, b) => a.x - b.x);
+  const levels = [];
+  ctx.font = '600 11px Fredoka, sans-serif';
+  for (const lb of labs) {
+    const txt = `${NAMES[lb.i]} ${lb.tag ? '· ' + lb.tag + ' ' : ''}${fpos(lb.p)}`;
+    const w = ctx.measureText(txt).width + 14;
+    let lv = 0;
+    while (levels[lv] !== undefined && levels[lv] > lb.x - w / 2 - 3) lv++;
+    levels[lv] = lb.x + w / 2;
+    const cx = Math.min(W - w / 2 - 2, Math.max(w / 2 + 2, lb.x)), cy = G.base - 76 - lv * 17;
+    ctx.globalAlpha = lb.a < 1 ? .7 : 1;
+    rr(cx - w / 2, cy - 8, w, 16, 8);
+    ctx.fillStyle = lb.a < 1 ? '#ffffff' : COLORS[lb.i]; ctx.fill();
+    if (lb.a < 1) { ctx.strokeStyle = COLORS[lb.i]; ctx.lineWidth = 1; ctx.stroke(); }
+    ctx.fillStyle = lb.a < 1 ? COLORS[lb.i] : '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(txt, cx, cy + .5);
+    ctx.globalAlpha = 1;
+  }
+
+  // money pops
+  ctx.font = '700 12px Fredoka, sans-serif'; ctx.textAlign = 'center';
+  for (const pp of S.pops) {
+    const k = pp.age / 900;
+    ctx.globalAlpha = 1 - k; ctx.fillStyle = COLORS[pp.i];
+    ctx.fillText('+$', pp.x, G.base - 30 - k * 26);
+  }
+  ctx.globalAlpha = 1;
+
+  drawHUD();
+}
+
+function drawStall(x, base, color, alpha) {
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.fillStyle = 'rgba(120,80,20,.18)';
+  ctx.beginPath(); ctx.ellipse(x, base + 3, 19, 4, 0, 0, Math.PI * 2); ctx.fill();
+  rr(x - 15, base - 18, 30, 16, 4); ctx.fillStyle = color; ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(x - 15, base - 12, 30, 3);
+  ctx.fillStyle = '#3d3d3d';
+  ctx.beginPath(); ctx.arc(x - 9, base - 1, 3.2, 0, Math.PI * 2); ctx.arc(x + 9, base - 1, 3.2, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#6b4f3a'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x, base - 18); ctx.lineTo(x, base - 44); ctx.stroke();
+  const cy = base - 42, R = 23;
+  for (let k = 0; k < 6; k++) {
+    ctx.beginPath(); ctx.moveTo(x, cy);
+    ctx.arc(x, cy, R, Math.PI + k * Math.PI / 6, Math.PI + (k + 1) * Math.PI / 6);
+    ctx.closePath(); ctx.fillStyle = k % 2 ? '#ffffff' : color; ctx.fill();
+  }
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(x, cy, R, Math.PI, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, cy - R, 2.5, 0, Math.PI * 2); ctx.fill();
+  // cone sign
+  ctx.fillStyle = '#e8a34c';
+  ctx.beginPath(); ctx.moveTo(x - 3, base - 9); ctx.lineTo(x + 3, base - 9); ctx.lineTo(x, base - 3); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function drawLens() {
+  const lc = S.lensCache; if (!lc) return;
+  const top = G.lensT, bot = G.lensB;
+  const ymax = Math.max(.3, lc.max * 1.28);
+  const Y = s => bot - s / ymax * (bot - top);
+  ctx.save();
+  rr(X(0) - 8, top - 18, X(100) - X(0) + 16, bot - top + 24, 10);
+  ctx.fillStyle = 'rgba(255,255,255,.72)'; ctx.fill();
+  ctx.fillStyle = '#6b7f8c'; ctx.font = '600 10px JetBrains Mono, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(W > 560 ? 'INSIGHT LENS · your share at each spot if rivals stay where they were' : 'INSIGHT LENS · your share by spot', X(0), top - 9);
+  // fair-share line
+  const fy = Y(1 / L.n);
+  ctx.setLineDash([2, 4]); ctx.strokeStyle = 'rgba(31,59,77,.35)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(X(0), fy); ctx.lineTo(X(100), fy); ctx.stroke(); ctx.setLineDash([]);
+  ctx.textAlign = 'right'; ctx.fillText('fair ' + pct(1 / L.n, 0), X(100), fy - 6);
+  // curve (gaps across banned zones)
+  const segs = []; let cur = [];
+  LEGAL.forEach((x, i) => {
+    if (cur.length && x - LEGAL[i - 1] > .6) { segs.push(cur); cur = []; }
+    cur.push([X(x), Y(lc.curve[i])]);
+  });
+  if (cur.length) segs.push(cur);
+  for (const sg of segs) {
+    ctx.beginPath(); ctx.moveTo(sg[0][0], bot);
+    sg.forEach(([x, y]) => ctx.lineTo(x, y));
+    ctx.lineTo(sg[sg.length - 1][0], bot); ctx.closePath();
+    ctx.fillStyle = 'rgba(255,79,121,.12)'; ctx.fill();
+    ctx.beginPath(); sg.forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    ctx.strokeStyle = COLORS[0]; ctx.lineWidth = 2; ctx.stroke();
+  }
+  // best reply marker
+  const bx = X(lc.bx), by = Y(lc.bs);
+  ctx.fillStyle = '#1f3b4d'; ctx.beginPath(); ctx.arc(bx, by, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.font = '600 10px JetBrains Mono, monospace'; ctx.textBaseline = 'bottom';
+  const btxt = `best reply ${fpos(lc.bx)} → ${pct(lc.bs)}`, bw = ctx.measureText(btxt).width;
+  ctx.textAlign = 'left';
+  ctx.fillText(btxt, Math.min(X(100) - bw, Math.max(X(0), bx - bw / 2)), Math.max(top + 2, by - 5));
+  // you marker
+  const ms = lensShareAt(S.player);
+  if (ms !== null) {
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = COLORS[0]; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(X(S.player), Y(ms), 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function dotHome(d) { return [X(d.x), G.crowdT + 6 + d.yr * (G.crowdB - G.crowdT - 10)]; }
+
+function drawDots() {
+  const active = S.phase === 'business' || S.phase === 'dayEnd';
+  for (const d of S.dots) {
+    let [x, y] = dotHome(d);
+    let col = 'rgba(70,90,105,.55)', cone = false;
+    if (active && d.stall >= 0) {
+      const t = S.phase === 'dayEnd' ? Infinity : S.t;
+      const tx = X(S.pos[d.stall]) + d.jx * 22, ty = G.base + 6 + d.jy * 10;
+      const t1 = d.t0 + d.tt, t2 = t1 + DAY_MS * .05, t3 = t2 + d.tt;
+      col = COLORS[d.stall];
+      if (t < d.t0) col = 'rgba(70,90,105,.55)';
+      else if (t < t1) { const k = ease((t - d.t0) / d.tt); x += (tx - x) * k; y += (ty - y) * k; }
+      else if (t < t2) { x = tx; y = ty; cone = true; }
+      else if (t < t3) { const k = ease((t - t2) / d.tt); x = tx + (x - tx) * k; y = ty + (y - ty) * k; cone = true; }
+      else cone = true;
+    }
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI * 2); ctx.fill();
+    if (cone) {
+      ctx.fillStyle = '#e8a34c';
+      ctx.beginPath(); ctx.moveTo(x - 1.8, y - 3); ctx.lineTo(x + 1.8, y - 3); ctx.lineTo(x, y - 0.5); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y - 4, 1.8, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+}
+
+function drawHUD() {
+  let txt, prog = null;
+  if (S.phase === 'place') txt = `PLANNING · DAY ${S.day + 1}/${S.days}`;
+  else if (S.phase === 'reveal') txt = 'REVEALING RIVALS…';
+  else if (S.phase === 'business') { txt = `OPEN FOR BUSINESS${S.speed > 1 ? ' · ×' + S.speed : ''}`; prog = S.t / DAY_MS; }
+  else txt = `DAY ${S.day + 1} CLOSED`;
+  ctx.font = '600 11px JetBrains Mono, monospace';
+  const w = ctx.measureText(txt).width + 20;
+  rr(10, 10, w, prog === null ? 22 : 30, 8);
+  ctx.fillStyle = 'rgba(31,59,77,.82)'; ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(txt, 20, 21.5);
+  if (prog !== null) {
+    ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(20, 32, w - 20, 3);
+    ctx.fillStyle = '#ffd43b'; ctx.fillRect(20, 32, (w - 20) * Math.min(1, prog), 3);
+  }
+}
+
+// ---------- loop ----------
+let lastT = performance.now(), chartTick = 0;
+function frame(now) {
+  const dt = Math.min(50, now - lastT); lastT = now;
+  if (S.phase === 'reveal') {
+    S.t += dt * S.speed;
+    if (S.t >= REVEAL_MS) { S.phase = 'business'; S.t = 0; syncUI(); }
+  } else if (S.phase === 'business') {
+    S.t += dt * S.speed;
+    const per = S.visitors / S.dots.length;
+    for (const d of S.dots) {
+      if (!d.arrived && S.t >= d.t0 + d.tt) {
+        d.arrived = true; S.served[d.stall] += per;
+        if (S.pops.length < 30 && Math.random() < .35) S.pops.push({ i: d.stall, x: X(S.pos[d.stall]) + (Math.random() - .5) * 16, age: 0 });
+      }
+    }
+    if ((chartTick += dt) > 120) { chartTick = 0; renderCharts(); }
+    if (S.t >= DAY_MS) endDay();
+  }
+  for (const pp of S.pops) pp.age += dt * Math.min(S.speed, 3);
+  S.pops = S.pops.filter(pp => pp.age < 900);
+  drawScene(now);
+  requestAnimationFrame(frame);
+}
+
+// ---------- modals ----------
+function openModal(html) { $('modalCard').innerHTML = html; $('modal').classList.remove('hidden'); }
+function closeModal() { $('modal').classList.add('hidden'); }
+
+function starsHTML(n) { return [0, 1, 2].map(k => k < n ? '★' : '<span class="off">★</span>').join(''); }
+function goals() { const fair = 1 / L.n; return { fair, pass: fair * .92, two: fair * 1.04, three: fair * 1.15 }; }
+
+function openBrief() {
+  const gl = goals();
+  openModal(`
+    <div class="kicker">Level ${S.lvl + 1} of ${LEVELS.length}</div>
+    <h2>${L.name}</h2>
+    <div class="chips" style="margin-bottom:12px">${L.chips.map(([t, c]) => `<span class="chip ${c}">${t}</span>`).join('')}</div>
+    <p>${L.story}</p>
+    <div class="tipbox">💡 ${L.tip}</div>
+    <div class="goal">🎯 Over <b>${S.days} days</b>, average at least <b>${pct(gl.pass)}</b> market share to pass.
+      ★★ at ${pct(gl.two)} · ★★★ at ${pct(gl.three)}. Each day all stands pick spots <b>simultaneously</b>, then rivals adapt to what happened.</div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-act="levels">All levels</button>
+      <button class="btn primary" data-act="close">Open the stand 🍦</button>
+    </div>`);
+}
+
+function openLevels() {
+  const cards = LEVELS.map((lv, i) => {
+    const locked = i > 0 && !(progress.stars[i - 1] > 0);
+    return `<button class="lv" data-lvl="${i}" ${locked ? 'disabled' : ''}>
+      <div class="num">LEVEL ${i + 1}${locked ? ' · 🔒' : ''}</div>
+      <div class="t">${lv.name}</div>
+      <div class="s">${starsHTML(progress.stars[i] || 0)}</div>
+      <div class="chips" style="margin-top:6px">${lv.chips.map(([t, c]) => `<span class="chip ${c}">${t}</span>`).join('')}</div>
+    </button>`;
+  }).join('');
+  openModal(`
+    <div class="kicker">Ice Cream Stand Showdown</div>
+    <h2>Choose a beach</h2>
+    <p>Each level adds a twist on Hotelling's model: more rivals, uneven crowds, and zoning. Pass a level to unlock the next.</p>
+    <div class="lv-grid">${cards}</div>
+    <div class="modal-actions"><button class="btn ghost" data-act="close">Close</button></div>`);
+}
+
+function showReport() {
+  const gl = goals(), n = L.n, D = S.hist.length;
+  const ps = S.hist.map(h => h.shares[0]);
+  const avg = ps.reduce((a, b) => a + b, 0) / D;
+  const stars = avg >= gl.three - 1e-9 ? 3 : avg >= gl.two - 1e-9 ? 2 : avg >= gl.pass - 1e-9 ? 1 : 0;
+  if (stars > (progress.stars[S.lvl] || 0)) { progress.stars[S.lvl] = stars; saveProgress(progress); }
+  const rank = 1 + S.money.slice(1).filter(m => m > S.money[0]).length;
+  const mult = (avg / gl.fair).toFixed(2);
+
+  const headline = stars === 3
+    ? `Congratulations! You captured <b>${pct(avg)}</b> of the market, ${mult}× your fair share, outplaying AIs that kept converging on you.`
+    : stars === 2
+    ? `Well played! You averaged <b>${pct(avg)}</b> of the market, beating the ${pct(gl.fair, 0)} fair share.`
+    : stars === 1
+    ? `You held your ground with <b>${pct(avg)}</b>. The rivals matched you move for move. Read their reactions a step earlier for more stars.`
+    : `Squeezed out! The rivals boxed you into <b>${pct(avg)}</b> of the market, below the ${pct(gl.pass)} you needed.`;
+
+  // behavioural analysis
+  const notes = [];
+  let undercuts = 0, edge = 0, perfect = 0;
+  S.hist.forEach(h => {
+    const p = h.pos[0];
+    // moved in right next to where a rival was last seen, and it paid off
+    if (h.ghost.some(q => Math.abs(p - q) <= 2 && Math.abs(h.prevPlayer - q) > 2) && h.shares[0] > gl.fair) undercuts++;
+    if ((p < 12 || p > 88) && h.shares[0] < gl.fair) edge++;
+    if (h.hind.s - h.shares[0] < .004) perfect++;
+  });
+  if (undercuts) notes.push(`You moved in right next to a rival's last-seen spot and won the day <b>${undercuts}×</b>. That's the classic Hotelling squeeze, and it's exactly what drags everyone toward the median.`);
+  if (perfect) notes.push(`On <b>${perfect}</b> of ${D} days your spot was the exact best reply to where the rivals actually stood. That means you predicted their move, not just their past.`);
+  if (edge) notes.push(`On ${edge} day${edge > 1 ? 's' : ''} you parked near the edge and lost share. An edge stand hands its neighbour everything in the middle.`);
+  if (n === 2) {
+    const target = L.ne.lines ? L.ne.lines[0] : MEDIAN;
+    const dist = S.hist.reduce((a, h) => a + Math.abs(h.pos[0] - target), 0) / D;
+    notes.push(`On average you stood <b>${dist.toFixed(1)}</b> units from the equilibrium spot (${fpos(target)}).${dist < 4 ? ' Staying close to it makes you nearly impossible to exploit.' : ''}`);
+  }
+  const lastPos = S.hist[D - 1].pos, firstPos = S.hist[0].pos;
+  const spread = a => Math.max(...a) - Math.min(...a);
+  if (spread(lastPos) < spread(firstPos) - 3) notes.push(`The spread between stands shrank from <b>${spread(firstPos).toFixed(1)}</b> on day 1 to <b>${spread(lastPos).toFixed(1)}</b> on day ${D}. That's the convergence effect in action.`);
+  const aiModes = S.hist.slice(1).flatMap(h => h.modes.slice(1));
+  const cnt = m => aiModes.filter(x => x === m).length;
+  if (aiModes.length) notes.push(`Rival psychology this season: chased yesterday ${cnt('react')}×, predicted your reply ${cnt('anticipate')}×, played safe ${cnt('nash')}×.`);
+
+  const lesson = L.lesson.replace('{m}', fpos(MEDIAN));
+  const last = S.lvl === LEVELS.length - 1;
+  openModal(`
+    <div class="kicker">Game-theory debrief · Level ${S.lvl + 1}</div>
+    <h2>${stars ? 'Season complete' : 'Season lost'} <span class="stars">${starsHTML(stars)}</span></h2>
+    <p class="headline">${headline}</p>
+    <div class="stats">
+      <div class="stat"><div class="k">Avg share</div><div class="val">${pct(avg)}</div></div>
+      <div class="stat"><div class="k">Fair share</div><div class="val">${pct(gl.fair)}</div></div>
+      <div class="stat"><div class="k">Revenue</div><div class="val">${fmt$(S.money[0])}</div></div>
+      <div class="stat"><div class="k">Rank</div><div class="val">#${rank} of ${n}</div></div>
+    </div>
+    <h4>Convergence map · positions by day</h4>
+    <canvas id="repChart"></canvas>
+    <h4>Your moves, analysed</h4>
+    <ul class="notes">${notes.map(t => `<li>${t}</li>`).join('')}</ul>
+    <h4>The theory</h4>
+    <p>${lesson}</p>
+    <div class="modal-actions">
+      <button class="btn ghost" data-act="levels">All levels</button>
+      <button class="btn ghost" data-act="retry">↺ Replay level</button>
+      ${stars && !last ? '<button class="btn primary" data-act="next">Next level ▶</button>' : ''}
+      ${stars && last ? '<button class="btn primary" data-act="levels">🏆 You beat the boardwalk!</button>' : ''}
+    </div>`);
+  drawReportChart();
+}
+
+function drawReportChart() {
+  const c = $('repChart'), x = c.getContext('2d'), dpr = window.devicePixelRatio || 1;
+  const w = c.clientWidth || 560, D = S.hist.length, rowH = 34, h = 44 + D * rowH;
+  c.width = w * dpr; c.height = h * dpr; c.style.height = h + 'px';
+  x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const m = 46, PX = p => m + p / 100 * (w - m - 16), RY = d => 20 + d * rowH + rowH / 2;
+  // bans & equilibrium guides
+  for (const [a, b] of L.bans) { x.fillStyle = 'rgba(255,59,92,.10)'; x.fillRect(PX(a), 12, PX(b) - PX(a), D * rowH + 12); }
+  if (L.ne.band) { x.fillStyle = 'rgba(47,128,237,.08)'; x.fillRect(PX(L.ne.band[0]), 12, PX(L.ne.band[1]) - PX(L.ne.band[0]), D * rowH + 12); }
+  const lines = L.ne.lines || (L.ne.median ? [MEDIAN] : []);
+  x.setLineDash([5, 4]); x.strokeStyle = 'rgba(31,59,77,.55)'; x.lineWidth = 1.2;
+  for (const p of lines) { x.beginPath(); x.moveTo(PX(p), 12); x.lineTo(PX(p), D * rowH + 24); x.stroke(); }
+  x.setLineDash([]);
+  x.fillStyle = '#1f3b4d'; x.font = '600 11px Fredoka, sans-serif'; x.textAlign = 'left'; x.textBaseline = 'middle';
+  x.fillText(L.ne.label + (L.ne.median ? ` (${fpos(MEDIAN)})` : ''), m, 8);
+  // axis
+  x.strokeStyle = 'rgba(90,60,20,.4)'; x.lineWidth = 1;
+  const ay = D * rowH + 26;
+  x.beginPath(); x.moveTo(PX(0), ay); x.lineTo(PX(100), ay); x.stroke();
+  x.font = '10px JetBrains Mono, monospace'; x.fillStyle = '#7a5a2a'; x.textAlign = 'center';
+  for (let p = 0; p <= 100; p += 10) x.fillText(p, PX(p), ay + 10);
+  x.textAlign = 'right';
+  for (let d = 0; d < D; d++) x.fillText('Day ' + (d + 1), m - 8, RY(d));
+  // trajectories
+  for (let i = L.n - 1; i >= 0; i--) {
+    x.strokeStyle = COLORS[i]; x.lineWidth = i === 0 ? 2.5 : 1.6; x.globalAlpha = i === 0 ? 1 : .8;
+    x.beginPath();
+    S.hist.forEach((hh, d) => d ? x.lineTo(PX(hh.pos[i]), RY(d)) : x.moveTo(PX(hh.pos[i]), RY(d)));
+    x.stroke();
+    S.hist.forEach((hh, d) => {
+      x.fillStyle = COLORS[i]; x.beginPath(); x.arc(PX(hh.pos[i]), RY(d), i === 0 ? 5 : 4, 0, Math.PI * 2); x.fill();
+      if (i === 0) { x.fillStyle = '#fff'; x.beginPath(); x.arc(PX(hh.pos[i]), RY(d), 2, 0, Math.PI * 2); x.fill(); }
+    });
+    x.globalAlpha = 1;
+  }
+  // player share annotations
+  x.font = '600 10px JetBrains Mono, monospace'; x.textAlign = 'left'; x.fillStyle = COLORS[0];
+  S.hist.forEach((hh, d) => {
+    const px = PX(hh.pos[0]);
+    const right = px < w - 70;
+    x.textAlign = right ? 'left' : 'right';
+    x.fillText(pct(hh.shares[0], 0), px + (right ? 9 : -9), RY(d) - 9);
+  });
+}
+
+$('modal').addEventListener('click', e => {
+  const b = e.target.closest('[data-act],[data-lvl]');
+  if (!b) { if (e.target === $('modal') && S.phase !== 'dayEnd') closeModal(); return; }
+  if (b.dataset.lvl !== undefined) { closeModal(); startLevel(+b.dataset.lvl); return; }
+  const act = b.dataset.act;
+  if (act === 'close') closeModal();
+  else if (act === 'levels') openLevels();
+  else if (act === 'retry') { closeModal(); startLevel(S.lvl, false); }
+  else if (act === 'next') { closeModal(); startLevel(S.lvl + 1); }
+});
+
+// ---------- input ----------
+let dragging = false;
+function evPos(e) { const r = cv.getBoundingClientRect(); return P(e.clientX - r.left); }
+cv.addEventListener('pointerdown', e => {
+  if (S.phase !== 'place') return;
+  dragging = true; cv.setPointerCapture(e.pointerId); setPlayer(evPos(e));
+});
+cv.addEventListener('pointermove', e => {
+  S.hover = evPos(e);
+  if (dragging) setPlayer(S.hover);
+});
+cv.addEventListener('pointerup', () => { dragging = false; });
+cv.addEventListener('pointercancel', () => { dragging = false; });
+cv.addEventListener('pointerleave', () => { S.hover = null; });
+slider.addEventListener('input', () => setPlayer(+slider.value));
+
+$('btnLock').addEventListener('click', primaryAction);
+$('btnFF').addEventListener('click', toggleFF);
+$('btnLens').addEventListener('click', () => { S.lens = !S.lens; lensPref = S.lens; syncUI(); });
+$('btnRestart').addEventListener('click', () => startLevel(S.lvl, false));
+$('btnLevels').addEventListener('click', openLevels);
+function toggleFF() {
+  if (!(S.phase === 'reveal' || S.phase === 'business')) return;
+  S.speed = S.speed > 1 ? 1 : 6; syncUI();
+}
+window.addEventListener('keydown', e => {
+  if (!$('modal').classList.contains('hidden')) {
+    if (e.key === 'Escape' && S.phase !== 'dayEnd') closeModal();
+    return;
+  }
+  if (e.target === slider && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    e.preventDefault();
+    const step = (e.shiftKey ? 5 : .5) * (e.key === 'ArrowLeft' ? -1 : 1);
+    let x = S.player + step;
+    // hop over a no-vending zone instead of snapping back to its edge
+    for (const [a, b] of L.bans) if (x > a && x < b) x = step > 0 ? b : a;
+    setPlayer(x);
+  } else if (e.key === 'Enter') { e.preventDefault(); primaryAction(); }
+  else if (e.key === 'f' || e.key === 'F') toggleFF();
+  else if (e.key === 'l' || e.key === 'L') { S.lens = !S.lens; lensPref = S.lens; syncUI(); }
+});
+window.addEventListener('resize', resize);
+
+// ---------- boot ----------
+resize();
+startLevel(0);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

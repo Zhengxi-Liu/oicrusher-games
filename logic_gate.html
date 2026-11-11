@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-L8GMZRR0GY');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Logic Gate Labyrinth</title>
+<meta name="description" content="Logic Gate Labyrinth: place AND / OR / NOT / XOR gates and wire them so every terminal lights up correctly for every switch combination.">
+<link rel="canonical" href="https://oicrusher.me/game/logic_gate.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* Layout: board left (canvas PCB + gate toolbar), verification panel right; stacks under 920px. Single dark neon look by design. */
+  :root {
+    --bg: #04070b;
+    --panel: #0a111b;
+    --panel2: #0d1724;
+    --line: #18293c;
+    --ink: #d8e6ff;
+    --muted: #7d8ea6;
+    --hi: #22e6ff;
+    --ok: #4dff9a;
+    --bad: #ff3b5c;
+    --warn: #ffb020;
+    --display: 'Chakra Petch', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, 'PingFang SC', monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { background: var(--bg); color: var(--ink); }
+  body { margin: 0; font-family: var(--display); font-size: 15px; line-height: 1.55; }
+  button { font: inherit; color: inherit; }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--hi); outline-offset: 2px; }
+
+  .wrap { max-width: 1200px; margin: 0 auto; padding-inline: 16px; padding-block: 18px 48px; }
+
+  header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; margin-bottom: 14px; }
+  .brand { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .brand .eyebrow { font: 600 11px var(--mono); letter-spacing: .28em; color: var(--muted); text-transform: uppercase; }
+  .brand h1 {
+    margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 700; letter-spacing: .02em; line-height: 1.1;
+    color: #eafcff; text-shadow: 0 0 6px rgba(34,230,255,.55), 0 0 22px rgba(34,230,255,.35);
+    text-wrap: balance;
+  }
+  .brand h1 small { font-size: .42em; color: var(--hi); letter-spacing: .14em; margin-left: .4em; text-shadow: none; white-space: nowrap; }
+  .head-links { display: flex; gap: 10px; align-items: center; font-size: 13px; }
+  .head-links a { color: var(--muted); text-decoration: none; border-bottom: 1px dashed var(--line); }
+  .head-links a:hover { color: var(--hi); }
+  .iconbtn { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 13px; }
+  .iconbtn:hover { border-color: var(--hi); }
+
+  .levels { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .lv {
+    min-width: 40px; height: 34px; padding: 0 10px; border-radius: 5px; cursor: pointer;
+    background: var(--panel); border: 1px solid var(--line); font: 600 13px var(--mono); color: var(--muted);
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .lv.done { color: var(--ok); border-color: rgba(77,255,154,.35); }
+  .lv.cur { color: #001018; background: var(--hi); border-color: var(--hi); box-shadow: 0 0 14px rgba(34,230,255,.5); }
+  .lv:disabled { opacity: .3; cursor: not-allowed; }
+
+  .main { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+  @media (max-width: 920px) { .main { grid-template-columns: minmax(0, 1fr); } }
+
+  .board-col { min-width: 0; }
+  .lvl-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 4px; }
+  .lvl-head h2 { margin: 0; font-size: 22px; font-weight: 700; }
+  .lvl-head .en { font: 600 12px var(--mono); color: var(--hi); letter-spacing: .12em; text-transform: uppercase; }
+  .desc { margin: 0 0 12px; color: var(--muted); max-width: 68ch; }
+  .desc b { color: var(--ink); font-weight: 600; }
+
+  .board-frame { position: relative; width: 100%; }
+  #board {
+    display: block; touch-action: none; user-select: none; -webkit-user-select: none;
+    border: 1px solid var(--line); border-radius: 6px; max-width: 100%;
+    box-shadow: 0 0 0 1px #000, 0 0 50px rgba(34,230,255,.07);
+  }
+  .status { margin-top: 8px; min-height: 22px; font: 13px var(--mono); color: var(--muted); }
+  .status .warn { color: var(--warn); }
+  .status .bad { color: var(--bad); }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .tool {
+    display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 6px; cursor: pointer;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px; font-weight: 600; font-size: 14px;
+  }
+  .tool:hover:not(:disabled) { border-color: rgba(34,230,255,.5); }
+  .tool.active { border-color: var(--hi); box-shadow: 0 0 0 1px var(--hi), 0 0 16px rgba(34,230,255,.35); }
+  .tool.erase.active { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad), 0 0 16px rgba(255,59,92,.35); }
+  .tool:disabled { opacity: .3; cursor: not-allowed; }
+  .tool canvas { width: 34px; height: 34px; display: block; }
+  .tool .count { font: 600 12px var(--mono); color: var(--muted); }
+  .tool .glyph { width: 34px; height: 34px; display: grid; place-items: center; font: 600 18px var(--mono); color: var(--muted); }
+  .sep { width: 1px; align-self: stretch; background: var(--line); margin-inline: 2px; }
+
+  .side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px; min-width: 0; }
+  .card h3 { margin: 0 0 8px; font: 600 11px var(--mono); letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
+  .verdict { font-size: 14px; margin-bottom: 10px; }
+  .verdict .ok { color: var(--ok); }
+  .verdict .no { color: var(--warn); }
+  .tt-scroll { overflow-x: auto; }
+  table.tt { width: 100%; border-collapse: collapse; font: 13px var(--mono); font-variant-numeric: tabular-nums; }
+  .tt th, .tt td { padding: 5px 6px; text-align: center; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .tt th { color: var(--muted); font-weight: 600; font-size: 12px; }
+  .tt th.in { color: var(--hi); }
+  .tt tr.row { cursor: pointer; }
+  .tt tr.row:hover td { background: var(--panel2); }
+  .tt tr.cur td { background: rgba(34,230,255,.08); }
+  .tt td.pass { color: var(--ok); }
+  .tt td.fail { color: var(--bad); }
+  .tt td .exp { color: var(--muted); font-size: 11px; }
+  .tt td.mark { width: 22px; }
+  .legend { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+  .help { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; display: grid; gap: 4px; }
+  .help kbd { font: 600 11px var(--mono); color: var(--ink); background: var(--panel2); border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; }
+  .hint { font-size: 13px; color: var(--muted); margin: 0; }
+  .hint b { color: var(--warn); font-weight: 600; }
+
+  #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
+  .modal { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(2,4,8,.6); backdrop-filter: blur(2px); }
+  .modal-box {
+    width: min(420px, 100%); background: var(--panel); border: 1px solid var(--hi); border-radius: 8px; padding: 24px;
+    box-shadow: 0 0 40px rgba(34,230,255,.3); text-align: center;
+  }
+  .modal-box .eyebrow { font: 600 11px var(--mono); letter-spacing: .3em; color: var(--ok); }
+  .modal-box h2 { margin: 6px 0 4px; font-size: 30px; color: #eafcff; text-shadow: 0 0 12px rgba(77,255,154,.6); }
+  .modal-box p { margin: 0 0 18px; color: var(--muted); }
+  .stats { display: flex; justify-content: center; gap: 24px; margin-bottom: 20px; font-family: var(--mono); }
+  .stats div { display: flex; flex-direction: column; }
+  .stats b { font-size: 24px; color: var(--hi); font-variant-numeric: tabular-nums; }
+  .stats span { font-size: 11px; color: var(--muted); letter-spacing: .1em; }
+  .modal-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn { padding: 9px 18px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel2); cursor: pointer; font-weight: 600; }
+  .btn.primary { background: var(--hi); border-color: var(--hi); color: #001018; }
+  .btn:hover { filter: brightness(1.12); }
+</style>
+  <script src="identity.js?v=2"></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <span class="eyebrow">A digital logic puzzle</span>
+      <h1>Logic Gate Labyrinth<small>v1.1</small></h1>
+    </div>
+    <div class="head-links">
+      <button class="iconbtn" id="soundBtn" type="button" aria-pressed="true">Sound: on</button>
+      <a href="https://oicrusher.me/game/" target="_blank" rel="noopener">← Game portal</a>
+    </div>
+  </header>
+
+  <nav class="levels" id="levels" aria-label="Levels"></nav>
+
+  <div class="main">
+    <section class="board-col">
+      <div class="lvl-head"><h2 id="lvlName"></h2><span class="en" id="lvlEn"></span></div>
+      <p class="desc" id="lvlDesc"></p>
+      <div class="board-frame" id="boardFrame"><canvas id="board" aria-label="Circuit board"></canvas></div>
+      <div class="status" id="status"></div>
+      <div class="toolbar" id="toolbar"></div>
+    </section>
+
+    <aside class="side">
+      <div class="card">
+        <h3>Truth table check</h3>
+        <div class="verdict" id="verdict"></div>
+        <div class="tt-scroll"><table class="tt" id="tt"></table></div>
+        <p class="legend">A level is complete when every terminal outputs its target for <b>every combination</b> of the switches you can flip. Click a row to set the switches to that combination.</p>
+      </div>
+      <div class="card">
+        <h3>Hint</h3>
+        <p class="hint" id="hint"></p>
+      </div>
+      <div class="card">
+        <h3>Controls</h3>
+        <ul class="help">
+          <li>Pick a gate, then click an empty cell to place it. Click a placed gate to rotate it 90°.</li>
+          <li><b>Drag</b> from one pin to another to draw a wire, or click both pins. An output can drive many wires; an input takes only one.</li>
+          <li>Click a switch on the left to flip it between 0 and 1. Locked switches can’t be flipped.</li>
+          <li>Right-click (or use Erase) to delete gates and wires.</li>
+          <li><kbd>1</kbd>–<kbd>4</kbd> pick gate · <kbd>R</kbd> rotate · <kbd>E</kbd> erase · <kbd>Ctrl/⌘ Z</kbd> undo · <kbd>Esc</kbd> cancel</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<canvas id="fx"></canvas>
+<div class="modal" id="modal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="eyebrow">CIRCUIT VERIFIED</div>
+    <h2 id="mTitle">Level complete!</h2>
+    <p id="mText"></p>
+    <div class="stats">
+      <div><b id="mGates">0</b><span>GATES</span></div>
+      <div><b id="mWires">0</b><span>WIRES</span></div>
+      <div><b id="mRows">0</b><span>CASES PASSED</span></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="mStay" type="button">Stay here</button>
+      <button class="btn primary" id="mNext" type="button">Next level →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- Levels ---------- */
+// sources: left column switches. terms: right column terminals with target function f(v) over switch values.
+const LEVELS = [
+  { name: 'First Wire', en: 'Wiring', cols: 9, rows: 5,
+    desc: 'Run a wire from the pin on the right of switch <b>A</b> to terminal <b>X</b>. Whether A is 0 or 1, X must match it.',
+    sources: [{ id: 'A', row: 2 }],
+    terms: [{ id: 'X', row: 2, expr: 'A', f: v => v.A }],
+    inv: {}, blocks: [[3, 1], [5, 3], [4, 0]],
+    hint: 'Press on a pin and drag to another pin to draw a wire. Then flip switch A and watch the signal flow.' },
+  { name: 'Inverter', en: 'NOT gate', cols: 9, rows: 5,
+    desc: 'Terminal <b>X</b> must always be the opposite of <b>A</b>. A NOT gate turns 1 into 0 and 0 into 1.',
+    sources: [{ id: 'A', row: 1 }],
+    terms: [{ id: 'X', row: 3, expr: '¬A', f: v => 1 - v.A }],
+    inv: { NOT: 1 }, blocks: [[4, 2], [2, 4], [6, 0], [5, 4]],
+    hint: 'Inputs are on the left of a gate and the output is on the right (where the triangle points). Click a placed gate to rotate it.' },
+  { name: 'Fixed Signals', en: 'Fan-out', cols: 9, rows: 6,
+    desc: 'Both switches are locked: <b>A = 1</b> and <b>B = 1</b>. Terminal <b>X</b> needs 1, <b>Y</b> needs 0, and <b>Z</b> also needs 0. You only have one XOR.',
+    sources: [{ id: 'A', row: 1, val: 1, locked: true }, { id: 'B', row: 4, val: 1, locked: true }],
+    terms: [{ id: 'X', row: 0, expr: '1', f: () => 1 }, { id: 'Y', row: 3, expr: '0', f: () => 0 }, { id: 'Z', row: 5, expr: '0', f: () => 0 }],
+    inv: { XOR: 1 }, blocks: [[3, 0], [3, 5], [6, 2], [6, 3]],
+    hint: 'One output can drive several wires at once (fan-out). 1 ⊕ 1 = 0.' },
+  { name: 'Two Keys', en: 'AND gate', cols: 9, rows: 5,
+    desc: '<b>X</b> outputs 1 only when both <b>A</b> and <b>B</b> are 1.',
+    sources: [{ id: 'A', row: 1 }, { id: 'B', row: 3 }],
+    terms: [{ id: 'X', row: 2, expr: 'A ∧ B', f: v => v.A & v.B }],
+    inv: { AND: 1, OR: 1 }, blocks: [[3, 2], [5, 1], [5, 3]],
+    hint: 'The toolbar also gives you an OR. It’s a decoy.' },
+  { name: 'Either, Not Both', en: 'Build XOR', cols: 10, rows: 6,
+    desc: '<b>X</b> outputs 1 when exactly one of A and B is 1. There is <b>no XOR gate</b> in this level, so build it from OR, AND and NOT.',
+    sources: [{ id: 'A', row: 1 }, { id: 'B', row: 4 }],
+    terms: [{ id: 'X', row: 2, expr: 'A ⊕ B', f: v => v.A ^ v.B }],
+    inv: { OR: 1, AND: 2, NOT: 1 }, blocks: [[2, 2], [2, 3], [5, 0], [5, 5], [7, 3]],
+    hint: 'Exactly one = at least one AND not both. <b>(A ∨ B) ∧ ¬(A ∧ B)</b>' },
+  { name: 'Half Adder', en: 'Binary addition', cols: 10, rows: 6,
+    desc: 'Add two 1-bit numbers: <b>S</b> is the sum bit and <b>C</b> is the carry. 1 + 1 = 10₂, so S = 0 and C = 1.',
+    sources: [{ id: 'A', row: 1 }, { id: 'B', row: 4 }],
+    terms: [{ id: 'S', row: 1, expr: 'A ⊕ B', f: v => v.A ^ v.B }, { id: 'C', row: 4, expr: 'A ∧ B', f: v => v.A & v.B }],
+    inv: { XOR: 1, AND: 1 }, blocks: [[4, 2], [4, 3], [7, 0], [7, 5]],
+    hint: 'Both A and B need to fan out to two gates.' },
+  { name: 'De Morgan', en: 'No OR allowed', cols: 10, rows: 6,
+    desc: '<b>X = A ∨ B</b>, but there are no OR gates in stock. You get one AND and three NOTs.',
+    sources: [{ id: 'A', row: 1 }, { id: 'B', row: 4 }],
+    terms: [{ id: 'X', row: 3, expr: 'A ∨ B', f: v => v.A | v.B }],
+    inv: { AND: 1, NOT: 3 }, blocks: [[3, 0], [3, 5], [6, 2], [8, 0], [8, 5]],
+    hint: 'De Morgan’s law: <b>A ∨ B = ¬(¬A ∧ ¬B)</b>' },
+  { name: 'Multiplexer', en: 'Selector', cols: 11, rows: 7,
+    desc: 'When select line <b>S</b> is 0, <b>X</b> outputs A; when S is 1, it outputs B. This is one of the most common circuits in a CPU.',
+    sources: [{ id: 'A', row: 1 }, { id: 'S', row: 3 }, { id: 'B', row: 5 }],
+    terms: [{ id: 'X', row: 3, expr: 'S ? B : A', f: v => (v.S ? v.B : v.A) }],
+    inv: { NOT: 1, AND: 2, OR: 1 }, blocks: [[2, 0], [2, 6], [5, 3], [8, 1], [8, 5]],
+    hint: '<b>X = (A ∧ ¬S) ∨ (B ∧ S)</b>' },
+  { name: 'Majority Vote', en: 'Three inputs', cols: 11, rows: 7,
+    desc: 'Three judges <b>A, B, C</b> vote. <b>X</b> lights when at least two vote 1. Gates are tight.',
+    sources: [{ id: 'A', row: 1 }, { id: 'B', row: 3 }, { id: 'C', row: 5 }],
+    terms: [{ id: 'X', row: 3, expr: 'maj(A,B,C)', f: v => (v.A + v.B + v.C >= 2 ? 1 : 0) }],
+    inv: { AND: 2, OR: 2 }, blocks: [[3, 3], [4, 0], [4, 6], [7, 2], [7, 4], [9, 3]],
+    hint: 'Two or more votes = A and B both agree, or C agrees and at least one of A, B does: <b>(A ∧ B) ∨ (C ∧ (A ∨ B))</b>' },
+  { name: 'Full Adder', en: 'Final challenge', cols: 12, rows: 7,
+    desc: 'Add <b>A</b>, <b>B</b> and the carry-in <b>Ci</b>. <b>S</b> is the sum bit and <b>Co</b> is the carry-out to the next bit.',
+    sources: [{ id: 'A', row: 1 }, { id: 'B', row: 3 }, { id: 'Ci', row: 5 }],
+    terms: [{ id: 'S', row: 2, expr: 'A ⊕ B ⊕ Ci', f: v => v.A ^ v.B ^ v.Ci }, { id: 'Co', row: 5, expr: 'maj(A,B,Ci)', f: v => (v.A + v.B + v.Ci >= 2 ? 1 : 0) }],
+    inv: { XOR: 2, AND: 2, OR: 1 }, blocks: [[3, 0], [3, 6], [6, 3], [9, 0], [9, 6]],
+    hint: 'First compute P = A ⊕ B with an XOR. <b>S = P ⊕ Ci</b>, <b>Co = (A ∧ B) ∨ (P ∧ Ci)</b>' },
+];
+
+/* ---------- Constants ---------- */
+const COL = { hi: '#22e6ff', lo: '#2c3a4b', ok: '#4dff9a', bad: '#ff3b5c', warn: '#ffb020', ink: '#d8e6ff', dim: '#5b6b80', body: '#0a1220' };
+const GATE = { AND: { n: 2, color: '#8f6bff' }, OR: { n: 2, color: '#00d1b2' }, XOR: { n: 2, color: '#ffb020' }, NOT: { n: 1, color: '#ff3b5c' } };
+const TYPES = ['AND', 'OR', 'XOR', 'NOT'];
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = s => document.querySelector(s);
+const hexA = (h, a) => `rgba(${parseInt(h.slice(1, 3), 16)},${parseInt(h.slice(3, 5), 16)},${parseInt(h.slice(5, 7), 16)},${a})`;
+
+/* ---------- Storage (per-browser convenience only) ---------- */
+const KEY = 'lgl:v1';
+let saved = {};
+try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { saved = {}; }
+saved.unlocked = saved.unlocked || 0; saved.circuits = saved.circuits || {}; saved.done = saved.done || {};
+if (saved.sound === undefined) saved.sound = true;
+const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {} };
+
+/* ---------- State ---------- */
+const cv = $('#board'), ctx = cv.getContext('2d');
+const fx = $('#fx'), fctx = fx.getContext('2d');
+let L, li = 0, gates = [], wires = [], nextId = 1, src = {};
+let tool = null, prot = 0, erase = false, pending = null, down = null, mouse = null;
+let solved = false, cur = null, rows = [], history = [];
+let S = 60, W = 0, H = 0, dpr = 1, bg = null, T = 0, flash = null;
+
+/* ---------- Audio ---------- */
+let AC = null;
+function ac() {
+  if (!saved.sound) return null;
+  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function blip(freq, dur, type = 'square', vol = 0.06, delay = 0, freq2) {
+  const a = ac(); if (!a) return;
+  const t0 = a.currentTime + delay, o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t0);
+  if (freq2) o.frequency.exponentialRampToValueAtTime(freq2, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g).connect(a.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+}
+function noise(dur, vol) {
+  const a = ac(); if (!a) return;
+  const n = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3);
+  const s = a.createBufferSource(), g = a.createGain(), f = a.createBiquadFilter();
+  f.type = 'lowpass'; f.frequency.value = 1800; g.gain.value = vol;
+  s.buffer = buf; s.connect(f).connect(g).connect(a.destination); s.start();
+}
+const sfx = {
+  click() { blip(2600, 0.022, 'square', 0.05); blip(1300, 0.035, 'square', 0.04, 0.018); },
+  tick() { blip(1700, 0.025, 'sine', 0.05); },
+  place() { blip(520, 0.07, 'triangle', 0.1); blip(780, 0.06, 'triangle', 0.07, 0.05); },
+  rot() { blip(900, 0.035, 'triangle', 0.07); },
+  wire() { blip(600, 0.09, 'sine', 0.08, 0, 1400); },
+  erase() { blip(420, 0.12, 'sawtooth', 0.04, 0, 110); },
+  deny() { blip(150, 0.14, 'square', 0.05); },
+  win() { [523, 659, 784, 1047, 1319].forEach((f, i) => blip(f, 0.22, 'triangle', 0.09, i * 0.09)); },
+  pop() { noise(0.35, 0.18); },
+};
+
+/* ---------- Circuit model ---------- */
+const rotv = (x, y, k) => { for (let i = 0; i < k; i++) [x, y] = [-y, x]; return [x, y]; };
+const gateAt = (c, r) => gates.find(g => g.c === c && g.r === r);
+const isBlocked = (c, r) => L.blocks.some(b => b[0] === c && b[1] === r);
+const remaining = t => (L.inv[t] || 0) - gates.filter(g => g.type === t).length;
+
+function portsOf(node) {
+  const k = node[0];
+  if (k === 'S') { const s = L.sources.find(s => 'S' + s.id === node); return [{ node, port: 'out', kind: 'out', x: 0.92, y: s.row + 0.5, dx: 1, dy: 0 }]; }
+  if (k === 'T') { const t = L.terms.find(t => 'T' + t.id === node); return [{ node, port: 'in', kind: 'in', x: L.cols - 1 + 0.08, y: t.row + 0.5, dx: -1, dy: 0 }]; }
+  const g = gates.find(g => g.id === node); if (!g) return [];
+  const defs = GATE[g.type].n === 2
+    ? [['in0', -0.44, -0.2, 'in'], ['in1', -0.44, 0.2, 'in'], ['out', 0.44, 0, 'out']]
+    : [['in0', -0.44, 0, 'in'], ['out', 0.44, 0, 'out']];
+  return defs.map(([port, x, y, kind]) => {
+    const [rx, ry] = rotv(x, y, g.rot), [dx, dy] = rotv(kind === 'out' ? 1 : -1, 0, g.rot);
+    return { node, port, kind, x: g.c + 0.5 + rx, y: g.r + 0.5 + ry, dx, dy };
+  });
+}
+const allNodes = () => [...L.sources.map(s => 'S' + s.id), ...gates.map(g => g.id), ...L.terms.map(t => 'T' + t.id)];
+const allPorts = () => allNodes().flatMap(portsOf);
+const portOf = ref => portsOf(ref.node).find(p => p.port === ref.port);
+
+function evaluate(v) {
+  const out = {}, inMap = {};
+  L.sources.forEach(s => { out['S' + s.id] = v[s.id]; });
+  gates.forEach(g => { out[g.id] = 0; });
+  wires.forEach(w => { inMap[w.to.node + '.' + w.to.port] = w.from.node; });
+  const rd = (n, p) => { const f = inMap[n + '.' + p]; return f == null ? null : out[f]; };
+  let stable = false;
+  for (let it = 0; it < 80 && !stable; it++) {
+    stable = true;
+    for (const g of gates) {
+      const a = rd(g.id, 'in0') || 0, b = rd(g.id, 'in1') || 0;
+      const r = g.type === 'AND' ? a & b : g.type === 'OR' ? a | b : g.type === 'XOR' ? a ^ b : 1 - a;
+      if (r !== out[g.id]) { out[g.id] = r; stable = false; }
+    }
+  }
+  L.terms.forEach(t => { out['T' + t.id] = rd('T' + t.id, 'in'); });
+  return { out, stable, rd };
+}
+
+function truthTable() {
+  const U = L.sources.filter(s => !s.locked), n = U.length, res = [];
+  for (let m = 0; m < (1 << n); m++) {
+    const v = {};
+    L.sources.forEach(s => { v[s.id] = s.val || 0; });
+    U.forEach((s, i) => { v[s.id] = (m >> (n - 1 - i)) & 1; });
+    const ev = evaluate(v);
+    const t = L.terms.map(t => { const e = t.f(v) ? 1 : 0, a = ev.out['T' + t.id]; return { e, a, ok: ev.stable && a === e }; });
+    res.push({ v, t, ok: t.every(x => x.ok), stable: ev.stable });
+  }
+  return res;
+}
+
+/* ---------- Mutations ---------- */
+function snapshot() {
+  history.push(JSON.stringify({ gates, wires }));
+  if (history.length > 100) history.shift();
+}
+function undo() {
+  const h = history.pop(); if (!h) { sfx.deny(); return; }
+  const d = JSON.parse(h); gates = d.gates; wires = d.wires; pending = null; sfx.rot(); refresh();
+}
+function place(c, r) {
+  if (c < 1 || c > L.cols - 2 || r < 0 || r >= L.rows) return;
+  if (isBlocked(c, r)) { sfx.deny(); say('That cell is burnt out. You can’t place a gate there.', 'bad'); return; }
+  if (remaining(tool) <= 0) { sfx.deny(); return; }
+  snapshot();
+  gates.push({ id: 'G' + nextId++, type: tool, c, r, rot: prot });
+  sfx.place();
+  if (remaining(tool) <= 0) tool = null;
+  refresh();
+}
+function rotateGate(g) { snapshot(); g.rot = (g.rot + 1) % 4; sfx.rot(); refresh(); }
+function removeGate(g) {
+  snapshot();
+  gates = gates.filter(x => x !== g);
+  wires = wires.filter(w => w.from.node !== g.id && w.to.node !== g.id);
+  sfx.erase(); refresh();
+}
+function tryConnect(a, b) {
+  if (a.node === b.node || a.kind === b.kind) return false;
+  const from = a.kind === 'out' ? a : b, to = a.kind === 'out' ? b : a;
+  snapshot();
+  wires = wires.filter(w => !(w.to.node === to.node && w.to.port === to.port));
+  wires.push({ from: { node: from.node, port: 'out' }, to: { node: to.node, port: to.port } });
+  sfx.wire(); refresh();
+  return true;
+}
+function toggleSource(s) {
+  if (s.locked) { sfx.deny(); say(`Switch ${s.id} is locked at ${s.val || 0}.`, 'warn'); return; }
+  src[s.id] ^= 1; sfx.click(); refresh();
+}
+function eraseAt(x, y) {
+  const c = Math.floor(x / S), r = Math.floor(y / S), g = gateAt(c, r);
+  const w = wireAt(x, y);
+  if (w) { snapshot(); wires = wires.filter(z => z !== w); sfx.erase(); refresh(); return; }
+  if (g) removeGate(g);
+}
+
+/* ---------- Geometry / hit testing ---------- */
+function wireCurve(w) {
+  const a = portOf(w.from), b = portOf(w.to); if (!a || !b) return null;
+  const p0 = [a.x * S, a.y * S], p3 = [b.x * S, b.y * S];
+  const k = Math.max(S * 0.55, Math.hypot(p3[0] - p0[0], p3[1] - p0[1]) * 0.4);
+  return [p0, [p0[0] + a.dx * k, p0[1] + a.dy * k], [p3[0] + b.dx * k, p3[1] + b.dy * k], p3];
+}
+function bez(p, t) {
+  const u = 1 - t;
+  return [u * u * u * p[0][0] + 3 * u * u * t * p[1][0] + 3 * u * t * t * p[2][0] + t * t * t * p[3][0],
+          u * u * u * p[0][1] + 3 * u * u * t * p[1][1] + 3 * u * t * t * p[2][1] + t * t * t * p[3][1]];
+}
+function wireAt(x, y) {
+  const tol = Math.max(7, S * 0.09); let best = null, bd = tol;
+  for (const w of wires) {
+    const p = wireCurve(w); if (!p) continue;
+    for (let i = 1; i < 40; i++) { const q = bez(p, i / 40), d = Math.hypot(q[0] - x, q[1] - y); if (d < bd) { bd = d; best = w; } }
+  }
+  return best;
+}
+function portAt(x, y) {
+  let best = null, bd = Math.max(12, S * 0.2);
+  for (const p of allPorts()) { const d = Math.hypot(p.x * S - x, p.y * S - y); if (d < bd) { bd = d; best = p; } }
+  return best;
+}
+const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+
+/* ---------- Input ---------- */
+cv.addEventListener('contextmenu', e => e.preventDefault());
+cv.addEventListener('pointerdown', e => {
+  ac();
+  const [x, y] = pos(e); mouse = { x, y };
+  if (e.button === 2) { eraseAt(x, y); return; }
+  if (erase) { eraseAt(x, y); return; }
+  const p = portAt(x, y);
+  if (p) {
+    if (pending && tryConnect(pending, p)) { pending = null; return; }
+    pending = p; down = { x, y };
+    try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+    sfx.tick(); return;
+  }
+  if (pending) { pending = null; return; }
+  const c = Math.floor(x / S), r = Math.floor(y / S);
+  if (c === 0) { const s = L.sources.find(s => s.row === r); if (s) toggleSource(s); return; }
+  const g = gateAt(c, r);
+  if (g) { rotateGate(g); return; }
+  if (tool) place(c, r);
+});
+cv.addEventListener('pointermove', e => { const [x, y] = pos(e); mouse = { x, y }; });
+cv.addEventListener('pointerleave', () => { if (!down) mouse = null; });
+cv.addEventListener('pointerup', e => {
+  if (!down) return;
+  const [x, y] = pos(e), moved = Math.hypot(x - down.x, y - down.y) > 8;
+  down = null;
+  if (pending && moved) { const p = portAt(x, y); if (p) tryConnect(pending, p); pending = null; }
+});
+window.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,textarea')) return;
+  if (!$('#modal').hidden) { if (e.key === 'Enter') $('#mNext').click(); if (e.key === 'Escape') $('#mStay').click(); return; }
+  const k = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); undo(); return; }
+  if (k >= '1' && k <= '4') { selectTool(TYPES[+k - 1]); return; }
+  if (k === 'r') {
+    const g = mouse && gateAt(Math.floor(mouse.x / S), Math.floor(mouse.y / S));
+    if (g && !tool) rotateGate(g); else { prot = (prot + 1) % 4; sfx.rot(); updateToolbar(); }
+    return;
+  }
+  if (k === 'e') { erase = !erase; tool = null; pending = null; updateToolbar(); return; }
+  if (k === 'escape') { pending = null; tool = null; erase = false; updateToolbar(); }
+});
+function selectTool(t) {
+  if (!L.inv[t] || remaining(t) <= 0) { sfx.deny(); return; }
+  tool = tool === t ? null : t; erase = false; pending = null; sfx.tick(); updateToolbar();
+}
+
+/* ---------- UI ---------- */
+function say(msg, cls) { flash = { msg, cls, until: performance.now() + 2200 }; updateStatus(); }
+function updateStatus() {
+  const el = $('#status');
+  if (flash && performance.now() < flash.until) { el.innerHTML = `<span class="${flash.cls}">${flash.msg}</span>`; return; }
+  flash = null;
+  if (cur && !cur.stable) { el.innerHTML = '<span class="warn">⚠ Oscillating loop: a signal keeps flipping around a feedback loop, so the circuit never settles.</span>'; return; }
+  if (erase) el.textContent = 'Erase mode: click a gate or wire to delete it.';
+  else if (pending) el.textContent = `Wiring: click an ${pending.kind === 'out' ? 'input' : 'output'} pin to finish, or press Esc to cancel.`;
+  else if (tool) el.textContent = `${tool} selected · facing ${['→', '↓', '←', '↑'][prot]} · click an empty cell to place, R to rotate.`;
+  else el.textContent = 'Click a switch to flip it · drag between pins to wire · click a gate to rotate it.';
+}
+function buildLevels() {
+  const nav = $('#levels'); nav.innerHTML = '';
+  LEVELS.forEach((lv, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'lv' + (i === li ? ' cur' : '') + (saved.done[i] ? ' done' : '');
+    b.textContent = (saved.done[i] && i !== li ? '✓' : '') + String(i + 1).padStart(2, '0');
+    b.title = lv.name + (i > saved.unlocked ? ' (locked)' : '');
+    b.disabled = i > saved.unlocked;
+    b.onclick = () => { if (i !== li) loadLevel(i); };
+    nav.appendChild(b);
+  });
+}
+function buildToolbar() {
+  const tb = $('#toolbar'); tb.innerHTML = '';
+  TYPES.forEach((t, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'tool'; b.dataset.type = t; b.title = `${t} (key ${i + 1})`;
+    const c = document.createElement('canvas'); c.width = 68; c.height = 68;
+    const x = c.getContext('2d'); x.scale(68, 68); drawGateBody(x, { type: t, rot: 0 }, 34, [0, 0], 0, false);
+    b.append(c, Object.assign(document.createElement('span'), { textContent: t }), Object.assign(document.createElement('span'), { className: 'count' }));
+    b.onclick = () => { ac(); selectTool(t); };
+    tb.appendChild(b);
+  });
+  tb.appendChild(Object.assign(document.createElement('span'), { className: 'sep' }));
+  const mk = (glyph, label, title, fn, cls = '') => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'tool ' + cls; b.title = title;
+    b.innerHTML = `<span class="glyph">${glyph}</span><span>${label}</span>`; b.onclick = () => { ac(); fn(); }; tb.appendChild(b); return b;
+  };
+  mk('⟳', 'Rotate', 'Rotate the gate you are placing (R)', () => { prot = (prot + 1) % 4; sfx.rot(); updateToolbar(); }, 'rotate');
+  mk('⌫', 'Erase', 'Erase mode (E). Right-click also deletes.', () => { erase = !erase; tool = null; pending = null; sfx.tick(); updateToolbar(); }, 'erase');
+  mk('↶', 'Undo', 'Undo (Ctrl/⌘ Z)', undo);
+  mk('⨯', 'Clear', 'Remove all gates and wires from this level', () => { if (!gates.length && !wires.length) return; snapshot(); gates = []; wires = []; sfx.erase(); refresh(); });
+}
+function updateToolbar() {
+  document.querySelectorAll('#toolbar .tool[data-type]').forEach(b => {
+    const t = b.dataset.type, have = L.inv[t] || 0, left = remaining(t);
+    b.disabled = !have || left <= 0;
+    b.classList.toggle('active', tool === t);
+    b.querySelector('.count').textContent = have ? `×${left}` : '×0';
+  });
+  const rb = document.querySelector('#toolbar .rotate .glyph'); if (rb) rb.textContent = ['→', '↓', '←', '↑'][prot];
+  const eb = document.querySelector('#toolbar .erase'); if (eb) eb.classList.toggle('active', erase);
+  cv.style.cursor = erase ? 'crosshair' : 'default';
+  updateStatus();
+}
+function renderTruth() {
+  const U = L.sources.filter(s => !s.locked), lockedS = L.sources.filter(s => s.locked);
+  let h = '<thead><tr>' + U.map(s => `<th class="in">${s.id}</th>`).join('') + (U.length ? '' : '<th class="in">State</th>');
+  h += L.terms.map(t => `<th>${t.id}<br><span style="font-weight:400">${t.expr}</span></th>`).join('') + '<th></th></tr></thead><tbody>';
+  rows.forEach((r, i) => {
+    const isCur = L.sources.every(s => r.v[s.id] === src[s.id]);
+    h += `<tr class="row${isCur ? ' cur' : ''}" data-i="${i}">`;
+    h += U.length ? U.map(s => `<td>${r.v[s.id]}</td>`).join('') : `<td>${lockedS.map(s => s.id + '=' + (s.val || 0)).join(' ')}</td>`;
+    h += r.t.map(c => `<td class="${c.ok ? 'pass' : 'fail'}">${c.a == null ? '–' : c.a}<span class="exp"> / ${c.e}</span></td>`).join('');
+    h += `<td class="mark ${r.ok ? 'pass' : 'fail'}">${r.ok ? '✓' : '✗'}</td></tr>`;
+  });
+  $('#tt').innerHTML = h + '</tbody>';
+  $('#tt').querySelectorAll('tr.row').forEach(tr => tr.onclick = () => {
+    const r = rows[+tr.dataset.i]; U.forEach(s => { src[s.id] = r.v[s.id]; }); ac(); sfx.click(); refresh();
+  });
+  const pass = rows.filter(r => r.ok).length;
+  $('#verdict').innerHTML = pass === rows.length
+    ? `<span class="ok">● All ${rows.length} ${rows.length === 1 ? 'case' : 'cases'} pass</span>`
+    : `<span class="no">● ${pass} / ${rows.length} cases pass</span> <span style="color:var(--muted);font-size:12px">(output / target)</span>`;
+}
+function refresh(initial) {
+  cur = evaluate(src);
+  rows = truthTable();
+  renderTruth(); updateToolbar();
+  saved.circuits[li] = { gates, wires }; persist();
+  const ok = rows.every(r => r.ok);
+  if (ok && !solved) { solved = true; if (!initial) win(); }
+  if (!ok) solved = false;
+}
+function loadLevel(i) {
+  li = i; L = LEVELS[i];
+  const c = saved.circuits[i];
+  gates = c ? c.gates.map(g => ({ ...g })) : [];
+  wires = c ? c.wires.map(w => ({ from: { ...w.from }, to: { ...w.to } })) : [];
+  nextId = gates.reduce((m, g) => Math.max(m, +g.id.slice(1) + 1), 1);
+  src = {}; L.sources.forEach(s => { src[s.id] = s.val || 0; });
+  tool = null; erase = false; pending = null; prot = 0; history = []; solved = false; flash = null;
+  $('#lvlName').textContent = `${String(i + 1).padStart(2, '0')} · ${L.name}`;
+  $('#lvlEn').textContent = L.en;
+  $('#lvlDesc').innerHTML = L.desc;
+  $('#hint').innerHTML = L.hint;
+  saved.last = i; persist();
+  buildLevels(); resize(); refresh(true);
+}
+
+/* ---------- Win ---------- */
+function win() {
+  saved.done[li] = true; saved.unlocked = Math.max(saved.unlocked, Math.min(li + 1, LEVELS.length - 1)); persist();
+  buildLevels(); sfx.win(); fireworks();
+  setTimeout(() => {
+    const last = li === LEVELS.length - 1;
+    $('#mTitle').textContent = last ? 'All levels complete!' : 'Level complete!';
+    $('#mText').textContent = last ? 'You went from a single wire to a full adder, the basic building block of a CPU’s ALU.' : `Every terminal in “${L.name}” lights up correctly.`;
+    $('#mGates').textContent = gates.length; $('#mWires').textContent = wires.length; $('#mRows').textContent = rows.length;
+    $('#mNext').hidden = last;
+    $('#modal').hidden = false; (last ? $('#mStay') : $('#mNext')).focus();
+  }, reduceMotion ? 300 : 1100);
+}
+$('#mStay').onclick = () => { $('#modal').hidden = true; };
+$('#mNext').onclick = () => { $('#modal').hidden = true; if (li < LEVELS.length - 1) loadLevel(li + 1); };
+$('#soundBtn').onclick = () => {
+  saved.sound = !saved.sound; persist();
+  $('#soundBtn').textContent = 'Sound: ' + (saved.sound ? 'on' : 'off'); $('#soundBtn').setAttribute('aria-pressed', saved.sound);
+  if (saved.sound) sfx.click();
+};
+$('#soundBtn').textContent = 'Sound: ' + (saved.sound ? 'on' : 'off');
+
+/* ---------- Rendering ---------- */
+function resize() {
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const avail = $('#boardFrame').clientWidth;
+  S = Math.max(28, Math.min(84, Math.floor(avail / L.cols)));
+  W = S * L.cols; H = S * L.rows;
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  buildBg();
+  fx.width = Math.round(innerWidth * dpr); fx.height = Math.round(innerHeight * dpr);
+}
+function rng(seed) { return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }; }
+function buildBg() {
+  bg = document.createElement('canvas'); bg.width = cv.width; bg.height = cv.height;
+  const b = bg.getContext('2d'); b.scale(dpr, dpr);
+  b.fillStyle = '#050b0f'; b.fillRect(0, 0, W, H);
+  // input / output bus strips
+  b.fillStyle = 'rgba(34,230,255,0.045)'; b.fillRect(0, 0, S, H);
+  b.fillStyle = 'rgba(77,255,154,0.045)'; b.fillRect(W - S, 0, S, H);
+  // decorative copper traces
+  const R = rng(li * 97 + 13);
+  b.lineCap = 'round'; b.lineJoin = 'round';
+  for (let i = 0; i < L.cols * 2; i++) {
+    let x = (1 + Math.floor(R() * (L.cols - 2))) * S, y = Math.floor(R() * (L.rows + 1)) * S;
+    b.beginPath(); b.moveTo(x, y);
+    for (let j = 0; j < 3; j++) {
+      const dir = Math.floor(R() * 4), len = S * (0.5 + Math.floor(R() * 3) * 0.5);
+      if (dir === 0) x += len; else if (dir === 1) y += len; else if (dir === 2) { x += len * 0.7; y += len * 0.7; } else { x += len * 0.7; y -= len * 0.7; }
+      b.lineTo(x, y);
+    }
+    b.strokeStyle = 'rgba(0,190,160,0.07)'; b.lineWidth = Math.max(2, S * 0.05); b.stroke();
+    b.beginPath(); b.arc(x, y, S * 0.06, 0, Math.PI * 2); b.strokeStyle = 'rgba(0,190,160,0.12)'; b.lineWidth = 1.5; b.stroke();
+  }
+  // grid
+  b.strokeStyle = 'rgba(70,150,175,0.11)'; b.lineWidth = 1;
+  for (let c = 1; c < L.cols; c++) { b.beginPath(); b.moveTo(c * S + 0.5, 0); b.lineTo(c * S + 0.5, H); b.stroke(); }
+  for (let r = 1; r < L.rows; r++) { b.beginPath(); b.moveTo(0, r * S + 0.5); b.lineTo(W, r * S + 0.5); b.stroke(); }
+  b.fillStyle = 'rgba(120,200,220,0.22)';
+  for (let c = 1; c < L.cols; c++) for (let r = 1; r < L.rows; r++) { b.beginPath(); b.arc(c * S, r * S, 1.4, 0, Math.PI * 2); b.fill(); }
+  // bus dividers
+  b.setLineDash([4, 6]); b.lineWidth = 1.5;
+  b.strokeStyle = 'rgba(34,230,255,0.35)'; b.beginPath(); b.moveTo(S, 0); b.lineTo(S, H); b.stroke();
+  b.strokeStyle = 'rgba(77,255,154,0.35)'; b.beginPath(); b.moveTo(W - S, 0); b.lineTo(W - S, H); b.stroke();
+  b.setLineDash([]);
+  // burnt cells
+  for (const [c, r] of L.blocks) {
+    const x = c * S, y = r * S, p = S * 0.1;
+    b.fillStyle = '#16080c'; b.fillRect(x + p, y + p, S - 2 * p, S - 2 * p);
+    b.save(); b.beginPath(); b.rect(x + p, y + p, S - 2 * p, S - 2 * p); b.clip();
+    b.strokeStyle = 'rgba(255,59,92,0.22)'; b.lineWidth = 1.5;
+    for (let k = -S; k < S; k += S * 0.16) { b.beginPath(); b.moveTo(x + k, y + S); b.lineTo(x + k + S, y); b.stroke(); }
+    b.restore();
+    b.strokeStyle = 'rgba(255,59,92,0.5)'; b.lineWidth = 1; b.strokeRect(x + p + 0.5, y + p + 0.5, S - 2 * p - 1, S - 2 * p - 1);
+  }
+  b.font = `600 ${Math.max(8, S * 0.13)}px 'IBM Plex Mono', monospace`; b.textBaseline = 'bottom';
+  b.fillStyle = 'rgba(34,230,255,0.45)'; b.fillText('IN', S * 0.08, H - S * 0.06);
+  b.fillStyle = 'rgba(77,255,154,0.45)'; b.textAlign = 'right'; b.fillText('OUT', W - S * 0.08, H - S * 0.06);
+}
+
+function gatePath(c, type) {
+  c.beginPath();
+  if (type === 'AND') { c.moveTo(-0.3, -0.28); c.lineTo(0.02, -0.28); c.arc(0.02, 0, 0.28, -Math.PI / 2, Math.PI / 2); c.lineTo(-0.3, 0.28); c.closePath(); }
+  else if (type === 'OR' || type === 'XOR') { c.moveTo(-0.3, -0.28); c.quadraticCurveTo(0.12, -0.28, 0.32, 0); c.quadraticCurveTo(0.12, 0.28, -0.3, 0.28); c.quadraticCurveTo(-0.16, 0, -0.3, -0.28); c.closePath(); }
+  else { c.moveTo(-0.26, -0.27); c.lineTo(0.2, 0); c.lineTo(-0.26, 0.27); c.closePath(); }
+}
+// Draws a gate in unit space centered at (0.5, 0.5) of the current transform's cell. px = size of one unit in device pixels.
+function drawGateBody(c, g, px, ins, outV, live) {
+  const col = GATE[g.type].color, lw = 2 / px, ys = GATE[g.type].n === 2 ? [-0.2, 0.2] : [0];
+  c.save(); c.translate(0.5, 0.5); c.rotate(g.rot * Math.PI / 2);
+  c.lineCap = 'round';
+  if (g.type === 'NOT' && live) {
+    const pulse = reduceMotion ? 0.5 : 0.5 + 0.5 * Math.sin(T * 3);
+    const rg = c.createRadialGradient(0, 0, 0.05, 0, 0, 0.5);
+    rg.addColorStop(0, hexA(COL.bad, 0.22 + 0.18 * pulse)); rg.addColorStop(1, hexA(COL.bad, 0));
+    c.fillStyle = rg; c.fillRect(-0.5, -0.5, 1, 1);
+  }
+  ys.forEach((y, i) => { c.beginPath(); c.moveTo(-0.44, y); c.lineTo(-0.2, y); c.strokeStyle = ins[i] ? COL.hi : COL.lo; c.lineWidth = lw * 1.6; c.stroke(); });
+  c.beginPath(); c.moveTo(0.2, 0); c.lineTo(0.44, 0); c.strokeStyle = outV ? COL.hi : COL.lo; c.lineWidth = lw * 1.6; c.stroke();
+  gatePath(c, g.type);
+  c.fillStyle = COL.body; c.fill();
+  c.fillStyle = hexA(col, live ? 0.16 : 0.22); c.fill();
+  if (live) { c.shadowColor = col; c.shadowBlur = g.type === 'NOT' ? 16 : 8; }
+  c.strokeStyle = col; c.lineWidth = lw * 1.5; c.stroke();
+  if (g.type === 'XOR') { c.beginPath(); c.moveTo(-0.38, -0.28); c.quadraticCurveTo(-0.24, 0, -0.38, 0.28); c.stroke(); }
+  if (g.type === 'NOT') { c.beginPath(); c.arc(0.26, 0, 0.06, 0, Math.PI * 2); c.fillStyle = COL.body; c.fill(); c.stroke(); }
+  c.restore();
+}
+function drawGate(g, ghost) {
+  const ev = ghost ? null : cur;
+  const ins = ghost ? [0, 0] : [ev.rd(g.id, 'in0'), ev.rd(g.id, 'in1')], outV = ghost ? 0 : ev.out[g.id];
+  ctx.save();
+  if (ghost) ctx.globalAlpha = 0.45;
+  // chip plate
+  const x = g.c * S, y = g.r * S, p = S * 0.05;
+  ctx.fillStyle = 'rgba(255,255,255,0.025)'; ctx.strokeStyle = hexA(GATE[g.type].color, 0.25); ctx.lineWidth = 1;
+  roundRect(ctx, x + p, y + p, S - 2 * p, S - 2 * p, S * 0.08); ctx.fill(); ctx.stroke();
+  ctx.translate(x, y); ctx.scale(S, S);
+  drawGateBody(ctx, g, S, ins, outV, true);
+  ctx.restore();
+  ctx.save(); if (ghost) ctx.globalAlpha = 0.45;
+  ctx.font = `600 ${Math.max(8, S * 0.13)}px 'IBM Plex Mono', monospace`; ctx.textBaseline = 'top'; ctx.fillStyle = hexA(GATE[g.type].color, 0.9);
+  ctx.fillText(g.type, x + S * 0.09, y + S * 0.07);
+  ctx.restore();
+}
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+}
+function drawSource(s) {
+  const y = s.row * S, cy = y + S * 0.5, v = src[s.id];
+  ctx.save();
+  ctx.font = `700 ${S * 0.24}px 'Chakra Petch', sans-serif`; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  ctx.fillStyle = v ? COL.hi : COL.ink; ctx.fillText(s.id, S * 0.16, cy);
+  // lead
+  ctx.beginPath(); ctx.moveTo(S * 0.74, cy); ctx.lineTo(S * 0.92, cy); ctx.strokeStyle = v ? COL.hi : COL.lo; ctx.lineWidth = Math.max(2, S * 0.05); ctx.stroke();
+  // toggle pill
+  const x0 = S * 0.3, w = S * 0.44, h = S * 0.28;
+  roundRect(ctx, x0, cy - h / 2, w, h, h / 2);
+  ctx.fillStyle = v ? 'rgba(34,230,255,0.22)' : '#0b1320'; ctx.fill();
+  if (v) { ctx.shadowColor = COL.hi; ctx.shadowBlur = 14; }
+  ctx.strokeStyle = v ? COL.hi : (s.locked ? '#3a2a1a' : COL.dim); ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.beginPath(); ctx.arc(v ? x0 + w - h / 2 : x0 + h / 2, cy, h * 0.36, 0, Math.PI * 2);
+  ctx.fillStyle = v ? '#e8fdff' : '#5b6b80'; ctx.fill();
+  ctx.font = `600 ${Math.max(8, S * 0.12)}px 'IBM Plex Mono', monospace`;
+  ctx.fillStyle = s.locked ? COL.warn : COL.dim; ctx.textAlign = 'center';
+  ctx.fillText(s.locked ? 'LOCKED' : (v ? '1' : '0'), x0 + w / 2, cy + S * 0.28);
+  ctx.restore();
+}
+function drawTerm(t) {
+  const x = (L.cols - 1) * S, y = t.row * S, cx = x + S * 0.56, cy = y + S * 0.5;
+  const a = cur.out['T' + t.id], e = t.f(src) ? 1 : 0, ok = cur.stable && a === e, r = S * 0.19;
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(x + S * 0.08, cy); ctx.lineTo(cx - r, cy); ctx.strokeStyle = a ? COL.hi : COL.lo; ctx.lineWidth = Math.max(2, S * 0.05); ctx.stroke();
+  if (ok) {
+    const pulse = reduceMotion ? 1 : 0.85 + 0.15 * Math.sin(T * 4 + t.row);
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 2.4);
+    g.addColorStop(0, hexA(COL.ok, 0.5 * pulse)); g.addColorStop(1, hexA(COL.ok, 0));
+    ctx.fillStyle = g; ctx.fillRect(cx - r * 2.4, cy - r * 2.4, r * 4.8, r * 4.8);
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    const g2 = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, 0, cx, cy, r);
+    g2.addColorStop(0, '#eafff3'); g2.addColorStop(0.5, COL.ok); g2.addColorStop(1, '#0f8f52');
+    ctx.fillStyle = g2; ctx.shadowColor = COL.ok; ctx.shadowBlur = 22; ctx.fill();
+  } else {
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#100a10'; ctx.fill();
+    ctx.strokeStyle = a == null ? COL.dim : COL.bad; ctx.lineWidth = 1.6; ctx.stroke();
+  }
+  ctx.shadowBlur = 0;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `700 ${S * 0.17}px 'IBM Plex Mono', monospace`;
+  ctx.fillStyle = ok ? '#043018' : (a == null ? COL.dim : COL.bad);
+  ctx.fillText(a == null ? '–' : a, cx, cy + 1);
+  ctx.font = `700 ${Math.max(9, S * 0.15)}px 'Chakra Petch', sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillStyle = ok ? COL.ok : COL.ink; ctx.fillText(t.id, x + S * 0.08, y + S * 0.05);
+  ctx.font = `600 ${Math.max(8, S * 0.12)}px 'IBM Plex Mono', monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillStyle = COL.dim; ctx.fillText('need ' + e, cx, y + S * 0.97);
+  ctx.restore();
+}
+function strokeCurve(p) { ctx.beginPath(); ctx.moveTo(p[0][0], p[0][1]); ctx.bezierCurveTo(p[1][0], p[1][1], p[2][0], p[2][1], p[3][0], p[3][1]); }
+function drawWires() {
+  const hoverW = erase && mouse ? wireAt(mouse.x, mouse.y) : null;
+  ctx.save(); ctx.lineCap = 'round';
+  for (const w of wires) {
+    const p = wireCurve(w); if (!p) continue;
+    const v = cur.out[w.from.node];
+    if (w === hoverW) { strokeCurve(p); ctx.strokeStyle = COL.bad; ctx.lineWidth = Math.max(4, S * 0.08); ctx.stroke(); continue; }
+    if (v) {
+      strokeCurve(p); ctx.strokeStyle = hexA(COL.hi, 0.16); ctx.lineWidth = S * 0.16; ctx.stroke();
+      ctx.shadowColor = COL.hi; ctx.shadowBlur = 12; ctx.strokeStyle = COL.hi; ctx.lineWidth = Math.max(2.5, S * 0.055); ctx.stroke(); ctx.shadowBlur = 0;
+      if (!reduceMotion) {
+        ctx.setLineDash([S * 0.05, S * 0.32]); ctx.lineDashOffset = -T * S * 1.4;
+        ctx.strokeStyle = '#eafeff'; ctx.lineWidth = Math.max(1.6, S * 0.035); ctx.stroke(); ctx.setLineDash([]);
+      }
+    } else {
+      strokeCurve(p); ctx.strokeStyle = COL.lo; ctx.lineWidth = Math.max(2, S * 0.045); ctx.stroke();
+    }
+  }
+  if (pending && mouse) {
+    const a = pending, p0 = [a.x * S, a.y * S], m = [mouse.x, mouse.y];
+    const k = Math.max(S * 0.4, Math.hypot(m[0] - p0[0], m[1] - p0[1]) * 0.35);
+    strokeCurve([p0, [p0[0] + a.dx * k, p0[1] + a.dy * k], m, m]);
+    ctx.setLineDash([6, 6]); ctx.lineDashOffset = -T * 30; ctx.strokeStyle = COL.warn; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+  }
+  ctx.restore();
+}
+function drawPorts() {
+  const hp = mouse && !erase ? portAt(mouse.x, mouse.y) : null;
+  const connected = new Set(wires.map(w => w.to.node + '.' + w.to.port));
+  for (const p of allPorts()) {
+    const x = p.x * S, y = p.y * S, r = Math.max(3.5, S * 0.065);
+    let v, filled = true;
+    if (p.kind === 'out') v = cur.out[p.node];
+    else { filled = connected.has(p.node + '.' + p.port); v = filled ? cur.rd(p.node, p.port) : 0; }
+    const compatible = pending && pending.node !== p.node && pending.kind !== p.kind;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = filled ? (v ? COL.hi : '#3e4c5e') : '#050b0f'; ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = v ? COL.hi : '#6a7a90'; ctx.stroke();
+    if (compatible) { ctx.beginPath(); ctx.arc(x, y, r + 3 + (reduceMotion ? 0 : Math.sin(T * 6)), 0, Math.PI * 2); ctx.strokeStyle = hexA(COL.warn, 0.6); ctx.stroke(); }
+    if ((hp && hp.node === p.node && hp.port === p.port) || (pending && pending.node === p.node && pending.port === p.port)) {
+      ctx.beginPath(); ctx.arc(x, y, r + 4, 0, Math.PI * 2); ctx.strokeStyle = pending && pending.node === p.node && pending.port === p.port ? COL.warn : '#ffffff'; ctx.lineWidth = 2; ctx.stroke();
+    }
+  }
+}
+function drawGhost() {
+  if (!tool || !mouse || pending) return;
+  const c = Math.floor(mouse.x / S), r = Math.floor(mouse.y / S);
+  if (c < 1 || c > L.cols - 2 || r < 0 || r >= L.rows || gateAt(c, r)) return;
+  if (isBlocked(c, r)) {
+    ctx.save(); ctx.strokeStyle = COL.bad; ctx.lineWidth = 2; ctx.strokeRect(c * S + 3, r * S + 3, S - 6, S - 6); ctx.restore(); return;
+  }
+  drawGate({ type: tool, c, r, rot: prot }, true);
+}
+function frame(ts) {
+  T = ts / 1000;
+  if (L && bg) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(bg, 0, 0, W, H);
+    if (mouse && !pending && !tool && !erase) {
+      const c = Math.floor(mouse.x / S), r = Math.floor(mouse.y / S);
+      if (gateAt(c, r) || (c === 0 && L.sources.some(s => s.row === r))) { ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.fillRect(c * S, r * S, S, S); }
+    }
+    drawWires();
+    gates.forEach(g => drawGate(g, false));
+    drawGhost();
+    L.sources.forEach(drawSource);
+    L.terms.forEach(drawTerm);
+    drawPorts();
+    if (flash && performance.now() >= flash.until) updateStatus();
+  }
+  stepFx(ts);
+  requestAnimationFrame(frame);
+}
+
+/* ---------- Fireworks ---------- */
+const rockets = [], sparks = [];
+const PAL = ['#22e6ff', '#4dff9a', '#ff3bd4', '#ffb020', '#8f6bff', '#ffffff'];
+let lastFx = 0, fxDirty = false;
+function fireworks() {
+  const rect = cv.getBoundingClientRect();
+  // a burst over each terminal first
+  L.terms.forEach((t, i) => setTimeout(() => burst(rect.left + (L.cols - 0.44) * S, rect.top + (t.row + 0.5) * S, 36, COL.ok), i * 90));
+  const n = reduceMotion ? 1 : 7;
+  for (let i = 0; i < n; i++) setTimeout(launch, 200 + i * 240);
+}
+function launch() {
+  const x = innerWidth * (0.15 + 0.7 * Math.random()), ty = innerHeight * (0.12 + 0.3 * Math.random());
+  rockets.push({ x, y: innerHeight + 10, vx: (Math.random() - 0.5) * 60, vy: -Math.sqrt(2 * 900 * (innerHeight - ty)), c: PAL[Math.floor(Math.random() * PAL.length)] });
+}
+function burst(x, y, n, color) {
+  sfx.pop();
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, sp = 90 + Math.random() * 260;
+    sparks.push({ x, y, px: x, py: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.1 + Math.random() * 0.8, age: 0, c: color || PAL[Math.floor(Math.random() * PAL.length)] });
+  }
+}
+function stepFx(ts) {
+  const dt = Math.min(0.05, (ts - (lastFx || ts)) / 1000); lastFx = ts;
+  if (!rockets.length && !sparks.length) { if (fxDirty) { fctx.setTransform(1, 0, 0, 1, 0, 0); fctx.clearRect(0, 0, fx.width, fx.height); fxDirty = false; } return; }
+  fxDirty = true;
+  if (fx.width !== Math.round(innerWidth * dpr)) { fx.width = Math.round(innerWidth * dpr); fx.height = Math.round(innerHeight * dpr); }
+  fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  fctx.clearRect(0, 0, innerWidth, innerHeight);
+  fctx.globalCompositeOperation = 'lighter'; fctx.lineCap = 'round';
+  for (let i = rockets.length - 1; i >= 0; i--) {
+    const r = rockets[i], px = r.x, py = r.y;
+    r.vy += 900 * dt; r.x += r.vx * dt; r.y += r.vy * dt;
+    fctx.beginPath(); fctx.moveTo(px, py + 10); fctx.lineTo(r.x, r.y); fctx.strokeStyle = r.c; fctx.lineWidth = 2.5; fctx.stroke();
+    if (r.vy >= 0) { rockets.splice(i, 1); burst(r.x, r.y, 70, null); }
+  }
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
+    s.age += dt; if (s.age >= s.life) { sparks.splice(i, 1); continue; }
+    s.px = s.x; s.py = s.y;
+    s.vx *= Math.pow(0.35, dt); s.vy = s.vy * Math.pow(0.35, dt) + 240 * dt;
+    s.x += s.vx * dt; s.y += s.vy * dt;
+    const k = 1 - s.age / s.life;
+    fctx.globalAlpha = k; fctx.strokeStyle = s.c; fctx.lineWidth = 2.2 * k + 0.6;
+    fctx.beginPath(); fctx.moveTo(s.px - s.vx * 0.03, s.py - s.vy * 0.03); fctx.lineTo(s.x, s.y); fctx.stroke();
+  }
+  fctx.globalAlpha = 1; fctx.globalCompositeOperation = 'source-over';
+}
+
+/* ---------- Boot ---------- */
+let rzT = 0;
+window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(resize, 80); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (L) buildBg(); });
+buildToolbar();
+loadLevel(Math.min(saved.last || 0, saved.unlocked));
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

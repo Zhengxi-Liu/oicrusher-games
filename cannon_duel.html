@@ -1,0 +1,3257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cannon Duel - 2 Player Artillery Game | Free Online</title>
+  <meta name="description" content="Cannon Duel: a local 2-player artillery game. Two oscillating cannons fire across the hills. Player 1 uses W, Player 2 uses Arrow Up. Three direct hits to win!">
+  <meta name="keywords" content="cannon duel, 2 player game, artillery game, local multiplayer, browser game, free game">
+  <link rel="canonical" href="https://oicrusher.me/game/cannon_duel.html">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1d2b52 0%, #3b2a63 60%, #5a2d5c 100%);
+      min-height: 100vh;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px;
+    }
+
+    header { text-align: center; margin-bottom: 14px; }
+
+    header h1 {
+      font-size: 2.2em;
+      letter-spacing: 1px;
+      text-shadow: 2px 3px 6px rgba(0,0,0,.4);
+    }
+
+    header p { opacity: .85; margin-top: 6px; }
+
+    .stage {
+      position: relative;
+      width: 100%;
+      max-width: 1180px;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(8, 12, 28, .72);
+      backdrop-filter: blur(6px);
+      border-radius: 16px;
+      z-index: 5;
+    }
+
+    .overlay.hidden { display: none; }
+
+    .panel {
+      text-align: center;
+      padding: 8px 10px;
+      width: min(92%, 460px);
+      max-height: 94%;
+      overflow-y: auto;
+    }
+
+    .panel.hidden { display: none; }
+
+    .panel h2 {
+      font-size: clamp(1.1em, 3.4vw, 1.7em);
+      margin-bottom: 6px;
+    }
+
+    .panel .sub {
+      opacity: .75;
+      font-size: .9em;
+      margin-bottom: 18px;
+    }
+
+    .panel button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 14px 18px;
+      font-size: 1em;
+      font-weight: 700;
+      font-family: inherit;
+      color: #0e1630;
+      background: linear-gradient(135deg, #8fe0ff, #6fb0ff);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+    .panel button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, .4);
+    }
+
+    .panel button small {
+      display: block;
+      font-weight: 500;
+      opacity: .7;
+      font-size: .8em;
+      margin-top: 3px;
+    }
+
+    .panel button.warm { background: linear-gradient(135deg, #ffc48f, #ff8f6f); }
+    .panel button.mid { background: linear-gradient(135deg, #ffe08f, #ffb347); }
+    .panel button.hot { background: linear-gradient(135deg, #ff9f9f, #ff5f6f); }
+
+    .panel button.ghost {
+      background: transparent;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, .35);
+      font-weight: 600;
+    }
+
+    .panel button:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .panel button[hidden] { display: none; }
+
+    .panel .note {
+      margin: -2px 0 12px;
+      font-size: .82em;
+      opacity: .8;
+    }
+
+    .name-row { display: flex; gap: 8px; margin-bottom: 14px; }
+
+    .name-row input {
+      flex: 1;
+      min-width: 0;
+      padding: 12px 14px;
+      font-family: inherit;
+      font-size: 1em;
+      color: #fff;
+      background: rgba(255, 255, 255, .1);
+      border: 1px solid rgba(255, 255, 255, .3);
+      border-radius: 10px;
+    }
+
+    .name-row input::placeholder { color: rgba(255, 255, 255, .45); }
+    .name-row input:focus { outline: 2px solid #8fe0ff; }
+
+    .name-row button { width: auto; margin: 0; padding: 12px 18px; }
+
+    .player-list {
+      margin-bottom: 12px;
+      text-align: left;
+    }
+
+    .player-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      margin-bottom: 7px;
+      background: rgba(255, 255, 255, .08);
+      border: 1px solid rgba(255, 255, 255, .14);
+      border-radius: 10px;
+    }
+
+    .player-row .who {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .player-row .tag { font-size: .75em; opacity: .6; }
+
+    .player-row button {
+      width: auto;
+      margin: 0;
+      padding: 7px 14px;
+      font-size: .85em;
+      border-radius: 8px;
+    }
+
+    .empty { opacity: .55; font-size: .9em; padding: 18px 0; }
+
+    .panel .section {
+      text-align: left;
+      font-size: .78em;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      opacity: .55;
+      margin: 4px 0 8px;
+    }
+
+    .history-list {
+      margin-bottom: 12px;
+      text-align: left;
+    }
+
+    .history-row {
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      background: rgba(255, 255, 255, .06);
+      border-left: 3px solid rgba(255, 255, 255, .2);
+      border-radius: 8px;
+    }
+
+    .history-row .top {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      font-size: .92em;
+    }
+
+    .history-row .who {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 38%;
+    }
+
+    .history-row .win { font-weight: 700; color: #9ef0b4; }
+    .history-row .beat { opacity: .5; font-size: .85em; }
+    .history-row .lose { opacity: .75; }
+    .history-row .score { margin-left: auto; font-weight: 700; white-space: nowrap; }
+    .history-row .meta { opacity: .5; font-size: .76em; margin-top: 3px; }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 16px;
+      border: 2px solid rgba(255,255,255,.18);
+      box-shadow: 0 18px 45px rgba(0,0,0,.45);
+      background: #0e1630;
+      touch-action: manipulation;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .hint {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 12px;
+      padding: 10px 18px;
+      font-size: .95em;
+    }
+
+    kbd {
+      background: rgba(255,255,255,.9);
+      color: #222;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-weight: 700;
+      font-family: inherit;
+    }
+
+    .p1 { color: #6fd3ff; }
+    .p2 { color: #ff7a7a; }
+
+    .sound-toggle {
+      color: #fff;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .sound-toggle:hover { background: rgba(255, 255, 255, .16); }
+
+    .touch-row { display: none; gap: 14px; margin-top: 14px; width: 100%; max-width: 1180px; }
+
+    .touch-row button {
+      flex: 1;
+      padding: 22px 0;
+      font-size: 1.1em;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      color: #10203a;
+      cursor: pointer;
+    }
+
+    .touch-row button.left { background: #6fd3ff; }
+    .touch-row button.right { background: #ff7a7a; }
+
+    .back {
+      margin-top: 18px;
+      color: #fff;
+      opacity: .8;
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(255,255,255,.5);
+    }
+
+    .back:hover { opacity: 1; }
+
+    @media (max-width: 760px) {
+      header h1 { font-size: 1.5em; }
+      .touch-row { display: flex; }
+    }
+  </style>
+  <script src="identity.js?v=2"></script>
+</head>
+<body>
+  <header>
+    <h1>💥 Cannon Duel</h1>
+    <p>Two oscillating cannons. Hold to charge, release to fire. Steep plunging shots hurt far more than flat ones — and two shells meeting in mid-air go off like a bomb.</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="game" width="1500" height="780"></canvas>
+
+    <div class="overlay" id="overlay">
+      <div class="panel" id="panelMain">
+        <h2>Choose a mode</h2>
+        <p class="sub">Hold your key to build power, release to fire. Land close and the blast still hurts.</p>
+        <button data-act="bot">🤖 Play vs Bot<small>You take the right gun</small></button>
+        <button class="warm" data-act="duel">⚔️ Duel — Blue vs Red<small>W vs ↑ on one keyboard</small></button>
+        <button class="mid" data-act="online">🌐 Online Duel<small>Challenge someone over the internet</small></button>
+      </div>
+
+      <div class="panel hidden" id="panelLobby">
+        <h2>Online Duel</h2>
+        <p class="sub" id="lobbyStatus">Connecting…</p>
+        <div class="name-row">
+          <input id="nameInput" maxlength="16" placeholder="Your name" autocomplete="off" spellcheck="false">
+          <button data-act="rename">Save</button>
+        </div>
+        <div class="player-list" id="playerList"></div>
+        <h3 class="section">Recent battles</h3>
+        <div class="history-list" id="historyList"></div>
+        <button class="ghost" data-act="lobby-back">← Back</button>
+      </div>
+
+      <div class="panel hidden" id="panelInvite">
+        <h2>⚔️ Challenge!</h2>
+        <p class="sub" id="inviteText"></p>
+        <button data-act="accept">Accept</button>
+        <button class="ghost" data-act="decline">Decline</button>
+      </div>
+
+      <div class="panel hidden" id="panelWait">
+        <h2 id="waitTitle">Waiting…</h2>
+        <p class="sub" id="waitText"></p>
+        <button class="ghost" data-act="wait-cancel">Cancel</button>
+      </div>
+
+      <div class="panel hidden" id="panelDiff">
+        <h2>Bot difficulty</h2>
+        <p class="sub">How steady is the enemy gunner?</p>
+        <button data-act="easy">Easy<small>Lands about 1 shot in 7</small></button>
+        <button class="mid" data-act="medium">Medium<small>Lands about 1 shot in 4</small></button>
+        <button class="hot" data-act="hard">Hard<small>Lands about half its shots</small></button>
+        <button class="ghost" data-act="back">← Back</button>
+      </div>
+
+      <div class="panel hidden" id="panelMap">
+        <h2>Choose the battlefield</h2>
+        <p class="sub">Every match regenerates the terrain within the chosen style.</p>
+        <button data-act="map-hill">⛰️ Ridgeline<small>One big hill between two gun pits</small></button>
+        <button class="mid" data-act="map-lake">🌊 Crater Lake<small>Twin summits with a lake between them</small></button>
+        <button class="ghost" data-act="back-map">← Back</button>
+      </div>
+
+      <div class="panel hidden" id="panelOver">
+        <h2 id="overTitle">Result</h2>
+        <p class="sub" id="overSub"></p>
+        <button data-act="rematch" id="btnRematch">Rematch</button>
+        <button data-act="again" id="btnOverAgain" hidden>↻ Play again</button>
+        <p class="sub note" id="overAgainNote" hidden></p>
+        <button class="ghost" data-act="lobby-again" id="btnOverLobby" hidden>Back to lobby</button>
+        <button class="ghost" data-act="menu">Main menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="touch-row">
+    <button class="left" id="btnP1">BLUE FIRE</button>
+    <button class="right" id="btnP2">RED FIRE</button>
+  </div>
+
+  <div class="controls">
+    <div class="hint" id="hintP1"><span class="p1">Blue</span> — hold <kbd>W</kbd>, release to fire</div>
+    <div class="hint" id="hintP2"><span class="p2">Red</span> — hold <kbd>↑</kbd>, release to fire</div>
+    <div class="hint">Restart with <kbd>R</kbd> · menu with <kbd>Esc</kbd></div>
+    <button class="hint sound-toggle" id="btnSound" type="button">🔊 Sound on</button>
+  </div>
+
+  <a class="back" href="index.html">← Back to Game Portal</a>
+
+  <script>
+  (function () {
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    const GRAVITY = 480;          // px / s^2
+    const MIN_SPEED = 450;        // px / s at a tapped shot
+    const MAX_SPEED = 990;        // px / s at full charge -- enough to clear the ridges
+    const CHARGE_TIME = 1.15;     // seconds of holding to go from min to max power
+    const BARREL_LEN = 74;
+    const ART = 74 / 54;          // cannon art is drawn in its original 54px-barrel units
+    const HIT_RADIUS = 34;        // inside this the shell is a direct hit
+    const SPLASH_RADIUS = 100;    // a landed shell still hurts out to here, fading with distance
+    const MAX_HP = 100;
+    const SWEEP_SPEED = 1.75;     // radians / s of the oscillation phase
+
+    const DMG_BASE = 12;          // worst direct hit
+    const DMG_DIST = 12;          // bonus for a long shot
+    const DMG_ANGLE = 10;         // bonus for a steep impact
+    // Best flat hit is 34 dmg -> exactly 3 direct hits are enough to win.
+    const DMG_PLUNGE_MAX = 80;    // a full-speed shell falling straight down out of the sky
+
+    const SHELL_COLLIDE = 22;     // two shells passing this close in the air detonate each other
+    const AIRBURST_RADIUS = 180;  // the airburst reaches much further than a landed shell
+    const AIRBURST_MULT = 1.8;    // ... and hits harder inside that reach
+
+    const rad = d => d * Math.PI / 180;
+
+    // ---------- sound ----------
+    // Everything is synthesised on the fly, so the page stays a single file.
+    const Sound = (() => {
+      let ctx = null, master = null, noiseBuf = null;
+      let on = localStorage.getItem('cannonDuelSound') !== 'off';
+      const charges = {};
+
+      function init() {
+        if (ctx) return;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        ctx = new AC();
+        master = ctx.createGain();
+        master.gain.value = on ? 0.55 : 0;
+        master.connect(ctx.destination);
+        const len = Math.floor(ctx.sampleRate * 1.5);
+        noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const d = noiseBuf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      }
+
+      function unlock() {
+        init();
+        if (ctx && ctx.state === 'suspended') ctx.resume();
+      }
+
+      const now = () => ctx.currentTime;
+
+      // one-shot noise burst through a sweeping filter
+      function noise(gain, dur, type, f0, f1, q) {
+        const src = ctx.createBufferSource();
+        src.buffer = noiseBuf;
+        src.loop = true;
+        const flt = ctx.createBiquadFilter();
+        flt.type = type;
+        flt.frequency.setValueAtTime(f0, now());
+        flt.frequency.exponentialRampToValueAtTime(Math.max(40, f1), now() + dur);
+        if (q) flt.Q.value = q;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(gain, now());
+        g.gain.exponentialRampToValueAtTime(0.0001, now() + dur);
+        src.connect(flt).connect(g).connect(master);
+        src.start();
+        src.stop(now() + dur + 0.02);
+      }
+
+      // pitched body: an oscillator sweeping down
+      function tone(gain, dur, f0, f1, type, delay) {
+        const t = now() + (delay || 0);
+        const o = ctx.createOscillator();
+        o.type = type || 'sine';
+        o.frequency.setValueAtTime(f0, t);
+        o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(gain, t + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g).connect(master);
+        o.start(t);
+        o.stop(t + dur + 0.02);
+      }
+
+      function metal(gain, dur, f, delay) {
+        const t = now() + (delay || 0);
+        [f, f * 1.48, f * 2.13].forEach((hz, i) => {
+          const o = ctx.createOscillator();
+          o.type = 'triangle';
+          o.frequency.setValueAtTime(hz, t);
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(gain / (i + 1.4), t + 0.005);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dur * (1 - i * 0.22));
+          o.connect(g).connect(master);
+          o.start(t);
+          o.stop(t + dur + 0.02);
+        });
+      }
+
+      return {
+        unlock,
+        get enabled() { return on; },
+        toggle() {
+          on = !on;
+          localStorage.setItem('cannonDuelSound', on ? 'on' : 'off');
+          unlock();
+          if (master) master.gain.setTargetAtTime(on ? 0.55 : 0, ctx.currentTime, 0.02);
+          return on;
+        },
+
+        fire(p) {
+          if (!ctx || !on) return;
+          tone(0.9, 0.55, 150 * (0.75 + 0.5 * p), 38, 'sine');
+          tone(0.45, 0.3, 90, 30, 'square');
+          noise(0.5, 0.38, 'lowpass', 1100 * (0.7 + 0.6 * p), 180);
+          noise(0.32, 0.07, 'highpass', 2600, 1400);
+        },
+
+        ground(p) {
+          if (!ctx || !on) return;
+          tone(0.55 * p, 0.42, 110, 32, 'sine');
+          noise(0.5 * p, 0.4, 'lowpass', 700, 120);
+          noise(0.2 * p, 0.22, 'highpass', 1800, 700);
+        },
+
+        water(p, steep) {
+          if (!ctx || !on) return;
+          noise(0.45 * p, 0.5 + 0.3 * steep, 'bandpass', 1300, 260, 0.9);
+          tone(0.3 * p, 0.28, 340, 70, 'sine');
+          noise(0.18 * p, 0.7, 'highpass', 3200, 1800);
+        },
+
+        directHit(k) {
+          if (!ctx || !on) return;
+          tone(1, 0.8, 160, 28, 'sine');
+          noise(0.7, 0.6, 'lowpass', 1800, 140);
+          noise(0.4, 0.09, 'highpass', 3000, 1500);
+          metal(0.3 * k, 0.45, 430, 0.02);
+        },
+
+        graze(k) {
+          if (!ctx || !on) return;
+          metal(0.22 * k, 0.24, 900);
+          noise(0.22 * k, 0.22, 'lowpass', 1200, 320);
+        },
+
+        chain() {
+          if (!ctx || !on) return;
+          tone(0.7, 0.6, 130 + Math.random() * 60, 30, 'sine');
+          noise(0.5, 0.45, 'lowpass', 1400, 150);
+        },
+
+        airburst(k) {
+          if (!ctx || !on) return;
+          metal(0.4, 0.18, 1400);                       // the shells clanging together
+          tone(1, 1.1, 130, 20, 'sine', 0.02);
+          tone(0.6, 0.6, 240 + 140 * k, 40, 'triangle', 0.02);
+          noise(0.85, 0.95, 'lowpass', 2400, 110, 0.6);
+          noise(0.5, 0.14, 'highpass', 3400, 1500);
+        },
+
+        victory(rising) {
+          if (!ctx || !on) return;
+          const notes = rising ? [262, 330, 392, 523] : [330, 262, 196, 131];
+          notes.forEach((hz, i) => tone(0.28, 0.5, hz, hz, 'triangle', 0.12 * i));
+        },
+
+        startCharge(id) {
+          if (!ctx || !on || charges[id]) return;
+          const o = ctx.createOscillator();
+          o.type = 'sawtooth';
+          o.frequency.value = 55;
+          const flt = ctx.createBiquadFilter();
+          flt.type = 'lowpass';
+          flt.frequency.value = 500;
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.0001, now());
+          g.gain.exponentialRampToValueAtTime(0.09, now() + 0.12);
+          o.connect(flt).connect(g).connect(master);
+          o.start();
+          charges[id] = { o, g, flt };
+        },
+
+        setCharge(id, v) {
+          const c = charges[id];
+          if (!c || !ctx) return;
+          c.o.frequency.setTargetAtTime(55 + 175 * v, ctx.currentTime, 0.05);
+          c.flt.frequency.setTargetAtTime(500 + 1400 * v, ctx.currentTime, 0.05);
+        },
+
+        stopCharge(id) {
+          const c = charges[id];
+          if (!c || !ctx) return;
+          delete charges[id];
+          c.g.gain.cancelScheduledValues(now());
+          c.g.gain.setValueAtTime(Math.max(0.0001, c.g.gain.value), now());
+          c.g.gain.exponentialRampToValueAtTime(0.0001, now() + 0.08);
+          c.o.stop(now() + 0.1);
+        },
+
+        whistle() {
+          if (!ctx || !on) return null;
+          const o = ctx.createOscillator();
+          o.type = 'sine';
+          o.frequency.value = 1500;
+          const flt = ctx.createBiquadFilter();
+          flt.type = 'bandpass';
+          flt.frequency.value = 1500;
+          flt.Q.value = 3;
+          const g = ctx.createGain();
+          g.gain.value = 0.0001;
+          o.connect(flt).connect(g).connect(master);
+          o.start();
+          return { o, g, flt };
+        },
+
+        whistleUpdate(h, falling, k) {
+          if (!h || !ctx) return;
+          const target = falling ? 0.055 * k : 0.0001;
+          h.g.gain.setTargetAtTime(target, ctx.currentTime, 0.08);
+          const hz = 1500 - 900 * k;
+          h.o.frequency.setTargetAtTime(hz, ctx.currentTime, 0.12);
+          h.flt.frequency.setTargetAtTime(hz, ctx.currentTime, 0.12);
+        },
+
+        whistleStop(h) {
+          if (!h || !ctx) return;
+          h.g.gain.cancelScheduledValues(now());
+          h.g.gain.setValueAtTime(Math.max(0.0001, h.g.gain.value), now());
+          h.g.gain.exponentialRampToValueAtTime(0.0001, now() + 0.06);
+          h.o.stop(now() + 0.08);
+        }
+      };
+    })();
+
+    // ---------- terrain ----------
+    // Two battlefields, both mirror-symmetric so each player faces the same problem:
+    //   'hill'  a single ridge between two gun pits (no water)
+    //   'lake'  twin summits with a perched lake between them
+    let mapId = 'lake';
+    let TP = null;
+    let waterHeight = 95;         // lake surface, measured up from the bottom of the canvas
+
+    const MAPS = {
+      hill: { label: 'RIDGELINE', gunT: 0.12 },
+      lake: { label: 'CRATER LAKE', gunT: 0.08 }
+    };
+
+    let LEFT_X = W * 0.08, RIGHT_X = W * 0.92, GUN_SPAN = RIGHT_X - LEFT_X;
+
+    function placeGuns(t) {
+      LEFT_X = W * t;
+      RIGHT_X = W * (1 - t);
+      GUN_SPAN = RIGHT_X - LEFT_X;
+    }
+
+    function defaultProfile() {
+      const gunT = MAPS.lake.gunT, peakT = 0.32;
+      return {
+        kind: 'lake',
+        pts: [
+          [0.00, 158], [gunT, 168], [0.15, 190], [0.22, 262],
+          [peakT, 360], [peakT + 0.018, 292], [0.40, 186], [0.50, 176]
+        ],
+        w1: 3, f1: 3, lakeFrom: peakT, lakeTo: 1 - peakT
+      };
+    }
+
+    function profileHeight(t) {
+      const u = t <= 0.5 ? t : 1 - t;
+      const P = TP.pts;
+      for (let i = 0; i < P.length - 1; i++) {
+        if (u <= P[i + 1][0]) {
+          const a = (u - P[i][0]) / (P[i + 1][0] - P[i][0]);
+          const s = 0.5 - 0.5 * Math.cos(Math.PI * Math.max(0, Math.min(1, a)));
+          return P[i][1] + (P[i + 1][1] - P[i][1]) * s;
+        }
+      }
+      return P[P.length - 1][1];
+    }
+
+    function groundHeight(x) {
+      const t = x / W;
+      const wob = TP.w1 * Math.cos(2 * Math.PI * TP.f1 * (t - 0.5));
+      if (TP.kind === 'hill') {
+        // one crest in the middle, a dip under each gun
+        return Math.max(20, TP.A - TP.B * Math.cos(2 * Math.PI * 1.3158 * (t - TP.gunT))
+          + wob + TP.w2 * Math.cos(2 * Math.PI * TP.f2 * (t - 0.5)));
+      }
+      return Math.max(18, profileHeight(t) + wob);
+    }
+    function terrainY(x) { return H - groundHeight(x); }
+
+    const waterY = () => H - waterHeight;
+    // The lake is held between the two ridges, so it can sit higher than the gun platforms.
+    const isWater = x => {
+      if (TP.kind !== 'lake') return false;
+      const t = x / W;
+      return t > TP.lakeFrom && t < TP.lakeTo && groundHeight(x) < waterHeight;
+    };
+
+    // Closest approach of a shot fired from (sx,sy) at `ang` and `speed` to the point (tx,ty).
+    function closestApproach(sx, sy, ang, speed, tx, ty) {
+      let x = sx + Math.cos(ang) * BARREL_LEN;
+      let y = sy - Math.sin(ang) * BARREL_LEN;
+      let vx = Math.cos(ang) * speed;
+      let vy = -Math.sin(ang) * speed;
+      const h = 1 / 240;
+      const wy = waterY();
+      let best = Infinity;
+      for (let i = 0; i < 1400; i++) {
+        vy += GRAVITY * h;
+        x += vx * h;
+        y += vy * h;
+        if (x < -60 || x > W + 60 || y > H + 200) break;
+        const d = Math.hypot(x - tx, y - ty);
+        if (d < best) best = d;
+        if (d < HIT_RADIUS) return 0;
+        if (y > 0 && x > 0 && x < W) {
+          if (y >= wy && isWater(x)) break;
+          if (y >= terrainY(x)) break;
+        }
+      }
+      return best;
+    }
+
+    // How many sweep angles have at least one power setting that connects.
+    function reachableAngles() {
+      const sy = terrainY(LEFT_X) - 14, ty = terrainY(RIGHT_X) - 14 - 8;
+      let n = 0;
+      for (let deg = 20; deg <= 84; deg += 3) {
+        for (let s = MIN_SPEED; s <= MAX_SPEED; s += 40) {
+          if (closestApproach(LEFT_X, sy, rad(deg), s, RIGHT_X, ty) === 0) { n++; break; }
+        }
+      }
+      return n;
+    }
+
+    function randomizeTerrain() {
+      const rnd = (lo, hi) => lo + Math.random() * (hi - lo);
+      const saved = TP, savedWater = waterHeight;
+      const gunT = MAPS[mapId].gunT;
+      placeGuns(gunT);
+
+      for (let tries = 0; tries < 80; tries++) {
+        if (mapId === 'hill') {
+          waterHeight = -1;                          // dry map
+          TP = {
+            kind: 'hill', gunT,
+            A: rnd(148, 182), B: rnd(78, 112),
+            w1: rnd(8, 22), f1: 2 + Math.floor(Math.random() * 3),
+            w2: rnd(5, 14), f2: 5 + Math.floor(Math.random() * 4)
+          };
+          if (reachableAngles() >= 8) return;
+        } else {
+          const peakT = rnd(0.30, 0.34);
+          // height order: gun platform << lake surface < ridge top
+          const peak = rnd(330, 392);
+          waterHeight = peak - rnd(12, 28);          // lake laps just under the summits
+          const shoulder = waterHeight - rnd(150, 205);
+          const floor = waterHeight - rnd(150, 215);
+          const climb = peak - shoulder;
+          TP = {
+            kind: 'lake',
+            pts: [
+              [0.00, shoulder - rnd(4, 16)],
+              [gunT, shoulder],
+              [0.15, shoulder + climb * rnd(0.06, 0.12)],
+              [0.22, shoulder + climb * rnd(0.32, 0.46)],
+              [peakT, peak],
+              [peakT + 0.018, waterHeight - rnd(30, 60)],
+              [0.40, floor + rnd(8, 18)],
+              [0.50, floor]
+            ],
+            w1: rnd(2, 5), f1: 2 + Math.floor(Math.random() * 3),
+            lakeFrom: peakT, lakeTo: 1 - peakT
+          };
+          if (isWater(W / 2) && reachableAngles() >= 7) return;
+        }
+      }
+      TP = saved || defaultProfile();
+      waterHeight = savedWater;
+    }
+
+    // Online matches must play on byte-identical ground, so the host ships its
+    // generated profile to the guest instead of both sides rolling their own.
+    const serializeTerrain = () => ({ mapId, TP, waterHeight });
+
+    function applyTerrain(t) {
+      mapId = MAPS[t.mapId] ? t.mapId : 'lake';
+      TP = t.TP;
+      waterHeight = t.waterHeight;
+      placeGuns(MAPS[mapId].gunT);
+    }
+
+    // ---------- players ----------
+    function makePlayers() {
+      return [
+        {
+          id: 1, name: 'BLUE', color: '#6fd3ff', rgb: '111,211,255', dark: '#1b6d92',
+          x: LEFT_X, dir: 1, minA: rad(18), maxA: rad(86),
+          phase: 0, angle: rad(45), hp: MAX_HP, flash: 0, shake: 0, recoil: 0,
+          charging: false, charge: 0
+        },
+        {
+          id: 2, name: 'RED', color: '#ff5f5f', rgb: '255,95,95', dark: '#96242b',
+          x: RIGHT_X, dir: -1, minA: rad(94), maxA: rad(162),
+          phase: Math.PI * 0.6, angle: rad(135), hp: MAX_HP, flash: 0, shake: 0, recoil: 0,
+          charging: false, charge: 0
+        }
+      ];
+    }
+
+    let players, shells, particles, rings, columns, winner, banner, elapsed, shake, whiteout;
+    let finale = null, winTint = 0;
+    let mode = 'duel';            // 'duel' | 'bot' | 'online'
+    let running = false;
+    let difficulty = 'medium';
+    let botDelay = 0, botTol = 0, botHold = 0, botMiss = false, botErr = 0, overTimer = 0;
+
+    // Online duel: the challenger hosts and always takes the left (BLUE) gun.
+    // Each gun resolves damage for its own shells and the other side replays it; the host
+    // only has the last word on who won (see settleWinner).
+    let myIndex = 0, isHost = true, netNames = [null, null], shellSeq = 0;
+    let stats = null;             // per-match tally, reported to the battle log when online
+    const online = () => mode === 'online';
+    const nextSid = owner => owner + ':' + (++shellSeq);
+
+    // In bot mode the human always mans the right gun.
+    const humanIndex = () => (mode === 'bot' ? 1 : mode === 'online' ? myIndex : 0);
+    const botIndex = () => 0;
+
+    // missRate is tuned so hit rates land near 15% / 25% / 50%
+    const BOTS = {
+      easy: { label: 'EASY', react: 2.2, tol: 30, missRate: 0.72, err: [0.05, 0.13] },
+      medium: { label: 'MEDIUM', react: 1.4, tol: 28, missRate: 0.58, err: [0.04, 0.10] },
+      hard: { label: 'HARD', react: 0.9, tol: 26, missRate: 0.36, err: [0.025, 0.07] }
+    };
+
+    function reset(terrain) {
+      TP = TP || defaultProfile();
+      if (terrain) applyTerrain(terrain); else randomizeTerrain();
+      Sound.stopCharge(0);
+      Sound.stopCharge(1);
+      if (shells) shells.forEach(s => Sound.whistleStop(s.whistle));
+      players = makePlayers();
+      players.forEach((p, i) => { p.y = terrainY(p.x) - 14; p.netName = netNames[i]; });
+      shells = [];
+      particles = [];
+      rings = [];
+      columns = [];
+      shake = 0;
+      whiteout = 0;
+      winner = null;
+      finale = null;
+      winTint = 0;
+      banner = null;
+      elapsed = 0;
+      overTimer = 0;
+      stats = { shots: [0, 0], hits: [0, 0], dmg: [0, 0], air: 0, duration: 0 };
+      botDelay = botReact();
+      botHold = 0;
+      pickBotTolerance();
+      buildScenery();
+      clearDecals();
+    }
+
+    // Jittered so the firing cadence can never lock onto the barrel sweep period.
+    const botReact = () => BOTS[difficulty].react * (0.6 + Math.random() * 0.8);
+
+    function pickBotTolerance() {
+      const cfg = BOTS[difficulty];
+      botTol = cfg.tol;
+      botMiss = Math.random() < cfg.missRate;
+      botErr = (cfg.err[0] + Math.random() * (cfg.err[1] - cfg.err[0])) * (Math.random() < 0.5 ? -1 : 1);
+    }
+
+    function updateBot(dt) {
+      if (mode !== 'bot' || !running || winner) return;
+      const bot = players[botIndex()];
+      const target = players[humanIndex()];
+      if (!bot.charging) {
+        botDelay -= dt;
+        if (botDelay <= 0) { beginCharge(botIndex()); botHold = 0; }
+        return;
+      }
+      // Power climbs while it holds; it lets go once the shot looks good enough.
+      // If the whole power ramp gave nothing, dump the shell and scan again.
+      botHold += dt;
+      const speed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * bot.charge;
+      if (closestApproach(bot.x, bot.y, bot.angle, speed, target.x, target.y - 8) <= botTol || botHold > CHARGE_TIME + 0.25) {
+        if (botMiss) {
+          // flip the error if the charge would clamp and cancel the miss
+          let off = speed * (1 + botErr);
+          if (off > MAX_SPEED || off < MIN_SPEED) off = speed * (1 - botErr);
+          off = Math.max(MIN_SPEED, Math.min(MAX_SPEED, off));
+          bot.charge = (off - MIN_SPEED) / (MAX_SPEED - MIN_SPEED);
+        }
+        releaseFire(botIndex());
+        botDelay = botReact();
+        pickBotTolerance();
+      }
+    }
+
+    function muzzle(p) {
+      return {
+        x: p.x + Math.cos(p.angle) * BARREL_LEN,
+        y: p.y - Math.sin(p.angle) * BARREL_LEN
+      };
+    }
+
+    function beginCharge(index) {
+      if (!running || winner) return;
+      const p = players[index];
+      if (p.charging) return;
+      p.charging = true;
+      p.charge = 0;
+      Sound.startCharge(index);
+      if (online() && index === myIndex) Net.send({ t: 'chg', owner: index });
+    }
+
+    function releaseFire(index) {
+      const p = players[index];
+      if (!p.charging) return;
+      p.charging = false;
+      Sound.stopCharge(index);
+      const speed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * p.charge;
+      p.charge = 0;
+      fire(index, speed);
+    }
+
+    // The shooter owns its own launch parameters: over a laggy link the opponent must
+    // replay the exact shot that was aimed, not re-derive it from a stale barrel angle.
+    function fire(index, speed) {
+      if (winner || !running) return;
+      const p = players[index];
+      const m = muzzle(p);
+      const shot = {
+        owner: index, sid: nextSid(index), ang: p.angle, pw: speed / MAX_SPEED,
+        x: m.x, y: m.y,
+        vx: Math.cos(p.angle) * speed, vy: -Math.sin(p.angle) * speed
+      };
+      launch(shot);
+      if (online() && index === myIndex) Net.send(Object.assign({ t: 'fire' }, shot));
+    }
+
+    function launch(shot) {
+      const p = players[shot.owner];
+      const pw = shot.pw;
+      stats.shots[shot.owner]++;
+      p.charging = false;
+      p.charge = 0;
+      Sound.stopCharge(shot.owner);
+      Sound.fire(pw);
+      p.flash = 0.1 + 0.06 * pw;
+      p.shake = 4 + 5 * pw;
+      p.recoil = 0.55 + 0.45 * pw;
+      shake = Math.max(shake, 3 + 4 * pw);
+      shells.push({
+        owner: shot.owner,
+        sid: shot.sid,
+        x: shot.x, y: shot.y,
+        startX: shot.x,
+        vx: shot.vx,
+        vy: shot.vy,
+        acc: 0,
+        color: p.color,
+        rot: -shot.ang,
+        puff: 0,
+        whistle: Sound.whistle(),
+        trail: []
+      });
+
+      rings.push({ x: shot.x, y: shot.y, r: 6, maxR: 26 + 26 * pw, life: 0.26, max: 0.26, color: '255,235,180', width: 9 * pw, sq: 0.9 });
+      for (let i = 0; i < Math.round(12 + 18 * pw); i++) {
+        const a = shot.ang + (Math.random() - 0.5) * 0.75;
+        const s = (120 + Math.random() * 420) * pw;
+        spark(shot.x, shot.y, Math.cos(a) * s, -Math.sin(a) * s, 0.22 + Math.random() * 0.3,
+          1.5 + Math.random() * 2.5, i % 3 ? '#ffd27a' : '#fff4d0');
+      }
+      for (let i = 0; i < 8; i++) {
+        const a = shot.ang + (Math.random() - 0.5) * 1.1;
+        const s = (50 + Math.random() * 120) * pw;
+        smoke(shot.x, shot.y, Math.cos(a) * s, -Math.sin(a) * s,
+          0.5 + Math.random() * 0.4, 5 + Math.random() * 6, 16, 90, '205,205,215');
+      }
+      // dust kicked off the ground by the blast
+      for (let i = 0; i < 6; i++) {
+        smoke(p.x + (Math.random() - 0.5) * 40, terrainY(p.x) - 2,
+          (Math.random() - 0.5) * 90 * pw, (-15 - Math.random() * 40) * pw,
+          0.6, 5 + Math.random() * 6, 14, 60, '150,130,105');
+      }
+    }
+
+    // Snap the remote barrel onto the angle it actually fired at, picking the sweep
+    // phase closest to the one we were already showing so it does not jump a full cycle.
+    function snapPhase(p, ang) {
+      const TAU = Math.PI * 2;
+      const k = Math.max(0, Math.min(1, (ang - p.minA) / (p.maxA - p.minA)));
+      const base = Math.acos(Math.max(-1, Math.min(1, 1 - 2 * k)));
+      const n0 = Math.round(p.phase / TAU);
+      let best = p.phase, bestD = Infinity;
+      for (let n = n0 - 1; n <= n0 + 1; n++) {
+        for (const cand of [n * TAU + base, n * TAU - base]) {
+          const d = Math.abs(cand - p.phase);
+          if (d < bestD) { bestD = d; best = cand; }
+        }
+      }
+      p.phase = best;
+      p.angle = ang;
+    }
+
+    // ---------- particles ----------
+    function spark(x, y, vx, vy, life, size, color) {
+      particles.push({ type: 'spark', x, y, vx, vy, life, max: life, size, color });
+    }
+    function ember(x, y, vx, vy, life, size, color) {
+      particles.push({ type: 'ember', x, y, vx, vy, life, max: life, size, color });
+    }
+    function smoke(x, y, vx, vy, life, size, grow, rise, rgb, alpha) {
+      particles.push({
+        type: 'smoke', x, y, vx, vy, life, max: life, size,
+        grow, rise, rgb: rgb || '190,190,200',
+        alpha: alpha != null ? alpha : 0.3 + Math.random() * 0.18
+      });
+    }
+    function debris(x, y, vx, vy, life, size, color) {
+      particles.push({
+        type: 'debris', x, y, vx, vy, life, max: life, size, color,
+        rot: Math.random() * 6.28, spin: (Math.random() - 0.5) * 18
+      });
+    }
+    function drop(x, y, vx, vy, life, size, bounds) {
+      particles.push({ type: 'drop', x, y, vx, vy, life, max: life, size, bounds });
+    }
+
+    // Shell hitting the lake: a tall narrow column of water that rises and collapses,
+    // ringed by foam and drifting mist -- the way a naval near-miss looks.
+    // A fast, steep shell drives a high thin plume; a shallow one throws a low wide one.
+    function splash(x, vx, vy) {
+      const wy = waterY();
+      const speed = Math.hypot(vx, vy) || 1;
+      const fast = Math.min(1, speed / MAX_SPEED);
+      const steep = Math.min(1, Math.abs(vy) / speed);   // 0 grazing, 1 straight down
+      const energy = 0.35 + 0.65 * fast;
+
+      // the stretch of open water the shell landed in -- nothing may spill past it
+      let x0 = x, x1 = x;
+      while (x0 > 2 && isWater(x0 - 3)) x0 -= 3;
+      while (x1 < W - 2 && isWater(x1 + 3)) x1 += 3;
+      const clip = [x0, x1];
+      const within = px => Math.max(x0 + 3, Math.min(x1 - 3, px));
+
+      const h = (90 + 230 * fast) * (0.4 + 0.8 * steep);
+      const w = (24 + 18 * fast) * (1.45 - 0.55 * steep);
+      shake = Math.max(shake, 3 + 4 * fast * steep);
+
+      columns.push({ x, t: 0, life: 1.5 + 0.8 * steep, h, w, clip });
+      // a couple of smaller offset plumes so the base is not a clean cone
+      for (let i = 0; i < 2; i++) {
+        columns.push({
+          x: within(x + (Math.random() - 0.5) * (40 + 60 * (1 - steep))), t: 0, life: 1.2,
+          h: h * (0.22 + Math.random() * 0.26),
+          w: w * (0.5 + Math.random() * 0.35),
+          clip
+        });
+      }
+
+      rings.push({ x, y: wy, r: 10, maxR: 90 + 90 * energy, life: 0.9, max: 0.9, color: '235,250,255', width: 7, sq: 0.13, clip });
+      rings.push({ x, y: wy, r: 6, maxR: 160 + 140 * energy, life: 1.5, max: 1.5, color: '165,212,240', width: 3, sq: 0.1, clip });
+
+      // heavy water thrown clear of the base; a grazing shell skips it further sideways
+      const spread = 0.8 + 1.6 * (1 - steep);
+      for (let i = 0; i < Math.round(12 + 14 * energy); i++) {
+        const a = -Math.PI / 2 + (Math.random() - 0.5) * spread + (1 - steep) * Math.sign(vx) * 0.5;
+        const s = (80 + Math.random() * 240) * energy;
+        drop(within(x + (Math.random() - 0.5) * 20), wy - 6, Math.cos(a) * s, Math.sin(a) * s,
+          0.9 + Math.random() * 0.6, 1.6 + Math.random() * 2.4, clip);
+      }
+      // mist hanging over the impact
+      for (let i = 0; i < Math.round(9 + 8 * energy); i++) {
+        smoke(within(x + (Math.random() - 0.5) * (60 + 60 * (1 - steep))), wy - 10 - Math.random() * h * 0.4,
+          (Math.random() - 0.5) * 60, -8 - Math.random() * 26,
+          1.2 + Math.random() * 0.9, 12 + Math.random() * 16, 22, 10, '234,246,255', 0.3);
+      }
+    }
+
+    function blast(x, y, scale, tint) {
+      particles.push({ type: 'fire', x, y, vx: 0, vy: -30, life: 0.38, max: 0.38, size: 20 * scale, grow: 110 * scale });
+      rings.push({ x, y, r: 8, maxR: 78 * scale, life: 0.34, max: 0.34, color: '255,240,200', width: 14 * scale, sq: 0.85 });
+      rings.push({ x, y, r: 4, maxR: 132 * scale, life: 0.5, max: 0.5, color: '255,170,80', width: 5, sq: 0.85 });
+
+      for (let i = 0; i < Math.round(34 * scale); i++) {
+        const a = Math.random() * Math.PI * 2;
+        const s = (60 + Math.random() * 360) * scale;
+        spark(x, y, Math.cos(a) * s, Math.sin(a) * s - 60, 0.3 + Math.random() * 0.4,
+          2 + Math.random() * 3, ['#fff6d5', '#ffcb5e', '#ff8b3d'][i % 3]);
+      }
+      for (let i = 0; i < Math.round(16 * scale); i++) {
+        const a = Math.random() * Math.PI * 2;
+        const s = (30 + Math.random() * 150) * scale;
+        ember(x, y, Math.cos(a) * s, Math.sin(a) * s - 40, 0.8 + Math.random() * 0.7,
+          2 + Math.random() * 2.5, tint || '#ffb24d');
+      }
+      for (let i = 0; i < Math.round(14 * scale); i++) {
+        const a = Math.random() * Math.PI * 2;
+        const s = (20 + Math.random() * 110) * scale;
+        smoke(x, y, Math.cos(a) * s, Math.sin(a) * s - 30,
+          1.1 + Math.random() * 0.9, 12 + Math.random() * 14, 40, 130, '110,105,110');
+      }
+    }
+
+    function groundBurst(x, y) {
+      shake = Math.max(shake, 7);
+      particles.push({ type: 'fire', x, y: y - 6, vx: 0, vy: -50, life: 0.26, max: 0.26, size: 12, grow: 70 });
+      rings.push({ x, y, r: 6, maxR: 58, life: 0.3, max: 0.3, color: '225,195,140', width: 10, sq: 0.35 });
+      for (let i = 0; i < 16; i++) {
+        const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.2;
+        const s = 90 + Math.random() * 300;
+        debris(x, y, Math.cos(a) * s, Math.sin(a) * s, 1.1 + Math.random() * 0.6,
+          2 + Math.random() * 4, ['#6d573c', '#8a6a4a', '#4e4433'][i % 3]);
+      }
+      for (let i = 0; i < 12; i++) {
+        const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.6;
+        const s = 40 + Math.random() * 150;
+        smoke(x, y, Math.cos(a) * s, Math.sin(a) * s, 0.9 + Math.random() * 0.8,
+          9 + Math.random() * 12, 34, 120, '150,132,104');
+      }
+      for (let i = 0; i < 10; i++) {
+        const a = -Math.PI / 2 + (Math.random() - 0.5) * 2;
+        const s = 60 + Math.random() * 220;
+        spark(x, y, Math.cos(a) * s, Math.sin(a) * s, 0.25 + Math.random() * 0.25,
+          1.5 + Math.random() * 2, '#ffd08a');
+      }
+      scorch(x, y, 26 + Math.random() * 10);
+    }
+
+    function nameOf(p) {
+      if (online()) return p.netName || p.name;
+      return mode === 'bot' ? (p.id === 2 ? 'YOU' : 'BOT') : p.name;
+    }
+
+    function winHeadline(p) {
+      if (online()) return players.indexOf(p) === myIndex ? 'YOU WIN!' : nameOf(p) + ' WINS!';
+      if (mode === 'bot') return p.id === 2 ? 'YOU WIN!' : 'BOT WINS!';
+      return p.name + ' WINS!';
+    }
+
+    // How much of a shot is a plunge: a fast shell coming almost straight down out of the
+    // top of its arc. 0 for anything flat or still climbing, 1 for a full-power vertical drop.
+    function plungeFactor(vx, vy) {
+      if (vy <= 0) return 0;
+      const speed = Math.hypot(vx, vy) || 1;
+      const steep = (vy / speed - 0.5) / 0.5;                      // 0 at 30 degrees, 1 straight down
+      const fast = (speed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED);  // height and power both feed this
+      return Math.pow(Math.max(0, Math.min(1, steep)), 1.5) * Math.max(0, Math.min(1, fast));
+    }
+
+    function damageFor(shell, impactVx, impactVy) {
+      const speed = Math.hypot(impactVx, impactVy) || 1;
+      const distance = Math.abs(shell.x - shell.startX);
+      const distNorm = Math.min(1, distance / GUN_SPAN);
+      // 0 = grazing/horizontal impact, 1 = straight down on top of the barrel
+      const angleNorm = Math.min(1, Math.abs(impactVy) / speed);
+      const flat = DMG_BASE + DMG_DIST * distNorm + DMG_ANGLE * angleNorm;
+      // Flat shots are untouched; a plunge ramps all the way up to DMG_PLUNGE_MAX.
+      const plunge = plungeFactor(impactVx, impactVy);
+      const dmg = flat + (DMG_PLUNGE_MAX - flat) * plunge;
+      return {
+        dmg: Math.round(dmg), plunge,
+        distance: Math.round(distance),
+        angle: Math.round(Math.abs(Math.atan2(impactVy, impactVx) * 180 / Math.PI))
+      };
+    }
+
+    function registerHit(shell, target, info) {
+      damagePlayer(shell, target, info.dmg, info, true);
+    }
+
+    function damagePlayer(shell, target, dmg, info, direct, label, fromNet) {
+      if (dmg <= 0 || winner) return;
+      // Online: each gun resolves the damage of its own shells, so a hit lands instantly on
+      // the shooter's screen; the other side replays the `dmg` event it is sent.
+      if (online() && !fromNet) {
+        if (shell.owner !== myIndex) return;
+        Net.send({
+          t: 'dmg', owner: shell.owner, x: shell.x, y: shell.y,
+          g: players.indexOf(target), d: dmg, i: info, dir: !!direct, l: label || null
+        });
+      }
+      target.hp = Math.max(0, target.hp - dmg);
+      stats.dmg[shell.owner] += dmg;
+      if (direct) stats.hits[shell.owner]++;
+      target.shake = direct ? 18 : 9;
+      shake = Math.max(shake, direct ? 16 : 7);
+      if (direct) {
+        Sound.directHit(Math.min(1, dmg / 30));
+        whiteout = 0.35;
+        blast(shell.x, shell.y, 1.6, target.color);
+        blast(shell.x, shell.y, 1.0, '#ffd166');
+        scorch(shell.x, Math.min(shell.y + 14, terrainY(shell.x)), 30);
+      } else {
+        grazeEffect(target, dmg);
+      }
+      const kind = direct ? (info.plunge > 0.5 ? 'PLUNGING HIT' : 'DIRECT HIT') : (label || 'SPLASH');
+      banner = {
+        text: direct
+          ? `${kind}  ·  ${dmg} DMG  ·  ${info.distance}px  ·  ${info.angle}° impact`
+          : `${kind}  ·  ${dmg} DMG`,
+        color: players[shell.owner].color,
+        life: 1.6
+      };
+      if (target.hp <= 0) {
+        // Credit the win to whoever is left standing, not the shooter: a self-inflicted
+        // kill (own shell or own splash) hands the match to the opponent.
+        winner = players[1 - players.indexOf(target)];
+        startFinale(target);
+        if (online() && isHost) Net.send({ t: 'win', w: players.indexOf(winner), hp: players.map(p => p.hp) });
+      }
+    }
+
+    // Online: since both guns score their own shells, a near-simultaneous double kill can
+    // crown a different winner on each screen. The host's verdict is final; the guest adopts it.
+    function settleWinner(w, hp) {
+      const champ = players[w];
+      if (!champ || !Array.isArray(hp)) return;
+      players.forEach((p, i) => { if (typeof hp[i] === 'number') p.hp = hp[i]; });
+      if (winner === champ) return;
+      const wasOver = !!winner && overTimer <= 0;
+      if (winner) { champ.dead = false; champ.tilt = 0; }
+      winner = champ;
+      startFinale(players[1 - w]);
+      if (wasOver) { overTimer = 0; showGameOver(); }
+    }
+
+    // Near miss: shrapnel rattling the gun, much tamer than a direct hit.
+    function grazeEffect(target, dmg) {
+      const k = Math.min(1, dmg / 18);
+      Sound.graze(0.4 + 0.6 * k);
+      target.hurt = 0.3;
+      rings.push({
+        x: target.x, y: target.y - 8, r: 6, maxR: 30 + 46 * k,
+        life: 0.34, max: 0.34, color: target.rgb, width: 3 + 3 * k, sq: 0.9
+      });
+      for (let i = 0; i < Math.round(5 + 13 * k); i++) {
+        const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.6;
+        const s = (60 + Math.random() * 190) * (0.5 + k);
+        spark(target.x, target.y - 8, Math.cos(a) * s, Math.sin(a) * s,
+          0.18 + Math.random() * 0.22, 1.2 + Math.random() * 1.8, i % 2 ? '#ffd9a0' : '#fff0cf');
+      }
+      for (let i = 0; i < Math.round(3 + 5 * k); i++) {
+        smoke(target.x + (Math.random() - 0.5) * 36, target.y + 6,
+          (Math.random() - 0.5) * 60, -20 - Math.random() * 40,
+          0.6 + Math.random() * 0.5, 5 + Math.random() * 7, 16, 60, '150,138,120', 0.28);
+      }
+    }
+
+    // A shell that lands short still rattles anything inside the blast radius.
+    function blastDamage(shell, x, y, wet) {
+      const info = damageFor(shell, shell.vx, shell.vy);
+      players.forEach(target => {
+        const d = Math.hypot(x - target.x, y - (target.y - 8));
+        if (d > SPLASH_RADIUS) return;
+        const t = Math.max(0, (d - HIT_RADIUS) / (SPLASH_RADIUS - HIT_RADIUS));
+        let mult = Math.pow(1 - Math.min(1, t), 1.3);
+        if (wet) mult *= 0.55;                 // water swallows most of the blast
+        damagePlayer(shell, target, Math.round(info.dmg * mult), info, false);
+      });
+    }
+
+    // ---------- mid-air collisions ----------
+    // Shells move far enough per frame to tunnel through each other, so instead of a point
+    // check we take the closest approach of the two paths swept over this frame.
+    function shellApproach(a, b) {
+      const dx = a.px - b.px, dy = a.py - b.py;
+      const dvx = (a.x - a.px) - (b.x - b.px);
+      const dvy = (a.y - a.py) - (b.y - b.py);
+      const den = dvx * dvx + dvy * dvy;
+      let t = den > 1e-6 ? -(dx * dvx + dy * dvy) / den : 0;
+      t = Math.max(0, Math.min(1, t));
+      return { d: Math.hypot(dx + dvx * t, dy + dvy * t), t };
+    }
+
+    function checkAirbursts() {
+      for (let i = 0; i < shells.length; i++) {
+        for (let j = i + 1; j < shells.length; j++) {
+          const a = shells[i], b = shells[j];
+          if (a.px == null || b.px == null) continue;
+          const c = shellApproach(a, b);
+          if (c.d > SHELL_COLLIDE) continue;
+          Sound.whistleStop(a.whistle);
+          Sound.whistleStop(b.whistle);
+          shells.splice(j, 1);
+          shells.splice(i, 1);
+          airburst(a, b, c.t);
+          return;                              // one detonation a frame is plenty
+        }
+      }
+    }
+
+    function removeShells(sids) {
+      for (let i = shells.length - 1; i >= 0; i--) {
+        if (sids.indexOf(shells[i].sid) !== -1) {
+          Sound.whistleStop(shells[i].whistle);
+          shells.splice(i, 1);
+        }
+      }
+    }
+
+    // Two shells meeting head-on dump both charges at once: a far bigger, brighter ball
+    // than anything a ground hit makes.
+    function airburst(a, b, t) {
+      const x = ((a.px + (a.x - a.px) * t) + (b.px + (b.x - b.px) * t)) / 2;
+      const y = ((a.py + (a.y - a.py) * t) + (b.py + (b.y - b.py) * t)) / 2;
+      const power = Math.min(1, Math.hypot(a.vx - b.vx, a.vy - b.vy) / (MAX_SPEED * 1.7));
+
+      if (online()) Net.send({ t: 'air', a: a.sid, b: b.sid, x, y, p: power });
+      airburstFx(x, y, power);
+      airburstDamage(a, b, x, y, power);
+    }
+
+    function airburstFx(x, y, power) {
+      const scale = 2.6 + 1.6 * power;
+      stats.air++;
+
+      Sound.airburst(power);
+      shake = Math.max(shake, 24 + 16 * power);
+      whiteout = Math.max(whiteout, 0.55 + 0.35 * power);
+      blast(x, y, scale, '#ffe08a');
+      blast(x, y, scale * 0.55, '#ff6b2c');
+      rings.push({ x, y, r: 10, maxR: AIRBURST_RADIUS * (1 + 0.45 * power), life: 0.62, max: 0.62, color: '255,255,236', width: 20, sq: 1 });
+      rings.push({ x, y, r: 6, maxR: AIRBURST_RADIUS * (1.6 + 0.6 * power), life: 0.9, max: 0.9, color: '255,150,70', width: 7, sq: 1 });
+
+      for (let i = 0; i < 26; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const s = (140 + Math.random() * 460) * (0.7 + power);
+        debris(x, y, Math.cos(ang) * s, Math.sin(ang) * s - 60,
+          1.2 + Math.random() * 0.9, 2 + Math.random() * 4,
+          ['#59616c', '#8a6a4a', '#39424e'][i % 3]);
+      }
+      for (let i = 0; i < 18; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const s = (30 + Math.random() * 130) * scale * 0.4;
+        smoke(x, y, Math.cos(ang) * s, Math.sin(ang) * s - 20,
+          1.3 + Math.random() * 1.1, 16 + Math.random() * 18, 46, 60, '118,112,118', 0.34);
+      }
+
+      banner = { text: 'MID-AIR COLLISION!', color: '#ffd166', life: 1.6 };
+    }
+
+    function airburstDamage(a, b, x, y, power) {
+      players.forEach((target, idx) => {
+        const d = Math.hypot(x - target.x, y - (target.y - 8));
+        if (d > AIRBURST_RADIUS) return;
+        // credit the shell that was not the target's own
+        const src = a.owner !== idx ? a : b;
+        if (online() && (src.owner !== myIndex || src.gone)) return;   // the other gun scores its own shell
+        const info = damageFor(src, src.vx, src.vy);
+        const t = Math.max(0, (d - HIT_RADIUS) / (AIRBURST_RADIUS - HIT_RADIUS));
+        const mult = Math.pow(1 - Math.min(1, t), 1.15) * AIRBURST_MULT * (0.75 + 0.35 * power);
+        damagePlayer(src, target, Math.round(info.dmg * mult), info, false, 'AIRBURST');
+      });
+    }
+
+    function startFinale(loser) {
+      loser.dead = true;
+      loser.tilt = 0;
+      stats.duration = elapsed;
+      Sound.victory(online() ? players.indexOf(winner) === myIndex : (mode !== 'bot' || winner.id === 2));
+      whiteout = 1;
+      shake = 40;
+      overTimer = 2.6;
+      finale = { t: 0, blasts: 0, nextBlast: 0, nextSpark: 0, loser };
+      banner = { text: winHeadline(winner), color: winner.color, life: Infinity };
+    }
+
+    function updateFinale(dt) {
+      if (!finale) return;
+      finale.t += dt;
+      winTint = Math.min(1, winTint + dt * 1.6);
+
+      // chain of secondary detonations tearing the loser's gun apart
+      finale.nextBlast -= dt;
+      if (finale.nextBlast <= 0 && finale.blasts < 9) {
+        finale.blasts++;
+        finale.nextBlast = 0.12 + Math.random() * 0.14;
+        Sound.chain();
+        const lx = finale.loser.x + (Math.random() - 0.5) * 70;
+        const ly = finale.loser.y - 6 + (Math.random() - 0.5) * 40;
+        blast(lx, ly, 1.4 + Math.random() * 1.6, '#ff8b3d');
+        scorch(lx, Math.min(ly + 16, terrainY(lx)), 26 + Math.random() * 22);
+        shake = Math.max(shake, 22);
+        whiteout = Math.max(whiteout, 0.45);
+        for (let i = 0; i < 12; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const s = 120 + Math.random() * 380;
+          debris(lx, ly, Math.cos(a) * s, Math.sin(a) * s - 140,
+            1.4 + Math.random() * 0.8, 3 + Math.random() * 5,
+            ['#59616c', '#8a6a4a', '#39424e'][i % 3]);
+        }
+      }
+
+      // victory confetti raining from the top
+      if (finale.t < 4) {
+        finale.nextSpark -= dt;
+        if (finale.nextSpark <= 0) {
+          finale.nextSpark = 0.03;
+          for (let i = 0; i < 3; i++) {
+            debris(Math.random() * W, -20,
+              (Math.random() - 0.5) * 90, 40 + Math.random() * 90,
+              2.2 + Math.random(), 3 + Math.random() * 5,
+              [winner.color, '#ffffff', winner.dark][i % 3]);
+          }
+        }
+      }
+
+      // burning wreck
+      if (Math.random() < dt * 34) {
+        smoke(finale.loser.x + (Math.random() - 0.5) * 26, finale.loser.y - 10,
+          (Math.random() - 0.5) * 30, -40 - Math.random() * 40,
+          1.6 + Math.random(), 10 + Math.random() * 10, 30, 90, '70,70,76', 0.4);
+      }
+      if (Math.random() < dt * 16) {
+        ember(finale.loser.x + (Math.random() - 0.5) * 24, finale.loser.y - 8,
+          (Math.random() - 0.5) * 40, -60 - Math.random() * 70,
+          0.9 + Math.random() * 0.6, 2 + Math.random() * 2, '#ffb24d');
+      }
+      finale.loser.tilt = Math.min(0.42, (finale.loser.tilt || 0) + dt * 1.1);
+    }
+
+    // Fixed sub-steps: a shell's path must be a pure function of its launch parameters so
+    // that both ends of an online match agree on it regardless of their frame rates.
+    const SHELL_STEP = 1 / 360;
+
+    function stepShell(shell, dt) {
+      shell.acc += dt;
+      let steps = Math.min(40, Math.floor(shell.acc / SHELL_STEP));
+      shell.acc -= steps * SHELL_STEP;
+      const h = SHELL_STEP;
+      while (steps-- > 0) {
+        shell.vy += GRAVITY * h;
+        shell.x += shell.vx * h;
+        shell.y += shell.vy * h;
+
+        if (shell.x < -60 || shell.x > W + 60 || shell.y > H + 200) return 'gone';
+
+        const target = players[1 - shell.owner];
+        if (Math.hypot(shell.x - target.x, shell.y - (target.y - 8)) < HIT_RADIUS) {
+          registerHit(shell, target, damageFor(shell, shell.vx, shell.vy));
+          return 'hit';
+        }
+
+        if (shell.y > 0 && shell.x > 0 && shell.x < W) {
+          if (shell.y >= waterY() && isWater(shell.x)) {
+            const sp = Math.hypot(shell.vx, shell.vy);
+            Sound.water(Math.min(1, sp / MAX_SPEED), Math.abs(shell.vy) / (sp || 1));
+            splash(shell.x, shell.vx, shell.vy);
+            blastDamage(shell, shell.x, waterY(), true);
+            return 'water';
+          }
+          if (shell.y >= terrainY(shell.x)) {
+            Sound.ground(Math.min(1, Math.hypot(shell.vx, shell.vy) / MAX_SPEED));
+            groundBurst(shell.x, terrainY(shell.x));
+            blastDamage(shell, shell.x, terrainY(shell.x), false);
+            return 'ground';
+          }
+        }
+      }
+      shell.rot = Math.atan2(shell.vy, shell.vx);
+      if (shell.whistle) {
+        // the whistle swells as the shell tips over and dives
+        const k = Math.min(1, Math.max(0, shell.vy) / (MAX_SPEED * 0.8));
+        Sound.whistleUpdate(shell.whistle, shell.vy > 40, k);
+      }
+      shell.puff -= dt;
+      if (shell.puff <= 0) {
+        shell.puff = 0.045;
+        smoke(shell.x, shell.y, (Math.random() - 0.5) * 18, (Math.random() - 0.5) * 18,
+          0.5 + Math.random() * 0.35, 3 + Math.random() * 2, 11, 20, '200,206,218', 0.16);
+      }
+      shell.trail.push({ x: shell.x, y: shell.y });
+      if (shell.trail.length > 34) shell.trail.shift();
+      return 'fly';
+    }
+
+    function update(dt) {
+      elapsed += dt;
+      shake *= Math.pow(0.0008, dt);
+      whiteout = Math.max(0, whiteout - dt * 2.2);
+
+      players.forEach((p, i) => {
+        if (!winner) {
+          p.phase += SWEEP_SPEED * dt;
+          const k = 0.5 - 0.5 * Math.cos(p.phase);
+          p.angle = p.minA + (p.maxA - p.minA) * k;
+        }
+        p.flash = Math.max(0, p.flash - dt);
+        p.recoil = Math.max(0, p.recoil - dt / 0.28);
+        p.hurt = Math.max(0, (p.hurt || 0) - dt);
+        p.shake *= Math.pow(0.0015, dt);
+
+        if (p.charging) {
+          p.charge = Math.min(1, p.charge + dt / CHARGE_TIME);
+          Sound.setCharge(i, p.charge);
+        }
+      });
+
+      updateBot(dt);
+      updateFinale(dt);
+
+      if (overTimer > 0) {
+        overTimer -= dt;
+        if (overTimer <= 0) showGameOver();
+      }
+
+      for (let i = shells.length - 1; i >= 0; i--) {
+        const s = shells[i];
+        s.px = s.x; s.py = s.y;          // frame start, for the swept mid-air check
+        if (stepShell(s, dt) !== 'fly') {
+          Sound.whistleStop(s.whistle);
+          shells.splice(i, 1);
+        }
+      }
+      if (shells.length > 1) checkAirbursts();
+
+      for (let i = rings.length - 1; i >= 0; i--) {        const r = rings[i];
+        r.life -= dt;
+        if (r.life <= 0) { rings.splice(i, 1); continue; }
+        const k = 1 - r.life / r.max;
+        r.r = r.maxR * (1 - Math.pow(1 - k, 2.4));
+      }
+
+      for (let i = columns.length - 1; i >= 0; i--) {
+        columns[i].t += dt;
+        if (columns[i].t >= columns[i].life) columns.splice(i, 1);
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const q = particles[i];
+        q.life -= dt;
+        if (q.life <= 0) { particles.splice(i, 1); continue; }
+        switch (q.type) {
+          case 'smoke':
+            q.vx *= Math.pow(0.08, dt);
+            q.vy *= Math.pow(0.08, dt);
+            q.vy -= q.rise * dt;
+            q.size += q.grow * dt;
+            break;
+          case 'ember':
+            q.vy += 210 * dt;
+            q.vx *= Math.pow(0.3, dt);
+            break;
+          case 'fire':
+            q.size += q.grow * dt;
+            q.vy *= Math.pow(0.15, dt);
+            break;          case 'debris':
+            q.vy += 900 * dt;
+            q.rot += q.spin * dt;
+            if (q.x > 0 && q.x < W && q.y >= terrainY(q.x) && q.vy > 0) {
+              q.y = terrainY(q.x);
+              q.vy *= -0.32;
+              q.vx *= 0.55;
+              q.spin *= 0.5;
+            }
+            break;
+          case 'drop':
+            q.vy += 900 * dt;
+            if (q.vy > 0 && q.y >= waterY()) q.life = 0;   // falls back into the lake
+            if (q.bounds && (q.x < q.bounds[0] || q.x > q.bounds[1])) q.life = 0;
+            break;
+          default:
+            q.vy += 640 * dt;
+            q.vx *= Math.pow(0.22, dt);
+        }
+        q.x += q.vx * dt;
+        q.y += q.vy * dt;
+      }
+
+      if (banner && banner.life !== Infinity) {
+        banner.life -= dt;
+        if (banner.life <= 0) banner = null;
+      }
+    }
+
+    // ---------- rendering ----------
+    const noise = i => { const s = Math.sin(i * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+
+    function terrainPath(c) {
+      c.beginPath();
+      c.moveTo(0, terrainY(0));
+      for (let x = 2; x <= W; x += 2) c.lineTo(x, terrainY(x));
+      c.lineTo(W, H);
+      c.lineTo(0, H);
+      c.closePath();
+    }
+
+    // Scenery (ridges + ground) never changes, so it is painted once into a buffer.
+    const scenery = document.createElement('canvas');
+    scenery.width = W; scenery.height = H;
+    const sctx = scenery.getContext('2d');
+
+    // Craters and scorch marks accumulate on their own buffer, clipped to the ground.
+    const decals = document.createElement('canvas');
+    decals.width = W; decals.height = H;
+    const dctx = decals.getContext('2d');
+
+    function clearDecals() { dctx.clearRect(0, 0, W, H); }
+
+    function scorch(x, y, r) {
+      dctx.save();
+      terrainPath(dctx);
+      dctx.clip();
+      let g = dctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, 'rgba(18,14,12,.85)');
+      g.addColorStop(0.55, 'rgba(32,25,18,.5)');
+      g.addColorStop(1, 'rgba(40,32,22,0)');
+      dctx.fillStyle = g;
+      dctx.beginPath();
+      dctx.ellipse(x, y, r, r * 0.45, 0, 0, Math.PI * 2);
+      dctx.fill();
+      dctx.strokeStyle = 'rgba(120,98,66,.45)';
+      dctx.lineWidth = 2;
+      dctx.beginPath();
+      dctx.ellipse(x, y, r * 0.55, r * 0.26, 0, 0, Math.PI * 2);
+      dctx.stroke();
+      dctx.restore();
+    }
+
+    function ridge(c, baseY, amp, freq, phase, fill) {
+      c.beginPath();
+      c.moveTo(0, H);
+      for (let x = 0; x <= W; x += 5) {
+        const t = x / W;
+        const y = baseY
+          - amp * (0.5 + 0.5 * Math.sin(t * Math.PI * 2 * freq + phase))
+          - amp * 0.3 * Math.sin(t * Math.PI * 2 * freq * 2.7 + phase * 1.7)
+          - amp * 0.12 * Math.sin(t * Math.PI * 2 * freq * 6.1 + phase * 3.1);
+        c.lineTo(x, y);
+      }
+      c.lineTo(W, H);
+      c.closePath();
+      c.fillStyle = fill;
+      c.fill();
+    }
+
+    function buildScenery() {
+      sctx.clearRect(0, 0, W, H);
+
+      // distant haze band behind the mountains
+      let haze = sctx.createLinearGradient(0, H * 0.4, 0, H * 0.78);
+      haze.addColorStop(0, 'rgba(120,140,200,0)');
+      haze.addColorStop(1, 'rgba(150,120,170,.28)');
+      sctx.fillStyle = haze;
+      sctx.fillRect(0, H * 0.4, W, H * 0.4);
+
+      ridge(sctx, H * 0.62, 96, 1.1, 0.4, '#2b3160');
+      ridge(sctx, H * 0.70, 74, 1.7, 2.3, '#333a6b');
+      ridge(sctx, H * 0.78, 52, 2.6, 5.1, '#3a3f70');
+
+      // treeline silhouette on the last ridge
+      sctx.fillStyle = '#232a4a';
+      for (let i = 0; i < 90; i++) {
+        const x = noise(i) * W;
+        const t = x / W;
+        const base = H * 0.78
+          - 52 * (0.5 + 0.5 * Math.sin(t * Math.PI * 2 * 2.6 + 5.1))
+          - 52 * 0.3 * Math.sin(t * Math.PI * 2 * 2.6 * 2.7 + 5.1 * 1.7)
+          - 52 * 0.12 * Math.sin(t * Math.PI * 2 * 2.6 * 6.1 + 5.1 * 3.1);
+        const h = 9 + noise(i + 40) * 12;
+        sctx.beginPath();
+        sctx.moveTo(x - h * 0.3, base + 3);
+        sctx.lineTo(x, base - h);
+        sctx.lineTo(x + h * 0.3, base + 3);
+        sctx.closePath();
+        sctx.fill();
+      }
+
+      // main battlefield
+      terrainPath(sctx);
+      sctx.save();
+      sctx.clip();
+
+      let g = sctx.createLinearGradient(0, H - 190, 0, H);
+      g.addColorStop(0, '#5d8f55');
+      g.addColorStop(0.18, '#3f6f45');
+      g.addColorStop(0.45, '#33553a');
+      g.addColorStop(0.75, '#2a3f2e');
+      g.addColorStop(1, '#1a2820');
+      sctx.fillStyle = g;
+      sctx.fillRect(0, 0, W, H);
+
+      // sedimentary layers
+      for (let s = 0; s < 9; s++) {
+        sctx.beginPath();
+        for (let x = 0; x <= W; x += 8) {
+          const y = H - 10 - s * 32 + Math.sin(x * 0.008 + s * 1.9) * 7 + Math.sin(x * 0.026 + s) * 3;
+          x === 0 ? sctx.moveTo(x, y) : sctx.lineTo(x, y);
+        }
+        sctx.strokeStyle = s % 2 ? 'rgba(24,34,26,.30)' : 'rgba(120,140,110,.10)';
+        sctx.lineWidth = 8 + (s % 2) * 6;
+        sctx.stroke();
+      }
+
+      // soil speckle + pebbles
+      for (let i = 0; i < 1400; i++) {
+        const x = noise(i * 3.1) * W;
+        const depth = noise(i * 7.7);
+        const y = terrainY(x) + 4 + depth * (H - terrainY(x));
+        if (y > H) continue;
+        const a = 0.05 + noise(i * 1.3) * 0.12;
+        sctx.fillStyle = noise(i * 5.5) > 0.5 ? `rgba(255,255,255,${a})` : `rgba(0,0,0,${a * 1.6})`;
+        const sz = 1 + noise(i * 2.2) * 2.2;
+        sctx.fillRect(x, y, sz, sz);
+      }
+
+      // grass blades along the crest
+      for (let i = 0; i < 620; i++) {
+        const x = noise(i * 9.3) * W;
+        if (isWater(x)) continue;
+        const y = terrainY(x);
+        const h = 4 + noise(i * 4.4) * 7;
+        const lean = (noise(i * 6.6) - 0.5) * 5;
+        sctx.strokeStyle = `rgba(${140 + noise(i) * 60 | 0},${190 + noise(i * 2) * 50 | 0},120,.5)`;
+        sctx.lineWidth = 1.3;
+        sctx.beginPath();
+        sctx.moveTo(x, y + 2);
+        sctx.quadraticCurveTo(x + lean * 0.5, y - h * 0.6, x + lean, y - h);
+        sctx.stroke();
+      }
+      sctx.restore();
+
+      // lit crest edge
+      sctx.beginPath();
+      sctx.moveTo(0, terrainY(0));
+      for (let x = 2; x <= W; x += 2) sctx.lineTo(x, terrainY(x));
+      sctx.strokeStyle = 'rgba(190,240,170,.6)';
+      sctx.lineWidth = 2.5;
+      sctx.stroke();
+
+      drawRocks();
+    }
+
+    function drawRocks() {
+      const count = 22 + Math.floor(Math.random() * 16);
+      for (let i = 0; i < count; i++) {
+        const x = 40 + Math.random() * (W - 80);
+        if (Math.abs(x - LEFT_X) < 60 || Math.abs(x - RIGHT_X) < 60) continue;
+        if (isWater(x) || isWater(x - 16) || isWater(x + 16)) continue;   // keep them out of the lake
+
+        const r = 5 + Math.random() * (Math.random() < 0.22 ? 22 : 9);
+        const y = terrainY(x) + r * 0.35;          // partly buried
+        const slope = (terrainY(x + 6) - terrainY(x - 6)) / 12;
+        const tilt = Math.atan(slope);
+
+        // irregular silhouette
+        const pts = [];
+        const sides = 6 + Math.floor(Math.random() * 4);
+        for (let k = 0; k < sides; k++) {
+          const a = (k / sides) * Math.PI * 2 + Math.random() * 0.25;
+          const rr = r * (0.68 + Math.random() * 0.45);
+          pts.push([Math.cos(a) * rr, Math.sin(a) * rr * 0.78]);
+        }
+
+        sctx.save();
+        sctx.translate(x, y);
+        sctx.rotate(tilt);
+
+        sctx.fillStyle = 'rgba(0,0,0,.3)';
+        sctx.beginPath();
+        sctx.ellipse(r * 0.25, r * 0.3, r * 1.15, r * 0.3, 0, 0, Math.PI * 2);
+        sctx.fill();
+
+        const tone = 96 + Math.random() * 46;
+        const g = sctx.createLinearGradient(-r, -r, r * 0.6, r);
+        g.addColorStop(0, `rgb(${tone + 40},${tone + 44},${tone + 36})`);
+        g.addColorStop(0.45, `rgb(${tone},${tone + 4},${tone - 6})`);
+        g.addColorStop(1, `rgb(${tone * 0.42 | 0},${tone * 0.46 | 0},${tone * 0.4 | 0})`);
+        sctx.fillStyle = g;
+        sctx.strokeStyle = 'rgba(12,18,14,.75)';
+        sctx.lineWidth = 1.6;
+        sctx.beginPath();
+        pts.forEach(([px, py], k) => k ? sctx.lineTo(px, py) : sctx.moveTo(px, py));
+        sctx.closePath();
+        sctx.fill();
+        sctx.stroke();
+
+        // cleavage facet + moonlit top edge
+        sctx.strokeStyle = 'rgba(0,0,0,.28)';
+        sctx.lineWidth = 1.2;
+        sctx.beginPath();
+        sctx.moveTo(pts[0][0], pts[0][1]);
+        sctx.lineTo(pts[(sides >> 1)][0] * 0.35, pts[(sides >> 1)][1] * 0.35);
+        sctx.lineTo(pts[sides - 2][0], pts[sides - 2][1]);
+        sctx.stroke();
+
+        sctx.strokeStyle = 'rgba(225,240,215,.35)';
+        sctx.lineWidth = 1.4;
+        sctx.beginPath();
+        sctx.moveTo(pts[sides - 1][0], pts[sides - 1][1]);
+        sctx.lineTo(pts[0][0], pts[0][1]);
+        sctx.lineTo(pts[1][0], pts[1][1]);
+        sctx.stroke();
+
+        sctx.restore();
+      }
+    }
+
+    function drawSky() {
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#080f2b');
+      g.addColorStop(0.35, '#1a2350');
+      g.addColorStop(0.62, '#3c3468');
+      g.addColorStop(0.82, '#7a4a6d');
+      g.addColorStop(1, '#c2705a');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+
+      // stars
+      for (let i = 0; i < 90; i++) {
+        const x = noise(i) * W;
+        const y = noise(i + 100) * H * 0.55;
+        const tw = 0.5 + 0.5 * Math.sin(elapsed * 1.8 + i * 1.7);
+        ctx.globalAlpha = (0.15 + tw * 0.55) * (1 - y / (H * 0.7));
+        ctx.fillStyle = '#fff';
+        const s = noise(i + 200) > 0.9 ? 2 : 1.3;
+        ctx.fillRect(x, y, s, s);
+      }
+      ctx.globalAlpha = 1;
+
+      // moon with halo
+      const mx = W * 0.78, my = H * 0.17;
+      const halo = ctx.createRadialGradient(mx, my, 6, mx, my, 90);
+      halo.addColorStop(0, 'rgba(255,245,220,.34)');
+      halo.addColorStop(1, 'rgba(255,245,220,0)');
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(mx, my, 90, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fdf4dd';
+      ctx.beginPath();
+      ctx.arc(mx, my, 22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(205,195,170,.55)';
+      [[-7, -5, 5], [6, 3, 4], [-2, 9, 3]].forEach(([ox, oy, r]) => {
+        ctx.beginPath();
+        ctx.arc(mx + ox, my + oy, r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // drifting cloud bands
+      for (let i = 0; i < 7; i++) {
+        const speed = 5 + noise(i + 11) * 9;
+        const cy = H * 0.12 + noise(i + 3) * H * 0.4;
+        const cw = 140 + noise(i + 7) * 220;
+        const cx = ((noise(i) * W + elapsed * speed) % (W + cw * 2)) - cw;
+        const cg = ctx.createLinearGradient(0, cy - 14, 0, cy + 14);
+        cg.addColorStop(0, 'rgba(255,220,220,0)');
+        cg.addColorStop(0.5, `rgba(255,205,200,${0.05 + noise(i + 5) * 0.08})`);
+        cg.addColorStop(1, 'rgba(255,220,220,0)');
+        ctx.fillStyle = cg;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, cw, 13 + noise(i + 2) * 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function waveY(x) {
+      return waterY()
+        + Math.sin(x * 0.018 + elapsed * 1.7) * 3.2
+        + Math.sin(x * 0.047 - elapsed * 2.6) * 1.6;
+    }
+
+    function drawWater() {
+      const wy = waterY();
+      let x = 0;
+      while (x < W) {
+        if (!isWater(x)) { x += 3; continue; }
+        const start = x;
+        while (x < W && isWater(x)) x += 3;
+        const end = Math.min(W, x);
+        if (end - start < 8) continue;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(start, waveY(start));
+        for (let px = start; px <= end; px += 4) ctx.lineTo(px, waveY(px));
+        for (let px = end; px >= start; px -= 4) ctx.lineTo(px, Math.max(terrainY(px), wy));
+        ctx.closePath();
+        ctx.clip();
+
+        const depth = H - wy;
+        const g = ctx.createLinearGradient(0, wy - 6, 0, wy + depth);
+        g.addColorStop(0, 'rgba(150,225,255,.72)');
+        g.addColorStop(0.28, 'rgba(56,140,200,.82)');
+        g.addColorStop(1, 'rgba(12,44,86,.95)');
+        ctx.fillStyle = g;
+        ctx.fillRect(start - 4, wy - 12, end - start + 8, depth + 20);
+
+        // moonlight glitter
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 26; i++) {
+          const gx = start + ((i * 137.5 + elapsed * 9) % (end - start));
+          const gy = wy + 6 + ((i * 53.7) % Math.min(70, depth));
+          const a = 0.05 + 0.12 * Math.abs(Math.sin(elapsed * 2 + i));
+          ctx.fillStyle = `rgba(210,240,255,${a})`;
+          ctx.fillRect(gx, gy, 10 + (i % 4) * 7, 1.4);
+        }
+        ctx.restore();
+
+        // bright surface line
+        ctx.beginPath();
+        ctx.moveTo(start, waveY(start));
+        for (let px = start; px <= end; px += 4) ctx.lineTo(px, waveY(px));
+        ctx.strokeStyle = 'rgba(205,245,255,.75)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
+    function drawColumns() {
+      if (!columns.length) return;
+      const wy = waterY();
+      columns.forEach(c => {
+        const k = c.t / c.life;
+        const rise = Math.min(1, c.t / 0.24);
+        const grow = 1 - Math.pow(1 - rise, 2.2);
+        const collapse = k > 0.45 ? Math.pow((k - 0.45) / 0.55, 1.4) : 0;
+        const h = c.h * grow * (1 - collapse * 0.94);
+        if (h < 3) return;
+        const w = c.w * (1 + k * 1.1);
+        const a = Math.max(0, 1 - Math.pow(k, 1.7));
+
+        ctx.save();
+        if (c.clip) {
+          ctx.beginPath();
+          ctx.rect(c.clip[0], 0, c.clip[1] - c.clip[0], H);
+          ctx.clip();
+        }
+
+        // foam skirt where the column meets the surface
+        ctx.fillStyle = `rgba(232,248,255,${a * 0.45})`;
+        ctx.beginPath();
+        ctx.ellipse(c.x, wy + 2, w * 1.5, w * 0.3, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        const g = ctx.createLinearGradient(0, wy - h, 0, wy + 6);
+        g.addColorStop(0, `rgba(255,255,255,${a * 0.1})`);
+        g.addColorStop(0.3, `rgba(240,251,255,${a * 0.55})`);
+        g.addColorStop(1, `rgba(214,240,255,${a * 0.92})`);
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(c.x - w / 2, wy + 4);
+        ctx.bezierCurveTo(c.x - w * 0.44, wy - h * 0.4, c.x - w * 0.22, wy - h * 0.78, c.x - w * 0.12, wy - h);
+        ctx.bezierCurveTo(c.x - w * 0.04, wy - h * 1.07, c.x + w * 0.04, wy - h * 1.07, c.x + w * 0.12, wy - h);
+        ctx.bezierCurveTo(c.x + w * 0.22, wy - h * 0.78, c.x + w * 0.44, wy - h * 0.4, c.x + w / 2, wy + 4);
+        ctx.closePath();
+        ctx.fill();
+
+        // brighter core near the base
+        const cg = ctx.createLinearGradient(0, wy - h * 0.6, 0, wy + 4);
+        cg.addColorStop(0, `rgba(255,255,255,0)`);
+        cg.addColorStop(1, `rgba(255,255,255,${a * 0.5})`);
+        ctx.fillStyle = cg;
+        ctx.beginPath();
+        ctx.moveTo(c.x - w * 0.2, wy + 4);
+        ctx.quadraticCurveTo(c.x - w * 0.1, wy - h * 0.45, c.x, wy - h * 0.62);
+        ctx.quadraticCurveTo(c.x + w * 0.1, wy - h * 0.45, c.x + w * 0.2, wy + 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+
+    function drawCannon(p) {
+      const sx = (Math.random() - 0.5) * p.shake;
+      const sy = (Math.random() - 0.5) * p.shake;
+      const BL = BARREL_LEN / ART;      // barrel length in the cannon's own art units
+      ctx.save();
+      ctx.translate(p.x + sx, p.y + sy);
+      ctx.scale(ART, ART);
+      if (p.dead) {
+        ctx.rotate((p.tilt || 0) * p.dir);
+        ctx.translate(0, (p.tilt || 0) * 14);
+        ctx.filter = 'grayscale(.55) brightness(.6)';
+      }
+
+      // ground shadow
+      ctx.fillStyle = 'rgba(0,0,0,.35)';
+      ctx.beginPath();
+      ctx.ellipse(0, 16, 40, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // aiming guide, its length shows the power in the chamber
+      ctx.save();
+      ctx.globalAlpha = p.dead ? 0 : (p.charging ? 0.5 : 0.28);
+      ctx.setLineDash([5, 9]);
+      ctx.strokeStyle = p.charging ? `hsl(${58 - 58 * p.charge},95%,60%)` : p.color;
+      ctx.lineWidth = 2 + 1.5 * (p.charging ? p.charge : 0);
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(p.angle) * (BL + 14), -Math.sin(p.angle) * (BL + 14));
+      const reach = BL + 40 + 105 * (p.charging ? p.charge : 0.45);
+      ctx.lineTo(Math.cos(p.angle) * reach, -Math.sin(p.angle) * reach);
+      ctx.stroke();
+      ctx.restore();
+
+      // trail spade dug into the ground, pointing away from the enemy
+      ctx.save();
+      ctx.scale(p.dir, 1);
+      ctx.fillStyle = '#414a55';
+      ctx.strokeStyle = '#151b24';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-4, -2);
+      ctx.lineTo(-46, 14);
+      ctx.lineTo(-46, 20);
+      ctx.lineTo(-2, 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      // barrel assembly
+      ctx.save();
+      ctx.rotate(-p.angle);
+      const recoil = -13 * p.recoil;
+
+      // cradle / recuperator
+      ctx.fillStyle = '#39424e';
+      ctx.strokeStyle = '#141a22';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(0, -13, 34, 26, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.save();
+      ctx.translate(recoil, 0);
+      const steel = ctx.createLinearGradient(0, -11, 0, 11);
+      steel.addColorStop(0, '#8b97a6');
+      steel.addColorStop(0.32, '#5c6876');
+      steel.addColorStop(0.55, '#3a434f');
+      steel.addColorStop(1, '#20262e');
+      ctx.fillStyle = steel;
+      ctx.strokeStyle = '#11161d';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(6, -11, BL - 4, 22, 5);
+      ctx.fill();
+      ctx.stroke();
+
+      // reinforcing bands
+      ctx.fillStyle = 'rgba(20,26,34,.55)';
+      [18, 30].forEach(bx => ctx.fillRect(bx, -11, 3, 22));
+      ctx.fillStyle = 'rgba(255,255,255,.18)';
+      ctx.fillRect(8, -8, BL - 8, 2);
+
+      // muzzle brake
+      ctx.fillStyle = '#2e3742';
+      ctx.strokeStyle = '#11161d';
+      ctx.beginPath();
+      ctx.roundRect(BL - 2, -14, 16, 28, 4);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#0c1016';
+      ctx.fillRect(BL + 1, -14, 4, 7);
+      ctx.fillRect(BL + 1, 7, 4, 7);
+      ctx.fillRect(BL + 8, -14, 4, 7);
+      ctx.fillRect(BL + 8, 7, 4, 7);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(BL + 13, -9, 3, 18);
+
+      // charge building in the chamber
+      if (p.charging) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.translate(BL + 8, 0);
+        const r = 6 + 20 * p.charge;
+        const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+        cg.addColorStop(0, `rgba(255,255,220,${0.5 + 0.4 * p.charge})`);
+        cg.addColorStop(0.4, `hsla(${58 - 58 * p.charge},95%,60%,${0.4 * p.charge + 0.2})`);
+        cg.addColorStop(1, 'rgba(255,90,30,0)');
+        ctx.fillStyle = cg;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // muzzle flash
+      if (p.flash > 0) {
+        const k = p.flash / 0.14;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.translate(BL + 18, 0);
+        const fg = ctx.createRadialGradient(0, 0, 0, 0, 0, 44 * k);
+        fg.addColorStop(0, `rgba(255,255,235,${0.95 * k})`);
+        fg.addColorStop(0.3, `rgba(255,205,110,${0.7 * k})`);
+        fg.addColorStop(1, 'rgba(255,120,40,0)');
+        ctx.fillStyle = fg;
+        ctx.beginPath();
+        ctx.arc(0, 0, 44 * k, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = `rgba(255,248,214,${k})`;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+          const a = (i / 8) * Math.PI * 2;
+          const r = (i % 2 ? 9 : 34) * k;
+          const px = Math.cos(a) * r * (i % 2 ? 1 : 1.5), py = Math.sin(a) * r;
+          i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.restore();
+      ctx.restore();
+
+      // shield plate
+      ctx.save();
+      ctx.scale(p.dir, 1);
+      const plate = ctx.createLinearGradient(0, -22, 0, 12);
+      plate.addColorStop(0, p.color);
+      plate.addColorStop(1, p.dark);
+      ctx.fillStyle = plate;
+      ctx.strokeStyle = '#11161d';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(2, 10);
+      ctx.lineTo(2, -14);
+      ctx.quadraticCurveTo(10, -24, 22, -20);
+      ctx.lineTo(24, 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(0,0,0,.35)';
+      [[8, -12], [18, -12], [8, 2], [18, 2]].forEach(([bx, by]) => {
+        ctx.beginPath();
+        ctx.arc(bx, by, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+
+      // wheel
+      ctx.save();
+      ctx.translate(-6 * p.dir, 6);
+      ctx.rotate(-p.recoil * 0.5 * p.dir);
+      ctx.fillStyle = '#2b333d';
+      ctx.beginPath();
+      ctx.arc(0, 0, 17, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#151b24';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a) * 4, Math.sin(a) * 4);
+        ctx.lineTo(Math.cos(a) * 14, Math.sin(a) * 14);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#93a0ae';
+      ctx.beginPath();
+      ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // reload / power gauge is drawn last so nothing covers it
+      if (p.hurt > 0) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = (p.hurt / 0.3) * 0.5;
+        const hg = ctx.createRadialGradient(0, 0, 0, 0, 0, 46);
+        hg.addColorStop(0, '#ffd9a0');
+        hg.addColorStop(1, 'rgba(255,140,60,0)');
+        ctx.fillStyle = hg;
+        ctx.beginPath();
+        ctx.arc(0, 0, 46, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // power gauge
+      if (!winner) {
+        const charging = p.charging;
+        const k = charging ? p.charge : 1;
+        ctx.fillStyle = 'rgba(0,0,0,.55)';
+        ctx.beginPath();
+        ctx.roundRect(-30, 24, 60, 7, 3.5);
+        ctx.fill();
+        ctx.fillStyle = charging
+          ? `hsl(${58 - 58 * p.charge},95%,55%)`
+          : '#a8ffb0';
+        ctx.beginPath();
+        ctx.roundRect(-29, 25, 58 * k, 5, 2.5);
+        ctx.fill();
+        if (charging && p.charge >= 1) {
+          // held at full power, ready whenever you let go
+          ctx.globalAlpha = 0.45 + 0.4 * Math.sin(elapsed * 9);
+          ctx.strokeStyle = '#fff0a8';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.roundRect(-31, 23, 62, 9, 4.5);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        } else if (!charging) {
+          ctx.globalAlpha = 0.35 + 0.35 * Math.sin(elapsed * 7);
+          ctx.strokeStyle = '#d6ffd9';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.roundRect(-30, 24, 60, 7, 3.5);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawShells() {
+      shells.forEach(s => {
+        // contrail
+        ctx.lineCap = 'round';
+        for (let i = 1; i < s.trail.length; i++) {
+          const k = i / s.trail.length;
+          ctx.globalAlpha = k * 0.45;
+          ctx.strokeStyle = s.color;
+          ctx.lineWidth = 1 + k * 3;
+          ctx.beginPath();
+          ctx.moveTo(s.trail[i - 1].x, s.trail[i - 1].y);
+          ctx.lineTo(s.trail[i].x, s.trail[i].y);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+
+        ctx.save();
+        ctx.translate(s.x, s.y);
+        ctx.rotate(s.rot);
+
+        // rocket exhaust
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        const flick = 0.75 + Math.random() * 0.45;
+        const eg = ctx.createLinearGradient(-15, 0, -15 - 30 * flick, 0);
+        eg.addColorStop(0, 'rgba(255,240,200,.9)');
+        eg.addColorStop(0.4, 'rgba(255,160,60,.55)');
+        eg.addColorStop(1, 'rgba(255,90,30,0)');
+        ctx.fillStyle = eg;
+        ctx.beginPath();
+        ctx.moveTo(-14, -6);
+        ctx.quadraticCurveTo(-30 * flick, 0, -14, 6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        // fins
+        ctx.fillStyle = '#2b333d';
+        ctx.strokeStyle = '#11161d';
+        ctx.lineWidth = 1.5;
+        [-1, 1].forEach(sgn => {
+          ctx.beginPath();
+          ctx.moveTo(-14, sgn * 4);
+          ctx.lineTo(-20, sgn * 11);
+          ctx.lineTo(-7, sgn * 8);
+          ctx.lineTo(-7, sgn * 4);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        });
+
+        // body
+        const body = ctx.createLinearGradient(0, -8, 0, 8);
+        body.addColorStop(0, '#d7dee6');
+        body.addColorStop(0.35, '#98a4b2');
+        body.addColorStop(0.7, '#56616f');
+        body.addColorStop(1, '#2b323b');
+        ctx.fillStyle = body;
+        ctx.strokeStyle = '#141a22';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-15, -7.5);
+        ctx.lineTo(6, -7.5);
+        ctx.quadraticCurveTo(17, -6, 21, 0);
+        ctx.quadraticCurveTo(17, 6, 6, 7.5);
+        ctx.lineTo(-15, 7.5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // driving band + team stripe
+        ctx.fillStyle = '#c9a227';
+        ctx.fillRect(-4, -7.5, 4, 15);
+        ctx.fillStyle = s.color;
+        ctx.fillRect(-11, -7.5, 3.5, 15);
+        ctx.fillStyle = 'rgba(255,255,255,.35)';
+        ctx.fillRect(-14, -5.5, 32, 1.8);
+
+        // hot nose cap
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        const ng = ctx.createRadialGradient(18, 0, 0, 18, 0, 12);
+        ng.addColorStop(0, 'rgba(255,240,210,.85)');
+        ng.addColorStop(1, 'rgba(255,140,60,0)');
+        ctx.fillStyle = ng;
+        ctx.beginPath();
+        ctx.arc(18, 0, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.restore();
+      });
+      ctx.lineCap = 'butt';
+    }
+
+    function drawParticles() {
+      // smoke first, underneath the fire
+      particles.forEach(q => {
+        if (q.type !== 'smoke') return;
+        const k = q.life / q.max;
+        const a = q.alpha * Math.min(1, k * 1.6) * Math.min(1, (1 - k) * 6 + 0.2);
+        const g = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, q.size);
+        g.addColorStop(0, `rgba(${q.rgb},${a})`);
+        g.addColorStop(0.6, `rgba(${q.rgb},${a * 0.45})`);
+        g.addColorStop(1, `rgba(${q.rgb},0)`);
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(q.x, q.y, q.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      particles.forEach(q => {
+        if (q.type !== 'debris') return;
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, q.life / q.max * 2);
+        ctx.translate(q.x, q.y);
+        ctx.rotate(q.rot);
+        ctx.fillStyle = q.color;
+        ctx.fillRect(-q.size / 2, -q.size / 2, q.size, q.size * 0.8);
+        ctx.restore();
+      });
+
+      particles.forEach(q => {
+        if (q.type !== 'drop') return;
+        const k = Math.min(1, q.life / q.max * 1.6);
+        const sp = Math.hypot(q.vx, q.vy) || 1;
+        ctx.globalAlpha = k * 0.9;
+        ctx.strokeStyle = '#dff2ff';
+        ctx.lineWidth = q.size;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(q.x, q.y);
+        ctx.lineTo(q.x - q.vx / sp * q.size * 3, q.y - q.vy / sp * q.size * 3);
+        ctx.stroke();
+      });
+      ctx.lineCap = 'butt';
+      ctx.globalAlpha = 1;
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+
+      rings.forEach(r => {
+        const k = r.life / r.max;
+        if (r.clip) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(r.clip[0], 0, r.clip[1] - r.clip[0], H);
+          ctx.clip();
+        }
+        ctx.strokeStyle = `rgba(${r.color},${k * k * 0.85})`;
+        ctx.lineWidth = Math.max(0.5, r.width * k * k);
+        ctx.beginPath();
+        ctx.ellipse(r.x, r.y, r.r, r.r * (r.sq || 1), 0, 0, Math.PI * 2);
+        ctx.stroke();
+        if (r.clip) ctx.restore();
+      });
+
+      particles.forEach(q => {
+        if (q.type === 'smoke' || q.type === 'debris' || q.type === 'drop') return;
+        const k = Math.max(0, q.life / q.max);
+        ctx.globalAlpha = k;
+        if (q.type === 'fire') {
+          const g = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, q.size);
+          g.addColorStop(0, 'rgba(255,255,240,.95)');
+          g.addColorStop(0.25, 'rgba(255,220,140,.8)');
+          g.addColorStop(0.6, 'rgba(255,130,45,.45)');
+          g.addColorStop(1, 'rgba(180,40,10,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(q.x, q.y, q.size, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (q.type === 'ember') {
+          const g = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, q.size * 4);
+          g.addColorStop(0, q.color);
+          g.addColorStop(1, 'rgba(255,90,20,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(q.x, q.y, q.size * 4, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          const sp = Math.hypot(q.vx, q.vy);
+          ctx.strokeStyle = q.color;
+          ctx.lineWidth = q.size;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(q.x, q.y);
+          ctx.lineTo(q.x - q.vx / sp * q.size * 3.5, q.y - q.vy / sp * q.size * 3.5);
+          ctx.stroke();
+        }
+      });
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+
+    function drawHpBar(p, side) {
+      const barW = 24, barH = 420;
+      const x = side === 'left' ? 26 : W - 26 - barW;
+      const y = (H - barH) / 2 + 10;
+
+      ctx.fillStyle = 'rgba(0,0,0,.45)';
+      ctx.strokeStyle = 'rgba(255,255,255,.35)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(x, y, barW, barH, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      const ratio = p.hp / MAX_HP;
+      const fillH = barH * ratio;
+      if (fillH > 2) {
+        ctx.fillStyle = ratio > 0.5 ? p.color : (ratio > 0.25 ? '#ffd166' : '#ff5d5d');
+        ctx.beginPath();
+        ctx.roundRect(x + 3, y + barH - fillH + 3, barW - 6, Math.max(0, fillH - 6), 7);
+        ctx.fill();
+      }
+
+      // hit markers at the 1/3 thresholds
+      ctx.strokeStyle = 'rgba(255,255,255,.35)';
+      ctx.lineWidth = 1;
+      [1 / 3, 2 / 3].forEach(f => {
+        const ly = y + barH - barH * f;
+        ctx.beginPath();
+        ctx.moveTo(x, ly);
+        ctx.lineTo(x + barW, ly);
+        ctx.stroke();
+      });
+
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 26px Segoe UI, sans-serif';
+      ctx.fillText(p.hp, x + barW / 2, y - 16);
+      ctx.font = 'bold 15px Segoe UI, sans-serif';
+      ctx.fillStyle = p.color;
+      ctx.fillText(nameOf(p), x + barW / 2, y + barH + 26);
+      ctx.fillStyle = 'rgba(255,255,255,.7)';
+      ctx.font = '11px Segoe UI, sans-serif';
+      const sub = online()
+        ? (players.indexOf(p) === myIndex ? 'YOU · W/↑/SPACE' : 'OPPONENT')
+        : mode === 'bot'
+          ? (p.id === 2 ? 'W/↑/SPACE' : BOTS[difficulty].label)
+          : (p.id === 1 ? 'W' : '↑');
+      ctx.fillText(sub, x + barW / 2, y + barH + 46);
+    }
+
+    function drawHud() {
+      players.forEach((p, i) => drawHpBar(p, i === 0 ? 'left' : 'right'));
+
+      if (banner) {
+        ctx.textAlign = 'center';
+        const big = banner.life === Infinity;
+        ctx.globalAlpha = big ? 1 : Math.min(1, banner.life);
+        if (big) {
+          const pop = Math.min(1, (finale ? finale.t : 1) * 3.2);
+          const scale = 0.6 + 0.4 * pop + 0.04 * Math.sin(elapsed * 4);
+          ctx.save();
+          ctx.translate(W / 2, 200);
+          ctx.scale(scale, scale);
+          ctx.font = 'bold 76px Segoe UI, sans-serif';
+          ctx.lineWidth = 12;
+          ctx.strokeStyle = 'rgba(0,0,0,.6)';
+          ctx.strokeText(banner.text, 0, 0);
+          const grad = ctx.createLinearGradient(0, -50, 0, 30);
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.5, banner.color);
+          grad.addColorStop(1, '#ffffff');
+          ctx.fillStyle = grad;
+          ctx.fillText(banner.text, 0, 0);
+          ctx.font = 'bold 22px Segoe UI, sans-serif';
+          ctx.fillStyle = 'rgba(255,255,255,.85)';
+          ctx.fillText('GUNS SILENCED', 0, 44);
+          ctx.restore();
+        } else {
+          ctx.font = 'bold 22px Segoe UI, sans-serif';
+          ctx.fillStyle = 'rgba(0,0,0,.45)';
+          ctx.fillText(banner.text, W / 2 + 2, 62);
+          ctx.fillStyle = banner.color;
+          ctx.fillText(banner.text, W / 2, 60);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      ctx.textAlign = 'center';
+      ctx.font = '13px Segoe UI, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,.55)';
+      ctx.fillText(MAPS[mapId].label + '  ·  hold to charge, release to fire  ·  steep plunging shots hurt most  ·  shells that meet in the air explode', W / 2, H - 14);
+    }
+
+    function render() {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      drawSky();
+
+      ctx.save();
+      const k = Math.min(shake, 20);
+      ctx.translate((Math.random() - 0.5) * k, (Math.random() - 0.5) * k);
+
+      ctx.drawImage(scenery, 0, 0);
+      ctx.drawImage(decals, 0, 0);
+      drawWater();
+      drawColumns();
+      players.forEach(drawCannon);
+      drawShells();
+      drawParticles();
+      ctx.restore();
+
+      if (whiteout > 0) {
+        ctx.fillStyle = `rgba(255,236,200,${Math.min(0.55, whiteout * 0.55)})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // the whole viewport takes on the winner's colour
+      if (winTint > 0 && winner) {
+        const pulse = 0.26 + 0.09 * Math.sin(elapsed * 3.2);
+        ctx.save();
+        ctx.globalCompositeOperation = 'overlay';
+        ctx.globalAlpha = winTint;
+        ctx.fillStyle = winner.color;
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+
+        ctx.save();
+        ctx.globalAlpha = winTint * pulse;
+        ctx.fillStyle = winner.color;
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+
+        // light rays sweeping out of the winning gun
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = winTint * 0.16;
+        ctx.translate(winner.x, winner.y - 6);
+        ctx.fillStyle = winner.color;
+        for (let i = 0; i < 12; i++) {
+          const a = elapsed * 0.5 + (i / 12) * Math.PI * 2;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(Math.cos(a - 0.05) * 1200, Math.sin(a - 0.05) * 1200);
+          ctx.lineTo(Math.cos(a + 0.05) * 1200, Math.sin(a + 0.05) * 1200);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // vignette
+      const v = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 0.95);
+      v.addColorStop(0, 'rgba(0,0,0,0)');
+      v.addColorStop(1, 'rgba(0,0,0,.45)');
+      ctx.fillStyle = v;
+      ctx.fillRect(0, 0, W, H);
+
+      drawHud();
+    }
+
+    // ---------- loop ----------
+    let last = performance.now();
+    function loop(now) {
+      const dt = Math.min(0.033, (now - last) / 1000);
+      last = now;
+      update(dt);
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    // ---------- input ----------
+    const overlay = document.getElementById('overlay');
+    const panels = {
+      main: document.getElementById('panelMain'),
+      diff: document.getElementById('panelDiff'),
+      map: document.getElementById('panelMap'),
+      over: document.getElementById('panelOver'),
+      lobby: document.getElementById('panelLobby'),
+      invite: document.getElementById('panelInvite'),
+      wait: document.getElementById('panelWait')
+    };
+    const btnP1 = document.getElementById('btnP1');
+    const btnP2 = document.getElementById('btnP2');
+    const hintP1 = document.getElementById('hintP1');
+    const hintP2 = document.getElementById('hintP2');
+
+    function showPanel(name) {
+      Object.entries(panels).forEach(([k, el]) => el.classList.toggle('hidden', k !== name));
+      overlay.classList.remove('hidden');
+      running = false;
+    }
+
+    function showWait(title, text, cancelLabel) {
+      document.getElementById('waitTitle').textContent = title;
+      document.getElementById('waitText').textContent = text;
+      panels.wait.querySelector('[data-act="wait-cancel"]').textContent = cancelLabel || 'Cancel';
+      showPanel('wait');
+    }
+
+    function openMenu() {
+      Net.exit();
+      netNames = [null, null];
+      reset();
+      overlay.style.background = '';
+      overlay.style.boxShadow = '';
+      showPanel('main');
+    }
+
+    function startGame(terrain) {
+      reset(terrain);
+      overlay.classList.add('hidden');
+      overlay.style.background = '';
+      overlay.style.boxShadow = '';
+      running = true;
+      const bot = mode === 'bot';
+      const net = mode === 'online';
+      btnP1.style.display = (bot || net) ? 'none' : '';
+      btnP2.textContent = (bot || net) ? 'HOLD TO CHARGE' : 'RED FIRE';
+      if (net) {
+        hintP1.innerHTML = `<span class="${myIndex ? 'p2' : 'p1'}">You</span> — ${myIndex ? 'right' : 'left'} gun,`
+          + ' hold <kbd>W</kbd> / <kbd>↑</kbd> / <kbd>Space</kbd>';
+        hintP2.textContent = 'Opponent: ' + nameOf(players[1 - myIndex]);
+      } else {
+        hintP1.innerHTML = bot
+          ? '<span class="p2">You</span> — right gun, hold <kbd>W</kbd> / <kbd>↑</kbd> / <kbd>Space</kbd>, release to fire'
+          : '<span class="p1">Blue</span> — hold <kbd>W</kbd>, release to fire';
+        hintP2.innerHTML = bot
+          ? '<span class="p1">Bot</span> — left gun, difficulty <kbd>' + BOTS[difficulty].label + '</kbd>'
+          : '<span class="p2">Red</span> — hold <kbd>↑</kbd>, release to fire';
+      }
+    }
+
+    function showGameOver() {
+      const net = online();
+      const playerWon = net ? players.indexOf(winner) === myIndex : winner.id === 2;
+      document.getElementById('overTitle').textContent = winHeadline(winner);
+      document.getElementById('overSub').textContent = net
+        ? (playerWon ? `You beat ${nameOf(players[1 - myIndex])} with ${players[myIndex].hp} HP left.`
+          : `${nameOf(players[1 - myIndex])} got there first.`)
+        : mode === 'bot'
+          ? (playerWon ? `You beat the ${BOTS[difficulty].label.toLowerCase()} bot with ${players[1].hp} HP left.`
+            : 'The bot got there first. Try again?')
+          : `${players[winner.id - 1].hp} HP remaining.`;
+      const rgb = winner.id === 1 ? '111,211,255' : '255,95,95';
+      overlay.style.background = `rgba(${rgb},.32)`;
+      overlay.style.boxShadow = `inset 0 0 170px rgba(${rgb},.6)`;
+      document.getElementById('btnRematch').hidden = net;
+      document.getElementById('btnOverLobby').hidden = !net;
+      if (!net) {
+        document.getElementById('btnOverAgain').hidden = true;
+        document.getElementById('overAgainNote').hidden = true;
+      }
+      if (net) {
+        if (isHost) {
+          const wi = players.indexOf(winner), li = 1 - wi;
+          const side = i => ({
+            name: nameOf(players[i]), hp: players[i].hp,
+            shots: stats.shots[i], hits: stats.hits[i], dmg: stats.dmg[i]
+          });
+          Net.reportResult({
+            winnerIndex: wi, map: mapId, dur: Math.round(stats.duration),
+            air: stats.air, w: side(wi), l: side(li)
+          });
+        }
+        Net.matchOver();
+      }
+      showPanel('over');
+    }
+
+    overlay.addEventListener('click', e => {
+      Sound.unlock();
+      const btn = e.target.closest('button');
+      const act = btn?.dataset.act;
+      if (!act) return;
+      switch (act) {
+        case 'bot': showPanel('diff'); break;
+        case 'duel': mode = 'duel'; showPanel('map'); break;
+        case 'back': showPanel('main'); break;
+        case 'back-map': showPanel(mode === 'bot' ? 'diff' : 'main'); break;
+        case 'easy': case 'medium': case 'hard':
+          mode = 'bot';
+          difficulty = act;
+          showPanel('map');
+          break;
+        case 'map-hill': case 'map-lake':
+          mapId = act === 'map-hill' ? 'hill' : 'lake';
+          startGame();
+          if (online()) Net.send({ t: 'start', terrain: serializeTerrain() });
+          break;
+        case 'rematch': startGame(); break;
+        case 'again': Net.requestRematch(); break;
+        case 'menu': openMenu(); break;
+
+        case 'online': Net.open(); break;
+        case 'rename': Net.rename(); break;
+        case 'pick': Net.invite(Number(btn.dataset.id)); break;
+        case 'accept': Net.respond(true); break;
+        case 'decline': Net.respond(false); break;
+        case 'wait-cancel': Net.cancel(); break;
+        case 'lobby-back': Net.exit(); showPanel('main'); break;
+        case 'lobby-again': Net.backToLobby(); break;
+      }
+    });
+
+    const held = { KeyW: false, ArrowUp: false, Space: false };
+    const gunFor = code => (mode === 'duel' ? (code === 'KeyW' ? 0 : 1) : humanIndex());
+    const typing = () => /^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName || '');
+
+    window.addEventListener('keydown', e => {
+      if (typing()) return;             // the lobby name field owns the keyboard
+      Sound.unlock();
+      if (e.code === 'Space' && mode === 'duel') { e.preventDefault(); return; }
+      if (e.code === 'KeyW' || e.code === 'ArrowUp' || e.code === 'Space') {
+        e.preventDefault();
+        if (held[e.code]) return;         // ignore auto-repeat while holding
+        held[e.code] = true;
+        beginCharge(gunFor(e.code));
+      } else if (e.code === 'KeyR') {
+        if (online()) return;             // no unilateral restarts over the wire
+        if (running || winner) startGame();
+      } else if (e.code === 'Escape') {
+        if (online()) Net.backToLobby(); else openMenu();
+      }
+    });
+    window.addEventListener('keyup', e => {
+      if (held[e.code]) {
+        held[e.code] = false;
+        releaseFire(gunFor(e.code));
+      }
+    });
+    window.addEventListener('blur', () => {
+      Object.keys(held).forEach(code => {
+        if (held[code]) { held[code] = false; releaseFire(gunFor(code)); }
+      });
+    });
+
+    function bindTouch(el, index) {
+      const at = () => (typeof index === 'function' ? index() : index);
+      el.addEventListener('pointerdown', ev => {
+        ev.preventDefault();
+        Sound.unlock();
+        el.setPointerCapture(ev.pointerId);
+        beginCharge(at());
+      });
+      const up = ev => { ev.preventDefault(); releaseFire(at()); };
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointercancel', up);
+    }
+    bindTouch(btnP1, 0);
+    bindTouch(btnP2, () => (mode === 'duel' ? 1 : humanIndex()));
+
+    const btnSound = document.getElementById('btnSound');
+    const paintSound = () => {
+      btnSound.textContent = Sound.enabled ? '🔊 Sound on' : '🔇 Sound off';
+    };
+    btnSound.addEventListener('click', () => { Sound.toggle(); paintSound(); });
+    paintSound();
+
+    // ---------- online duel ----------
+    // WebSocket relay on the shared Node game server (wss://oicrusher.me/game/cannon-ws). The
+    // challenger hosts (BLUE / left gun). Both sides replay each other's launches, and each side
+    // scores its own shells, so neither waits a round trip for its hits. The server forwards every
+    // event the moment it arrives; there is no polling any more.
+    const Net = (() => {
+      const WS_URL = new URLSearchParams(location.search).get('ws')
+        || (location.protocol === 'https:' ? 'wss' : 'ws') + '://' + location.host + '/game/cannon-ws';
+
+      const nameInput = document.getElementById('nameInput');
+      const listEl = document.getElementById('playerList');
+      const historyEl = document.getElementById('historyList');
+      const statusEl = document.getElementById('lobbyStatus');
+      const inviteText = document.getElementById('inviteText');
+      const againBtn = document.getElementById('btnOverAgain');
+      const againNote = document.getElementById('overAgainNote');
+
+      let ws = null;            // open socket, or null
+      let connecting = null;    // in-flight connect(), shared so a quick rename cannot open a 2nd socket
+      let me = null;            // { id, name } once the lobby has welcomed us
+      let match = null;         // { id, role, opponent: { name } }
+      let invite = null;        // incoming challenge { id, name }
+      let outgoingName = '';
+      let terrainSeen = false, noticeUntil = 0, renaming = false;
+      // Rematch on the result panel: both sides have to ask; the server then opens a new match.
+      let again = { me: false, them: false };
+
+      function cookie(key, value) {
+        if (value === undefined) {
+          const hit = document.cookie.split('; ').find(c => c.indexOf(key + '=') === 0);
+          return hit ? decodeURIComponent(hit.slice(key.length + 1)) : '';
+        }
+        document.cookie = key + '=' + encodeURIComponent(value) + ';path=/;max-age=31536000;SameSite=Lax';
+      }
+
+      const wsSend = msg => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(msg)); };
+
+      /** Transient lobby message that the next lobby update must not immediately overwrite. */
+      function notice(text) {
+        statusEl.textContent = text;
+        noticeUntil = performance.now() + 4000;
+      }
+
+      function renderList(list) {
+        listEl.textContent = '';
+        if (!list.length) {
+          const empty = document.createElement('p');
+          empty.className = 'empty';
+          empty.textContent = 'Nobody else is online yet. Send a friend the link and they will show up here.';
+          listEl.appendChild(empty);
+          return;
+        }
+        list.forEach(entry => {
+          const row = document.createElement('div');
+          row.className = 'player-row';
+          const who = document.createElement('span');
+          who.className = 'who';
+          who.textContent = entry.name;                 // textContent: names are never parsed as HTML
+          const tag = document.createElement('span');
+          tag.className = 'tag';
+          tag.textContent = entry.status === 'busy' ? 'in a match'
+            : entry.status === 'pending' ? 'being challenged' : '';
+          const btn = document.createElement('button');
+          btn.dataset.act = 'pick';
+          btn.dataset.id = String(entry.id);
+          btn.textContent = 'Challenge';
+          btn.disabled = entry.status !== 'idle';
+          row.append(who, tag, btn);
+          listEl.appendChild(row);
+        });
+      }
+
+      const MAP_LABEL = { hill: 'Ridgeline', lake: 'Crater Lake' };
+
+      function ago(ts) {
+        const s = Math.max(0, Math.floor(Date.now() / 1000) - ts);
+        if (s < 60) return 'just now';
+        if (s < 3600) return Math.floor(s / 60) + 'm ago';
+        if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+        return Math.floor(s / 86400) + 'd ago';
+      }
+
+      const clock = sec => Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+
+      function renderHistory(log) {
+        historyEl.textContent = '';
+        if (!log.length) {
+          const empty = document.createElement('p');
+          empty.className = 'empty';
+          empty.textContent = 'No battles fought yet.';
+          historyEl.appendChild(empty);
+          return;
+        }
+        log.forEach(b => {
+          const row = document.createElement('div');
+          row.className = 'history-row';
+
+          const top = document.createElement('div');
+          top.className = 'top';
+          const win = document.createElement('span');
+          win.className = 'who win';
+          win.textContent = b.w.name;
+          const beat = document.createElement('span');
+          beat.className = 'beat';
+          beat.textContent = 'beat';
+          const lose = document.createElement('span');
+          lose.className = 'who lose';
+          lose.textContent = b.l.name;
+          const score = document.createElement('span');
+          score.className = 'score';
+          score.textContent = b.w.hp + '–' + b.l.hp;
+          top.append(win, beat, lose, score);
+
+          const meta = document.createElement('div');
+          meta.className = 'meta';
+          const bits = [
+            ago(b.ts),
+            MAP_LABEL[b.map] || b.map,
+            clock(b.dur),
+            `hits ${b.w.hits}/${b.w.shots} vs ${b.l.hits}/${b.l.shots}`,
+            `dmg ${b.w.dmg} vs ${b.l.dmg}`
+          ];
+          if (b.air) bits.push(b.air + ' airburst' + (b.air > 1 ? 's' : ''));
+          meta.textContent = bits.join(' · ');
+
+          row.append(top, meta);
+          historyEl.appendChild(row);
+        });
+      }
+
+      const inLobbyView = () => !panels.lobby.classList.contains('hidden');
+
+      /** Every message from the game server lands here. */
+      function onServer(m) {
+        switch (m.t) {
+          case 'welcome':
+            me = { id: m.id, name: m.name };
+            if (document.activeElement !== nameInput) nameInput.value = m.name;   // never clobber typing
+            cookie('cannonDuelName', m.name);
+            if (renaming) { renaming = false; notice('Name saved as ' + m.name + '.'); }
+            break;
+          case 'lobby':
+            renderList(m.players || []);
+            lobbyPresence(m.players || []);
+            renderHistory(m.recent || []);
+            if (me && !outgoingName && !invite && performance.now() > noticeUntil) {
+              statusEl.textContent = 'Signed in as ' + me.name + '. Pick someone to challenge.';
+            }
+            break;
+          case 'invite':
+            if (match || invite || !inLobbyView()) break;   // busy: the server lets it expire
+            invite = { id: m.id, name: m.from };
+            inviteText.textContent = m.from + ' wants to duel you.';
+            showPanel('invite');
+            break;
+          case 'invite_over':
+            if (!invite || invite.id !== m.id) break;
+            invite = null;
+            if (!panels.invite.classList.contains('hidden')) { showPanel('lobby'); notice('The challenge was withdrawn.'); }
+            break;
+          case 'challenging':
+            outgoingName = m.name;
+            showWait('Challenge sent', 'Waiting for ' + m.name + ' to accept…', 'Cancel');
+            break;
+          case 'challenge_over':
+            if (!outgoingName || match) break;
+            outgoingName = '';
+            if (m.why === 'cancelled') break;            // we withdrew it ourselves
+            showPanel('lobby');
+            notice(m.why === 'declined' ? m.name + ' declined.'
+              : m.why === 'offline' ? m.name + ' went offline.' : 'Challenge timed out.');
+            break;
+          case 'notice':
+          case 'error':
+            if (match) break;
+            outgoingName = '';
+            showPanel('lobby');
+            notice(m.msg);
+            break;
+          case 'match':
+            OIID.activity({ status: m.opp ? 'duelling ' + m.opp : 'in a duel', join: 'cannon_duel.html' });
+            enterMatch(m);
+            break;
+          case 'ev':
+            // One malformed event must never take the rest of the stream down with it.
+            if (match) { try { handle(m.e); } catch (err) { console.error('Cannon Duel: bad relay event', m.e, err); } }
+            break;
+          case 'rematch_ask':
+            if (!match) break;
+            again.them = true;
+            paintAgain();
+            break;
+          case 'end':
+            if (!match) break;
+            if (winner) { rematchOff('Your opponent left.'); break; }
+            dropMatch(m.why === 'disconnected' ? 'Your opponent dropped out.' : 'Your opponent left the match.');
+            break;
+        }
+      }
+
+      function connect() {
+        if (connecting) return connecting;
+        connecting = new Promise((resolve, reject) => {
+          let opened = false;
+          const sock = new WebSocket(WS_URL);
+          sock.onopen = () => { opened = true; ws = sock; resolve(); };
+          sock.onmessage = ev => {
+            let m; try { m = JSON.parse(ev.data); } catch (err) { return; }
+            onServer(m);
+          };
+          sock.onclose = () => {
+            if (!opened) { reject(new Error('Could not reach the game server.')); return; }
+            if (ws !== sock) return;                      // we closed it on purpose
+            ws = null; me = null; invite = null; outgoingName = '';
+            if (match) { match = null; running = false; netNames = [null, null]; reset(); }
+            mode = 'duel';
+            statusEl.textContent = 'Lost the connection to the game server.';
+            listEl.textContent = '';
+            showPanel('lobby');
+          };
+          sock.onerror = () => {};
+        });
+        const done = () => { connecting = null; };
+        connecting.then(done, done);
+        return connecting;
+      }
+
+      function enterMatch(info) {
+        match = { id: info.room, role: info.side === 0 ? 'host' : 'guest', opponent: { name: info.opp } };
+        invite = null;
+        outgoingName = '';
+        terrainSeen = false;
+        again = { me: false, them: false };
+
+        mode = 'online';
+        isHost = info.side === 0;
+        myIndex = info.side;
+        netNames = info.names.slice();
+        shellSeq = 0;
+
+        // A rematch arrives straight off the result panel: clear the winner's tint and wreck.
+        overlay.style.background = '';
+        overlay.style.boxShadow = '';
+        reset();
+
+        if (isHost) {
+          showPanel('map');
+        } else {
+          showWait('Match found', info.opp + ' is choosing the battlefield…', 'Leave');
+        }
+      }
+
+      function handle(ev) {
+        switch (ev.t) {
+          case 'start':
+            if (!isHost && !terrainSeen && ev.terrain) {
+              terrainSeen = true;
+              startGame(ev.terrain);
+            }
+            break;
+          case 'chg': {
+            const p = players[ev.owner];
+            if (running && p && !p.charging) { p.charging = true; p.charge = 0; Sound.startCharge(ev.owner); }
+            break;
+          }
+          case 'fire':
+            if (!running) break;
+            snapPhase(players[ev.owner], ev.ang);
+            launch(ev);
+            break;
+          case 'dmg': {
+            const target = players[ev.g];
+            if (target) damagePlayer({ owner: ev.owner, x: ev.x, y: ev.y }, target, ev.d, ev.i, ev.dir, ev.l, true);
+            break;
+          }
+          case 'air': {
+            // Either side may spot a collision first; the other accepts it while the shells
+            // are still flying here, and each gun then scores only its own shell.
+            const hit = shells.filter(s => s.sid === ev.a || s.sid === ev.b);
+            if (!hit.length) break;            // already burst here, or both shells landed
+            removeShells([ev.a, ev.b]);
+            airburstFx(ev.x, ev.y, ev.p);
+            // A shell that already landed here was scored then: stand in a `gone` stub for it.
+            airburstDamage(hit[0], hit[1] || { owner: 1 - hit[0].owner, gone: true }, ev.x, ev.y, ev.p);
+            break;
+          }
+          case 'win':
+            if (!isHost) settleWinner(ev.w, ev.hp);
+            break;
+        }
+      }
+
+      /** Result-panel rematch offer: button label plus the opponent's intent. */
+      function paintAgain(note) {
+        againBtn.disabled = again.me;
+        againBtn.textContent = again.me && again.them ? 'Starting…'
+          : again.me ? 'Waiting for opponent…' : '↻ Play again';
+        const text = note !== undefined ? note
+          : again.them && !again.me ? nameOf(players[1 - myIndex]) + ' wants another round.'
+            : again.them && again.me ? 'Both ready — setting up…'
+              : 'Both of you have to agree.';
+        againNote.textContent = text;
+        againNote.hidden = !text;
+      }
+
+      /** Opponent gone while the result panel is up: retire the offer, keep the panel. */
+      function rematchOff(message) {
+        if (match) wsSend({ t: 'leave' });
+        match = null;
+        again = { me: false, them: false };
+        againBtn.hidden = true;
+        againNote.textContent = message;
+        againNote.hidden = false;
+      }
+
+      /** Tear the match down locally and fall back to the lobby with an explanation. */
+      function dropMatch(message) {
+        if (match) wsSend({ t: 'leave' });               // frees the room; the opponent gets told
+        match = null;
+        running = false;
+        again = { me: false, them: false };
+        netNames = [null, null];
+        reset();
+        overlay.style.background = '';
+        overlay.style.boxShadow = '';
+        if (ws) {
+          notice(message);
+          showPanel('lobby');
+        } else {
+          mode = 'duel';
+          showPanel('main');
+        }
+      }
+
+      // the name box shows the portal identity; clicking it opens the account dialog
+      nameInput.readOnly = true;
+      nameInput.title = 'Your name in every game - click to change';
+      nameInput.addEventListener('click', () => OIID.open());
+      OIID.me().then(id => { if (id) nameInput.value = id.name; });
+      OIID.onChange(id => {
+        nameInput.value = id ? id.name : '';
+        if (id && ws && !match) { renaming = true; wsSend({ t: 'hello', name: id.name, token: id.token }); }
+      });
+      // "Playing now" on the portal: waiting in the lobby = anyone can click to challenge us
+      let deepChallenge = (OIID.param('challenge') || '').slice(0, 16), lastLobbyPresence = 0;
+      function lobbyPresence(players) {
+        if (Date.now() - lastLobbyPresence > 15000) {
+          lastLobbyPresence = Date.now();
+          OIID.activity({ status: 'in the duel lobby - challenge me!', join: 'cannon_duel.html?challenge=' + encodeURIComponent(OIID.name) });
+        }
+        if (deepChallenge) {
+          const t = players.find(p => p.name && p.name.toLowerCase() === deepChallenge.toLowerCase());
+          if (t && t.status !== 'busy') { deepChallenge = ''; api.invite(t.id); }
+        }
+      }
+
+      function readName() {
+        const value = nameInput.value.trim().replace(/\s+/g, ' ').slice(0, 16);
+        return value.length >= 2 ? value : '';
+      }
+
+      nameInput.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter') { ev.preventDefault(); api.rename(); }
+      });
+
+      const api = {
+        send(ev) {
+          if (match) wsSend({ t: 'ev', e: ev });
+        },
+
+        /** Host-only, best effort: log the finished battle. Called before matchOver(). */
+        reportResult(result) {
+          if (!match || !isHost) return;
+          wsSend({ t: 'report', winner: result.winnerIndex, map: result.map, dur: result.dur, air: result.air, w: result.w, l: result.l });
+        },
+
+        async open() {
+          // one name for every game: the portal identity (identity.js); the token proves it to the server
+          const id = await OIID.require();
+          if (!id) return;
+          const fresh = await OIID.fresh();
+          nameInput.value = id.name;
+          showPanel('lobby');
+          statusEl.textContent = 'Connecting…';
+          listEl.textContent = '';
+          try {
+            if (!ws) await connect();
+            wsSend({ t: 'hello', name: id.name, token: fresh ? fresh.token : '' });
+          } catch (err) {
+            notice(err.message);
+          }
+        },
+
+        rename() { OIID.open(); },     // names are changed in the portal account dialog
+
+        invite(targetId) {
+          if (!me || !targetId) return;
+          wsSend({ t: 'challenge', id: targetId });
+        },
+
+        respond(accept) {
+          const pending = invite;
+          invite = null;
+          if (!pending || !ws) { showPanel('lobby'); return; }
+          wsSend({ t: 'respond', id: pending.id, accept });
+          if (!accept) { showPanel('lobby'); notice('Challenge declined.'); }
+          else showWait('Accepted', 'Starting the match…', 'Cancel');
+        },
+
+        /** Cancel button on the waiting panel: drops an outgoing invite or leaves a match. */
+        cancel() {
+          if (match) { api.backToLobby(); return; }
+          outgoingName = '';
+          wsSend({ t: 'cancel' });
+          showPanel('lobby');
+        },
+
+        /** The local game is over. The room stays open so the two can agree on a rematch. */
+        matchOver() {
+          if (!match) { againBtn.hidden = true; return; }   // dropped during the finale
+          againBtn.hidden = false;
+          paintAgain();
+        },
+
+        /** Offer a rematch; once both sides have asked the server opens a fresh match. */
+        requestRematch() {
+          if (!match || again.me) return;
+          again.me = true;
+          wsSend({ t: 'rematch' });
+          paintAgain();
+        },
+
+        backToLobby() {
+          dropMatch('Back in the lobby.');
+        },
+
+        /** Leaving online mode entirely. */
+        exit() {
+          const sock = ws;
+          ws = null;                                        // so onclose knows it was on purpose
+          if (sock) { try { sock.close(); } catch (err) { /* already gone */ } }
+          match = null;
+          me = null;
+          invite = null;
+          outgoingName = '';
+          again = { me: false, them: false };
+          netNames = [null, null];
+          if (mode === 'online') mode = 'duel';
+        }
+      };
+
+      return api;
+    })();
+
+    if (!ctx.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        this.beginPath();
+        this.moveTo(x + r, y);
+        this.arcTo(x + w, y, x + w, y + h, r);
+        this.arcTo(x + w, y + h, x, y + h, r);
+        this.arcTo(x, y + h, x, y, r);
+        this.arcTo(x, y, x + w, y, r);
+        this.closePath();
+        return this;
+      };
+    }
+
+    reset();
+    showPanel('main');
+    requestAnimationFrame(loop);
+    // read-only debug hook (automated tests)
+    window.CannonDuel = { get state() { return { mode, running, isHost, myIndex, mapId, winner: winner ? players.indexOf(winner) : -1,
+      hp: players.map(p => Math.round(p.hp)), shells: shells.length, names: netNames.slice() }; } };
+  })();
+  </script>
+</body>
+</html>

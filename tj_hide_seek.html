@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TJ Hide and Seek - a 3D online hide-and-seek in Thomas Jefferson High School</title>
+  <meta name="description" content="TJ Hide and Seek: walk both floors of a 3D Thomas Jefferson High School (TJHSST) built from the real floor plans. Hide a MacBook, TI-84 or Hydro Flask with a note for someone else to find - every stash stays in the shared online school until it is found.">
+  <meta name="keywords" content="TJHSST, Thomas Jefferson High School, hide and seek, 3d browser game, multiplayer, scavenger hunt, three.js">
+  <link rel="canonical" href="https://oicrusher.me/game/tj_hide_seek.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --crimson: #9b1b30; --crimson2: #c2283f; --navy: #1c2b4f; --navy2: #263a66; --cream: #f7f3ea; --ink: #f2f4f8; --panel: rgba(18,26,46,.94); }
+    html, body { height: 100%; overflow: hidden; background: #0e1626; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--ink); }
+    #view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+    #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--navy); font-size: 1.15em; z-index: 50; letter-spacing: .5px; }
+    kbd { display: inline-block; min-width: 20px; padding: 1px 5px; border: 1px solid rgba(255,255,255,.45); border-bottom-width: 2px; border-radius: 4px; background: rgba(255,255,255,.08); font: 600 .82em system-ui; text-align: center; }
+    button { font: inherit; cursor: pointer; }
+    .muted { opacity: .6; }
+
+    /* ---------- HUD */
+    #hud { position: fixed; inset: 0; pointer-events: none; z-index: 5; transition: opacity .2s; }
+    #hud.dim > :not(#chatBox):not(#logBox):not(#toast) { opacity: 0; }
+    #crosshair { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
+    #prompt { position: absolute; left: 50%; top: 58%; transform: translate(-50%, 6px); padding: 9px 16px; border-radius: 22px; background: rgba(28,43,79,.88); border: 2px solid var(--crimson2);
+              font-weight: 600; opacity: 0; transition: opacity .15s, transform .15s; white-space: nowrap; }
+    #prompt.show { opacity: 1; transform: translate(-50%, 0); }
+    #mapBox { position: absolute; right: 16px; top: 16px; display: flex; gap: 10px; align-items: flex-start; }
+    #minimap { width: 210px; height: 210px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
+    #floorNav { display: flex; flex-direction: column; gap: 6px; margin-top: 30px; }
+    .fl { width: 64px; padding: 6px 4px; border-radius: 8px; background: rgba(28,43,79,.8); border: 2px solid rgba(255,255,255,.2); text-align: center; line-height: 1.1; }
+    .fl b { display: block; font: 800 1.35em Georgia, serif; }
+    .fl small { font-size: .68em; opacity: .8; }
+    .fl.on { background: var(--crimson); border-color: #fff; box-shadow: 0 0 12px rgba(194,40,63,.7); }
+    #where { position: absolute; right: 16px; top: 234px; width: 284px; text-align: center; font-weight: 700; text-shadow: 0 1px 3px #000; font-size: .95em; }
+    #stats { position: absolute; left: 16px; top: 16px; display: flex; gap: 8px; }
+    .stat { background: rgba(28,43,79,.85); border-left: 4px solid var(--crimson2); padding: 6px 11px; border-radius: 6px; }
+    .stat small { display: block; font-size: .66em; opacity: .75; text-transform: uppercase; letter-spacing: 1px; }
+    .stat b { font-size: 1.15em; }
+    #online { position: absolute; left: 16px; top: 70px; font-size: .8em; opacity: .85; text-shadow: 0 1px 2px #000; }
+    #keysHint { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); font-size: .78em; opacity: .8; text-shadow: 0 1px 2px #000; white-space: nowrap; }
+    /* chat (bottom left) and the event feed (right, under the map): always on, scroll back for history */
+    .feedBox { position: absolute; display: flex; flex-direction: column; background: rgba(14,22,38,.55); border: 1px solid rgba(255,255,255,.14); border-radius: 8px;
+               box-shadow: 0 3px 12px rgba(0,0,0,.3); pointer-events: auto; overflow: hidden; }
+    .feedBox h4 { margin: 0; padding: 4px 10px; font-size: .7em; letter-spacing: 1px; text-transform: uppercase; opacity: .8; background: rgba(28,43,79,.6);
+                  display: flex; justify-content: space-between; gap: 8px; }
+    .feedBox h4 span { text-transform: none; letter-spacing: 0; opacity: .75; font-weight: 400; }
+    .feedList { flex: 1; overflow-y: auto; padding: 5px 6px; display: flex; flex-direction: column; gap: 3px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.3) transparent; overscroll-behavior: contain; }
+    .feedList .hist { text-align: center; font-size: .7em; opacity: .55; padding: 2px 0 4px; }
+    .newBtn { display: none; position: absolute; right: 10px; bottom: 8px; padding: 3px 10px; border-radius: 12px; border: 0; background: var(--crimson); color: #fff; font-size: .75em; font-weight: 700;
+              box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+    .feedBox.unread .newBtn { display: block; }
+    #chatBox.open .newBtn { bottom: 52px; }
+    .feedBox time { font-size: .72em; opacity: .5; margin-right: 5px; font-variant-numeric: tabular-nums; }
+    #chatBox { left: 16px; bottom: 44px; width: min(460px, 52vw); height: 220px; }
+    #chatBox.open { border-color: var(--crimson2); background: rgba(14,22,38,.8); }
+    #logBox { right: 16px; top: 262px; width: 284px; bottom: 44px; max-height: 360px; }
+    .chatline { padding: 3px 7px; border-radius: 5px; font-size: .88em; line-height: 1.3; text-shadow: 0 1px 2px #000; word-wrap: break-word; }
+    .chatline.new { animation: slidein .25s ease-out; background: rgba(255,210,63,.12); transition: background 4s; }
+    .chatline b { color: #ffd23f; } .chatline.mine b { color: #7fd8ff; }
+    #chatRow { display: none; padding: 5px 6px; border-top: 1px solid rgba(255,255,255,.12); }
+    #chatBox.open #chatRow { display: flex; }
+    #chatIn { flex: 1; min-width: 0; background: rgba(14,22,38,.92); border: 2px solid var(--crimson2); border-radius: 6px; padding: 6px 9px; }
+    #chatHint { font-size: .72em; opacity: .7; margin-left: 8px; align-self: center; white-space: nowrap; }
+    .logline { padding: 5px 8px; border-radius: 5px; background: rgba(28,43,79,.6); font-size: .82em; line-height: 1.3; transition: background 1.5s; }
+    .logline.new { background: rgba(155,27,48,.9); animation: slidein .35s ease-out; }
+    .logline i { opacity: .85; }
+    @keyframes slidein { from { transform: translateX(-30px); opacity: 0; } }
+    #toast { position: absolute; left: 50%; top: 18%; transform: translate(-50%, -10px); max-width: 80vw; padding: 10px 18px; border-radius: 8px; background: rgba(28,43,79,.95);
+             border: 2px solid #4fd17a; font-weight: 600; opacity: 0; transition: opacity .2s, transform .2s; text-align: center; }
+    #toast.show { opacity: 1; transform: translate(-50%, 0); }
+    #toast.bad { border-color: var(--crimson2); }
+    #fps { position: absolute; right: 8px; bottom: 6px; font-size: .68em; opacity: .4; }
+
+    /* ---------- panels */
+    .panel { position: fixed; inset: 0; z-index: 10; display: none; align-items: center; justify-content: center; padding: 16px; }
+    .panel.show { display: flex; }
+    .card { background: var(--panel); border: 1px solid rgba(255,255,255,.14); border-top: 5px solid var(--crimson); border-radius: 10px; box-shadow: 0 18px 50px rgba(0,0,0,.55);
+            backdrop-filter: blur(6px); width: min(900px, 100%); max-height: 100%; overflow-y: auto; padding: 22px 26px; }
+    h1 { font: 800 2.5em Georgia, serif; letter-spacing: 2px; line-height: 1; }
+    h1 span { color: var(--crimson2); }
+    h2 { font: 700 1.3em Georgia, serif; margin-bottom: 8px; }
+    h3 { font-size: .72em; text-transform: uppercase; letter-spacing: 2px; opacity: .65; margin: 16px 0 6px; }
+    .btn { background: var(--crimson); color: #fff; border: none; padding: 11px 22px; border-radius: 6px; font-weight: 800; letter-spacing: 1px; box-shadow: 0 3px 0 #5e0f1d; }
+    .btn:hover { background: var(--crimson2); }
+    .btn.ghost { background: transparent; border: 1px solid rgba(255,255,255,.35); box-shadow: none; font-weight: 600; }
+    #menu { background: radial-gradient(ellipse at center, rgba(14,22,38,.35), rgba(14,22,38,.82)); }
+    .top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+    .sub { opacity: .8; margin-top: 6px; }
+    .cols { display: grid; grid-template-columns: 1.1fr 1fr; gap: 22px; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    input[type=text], textarea { font: inherit; color: var(--ink); background: #0f1830; border: 1px solid #3b4d75; border-radius: 5px; padding: 8px 10px; }
+    #nameBox { width: 190px; cursor: pointer; }
+    .keys { display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; font-size: .86em; align-items: center; }
+    .how li { margin: 4px 0 4px 18px; font-size: .9em; line-height: 1.4; }
+    table { width: 100%; border-collapse: collapse; font-size: .86em; }
+    th { text-align: left; font-size: .75em; opacity: .6; font-weight: 600; padding: 3px 6px; }
+    td { padding: 4px 6px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    tr.me td { color: #ffd23f; font-weight: 700; }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #888; margin-right: 6px; }
+    .dot.on { background: #4fd17a; box-shadow: 0 0 6px #4fd17a; }
+    #netState { font-size: .85em; }
+    .look { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,.25); padding: 0; }
+    .look.sel { border-color: #fff; box-shadow: 0 0 0 2px var(--crimson2); }
+    #looks { display: flex; gap: 4px; flex-wrap: wrap; max-width: 330px; }
+    .opts { font-size: .85em; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+    .back { color: #ffb3bf; font-size: .85em; text-decoration: none; }
+    .btns { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
+
+    /* hide panel */
+    #hidePanel .card { width: min(760px, 100%); }
+    #types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .type { text-align: left; background: #16223e; border: 2px solid #33456d; color: var(--ink); border-radius: 8px; padding: 8px 10px; }
+    .type span { font-size: 1.5em; } .type b { display: block; font-size: .86em; margin-top: 2px; } .type small { display: block; font-size: .7em; opacity: .65; line-height: 1.25; }
+    .type.sel { border-color: var(--crimson2); background: #2a1a2a; box-shadow: 0 0 10px rgba(194,40,63,.45); }
+    #hideMsg { width: 100%; height: 86px; resize: none; font: 600 1.25em 'Caveat', cursive; background: #fff6a8; color: #2a2a2a; border: none; box-shadow: inset 0 0 0 1px #e6d870; }
+    #hideWhere { color: #ffd23f; font-weight: 600; }
+    #hideErr { color: #ff9aa8; font-size: .85em; min-height: 1.2em; }
+
+    /* note (Post-it) */
+    #notePanel { justify-content: flex-end; pointer-events: none; background: radial-gradient(ellipse at 40% 50%, rgba(0,0,0,0) 30%, rgba(0,0,0,.55) 100%); }
+    #note { pointer-events: auto; width: min(380px, 90vw); margin-right: 7vw; transform: translateX(120%) rotate(6deg); transition: transform .45s cubic-bezier(.2,1.3,.4,1); }
+    #note.in { transform: translateX(0) rotate(-2.5deg); }
+    .postit { background: linear-gradient(170deg, #fff7a1, #ffe96a); color: #2a2a2a; padding: 26px 26px 22px; box-shadow: 0 16px 30px rgba(0,0,0,.45), inset 0 -30px 40px rgba(255,200,0,.18);
+              position: relative; min-height: 300px; }
+    .postit::before { content: ''; position: absolute; left: 50%; top: -12px; width: 110px; height: 28px; transform: translateX(-50%) rotate(-3deg); background: rgba(255,255,255,.55); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+    #noteItem { font: 700 .82em system-ui; letter-spacing: 1px; text-transform: uppercase; color: var(--crimson); }
+    #noteFrom { font: 700 1.9em 'Caveat', cursive; margin-top: 4px; }
+    #noteWhen { font-size: .78em; opacity: .7; }
+    #noteMsg { font: 600 1.75em/1.15 'Caveat', cursive; margin: 16px 0; white-space: pre-wrap; word-wrap: break-word; color: #1f2d6b; }
+    #notePts { font-weight: 800; color: var(--crimson); font-size: .95em; }
+    #noteWait { font: 700 1.6em 'Caveat', cursive; text-align: center; margin-top: 100px; }
+    #noteClose { margin-top: 14px; }
+
+    /* whiteboard */
+    #wbPanel .card { width: min(820px, 100%); }
+    #wbText { width: 100%; height: 190px; resize: none; padding: 14px 18px; font: 700 2em/1.15 'Caveat', 'Comic Sans MS', cursive; color: #1d3d8f; background: #fbfcfd;
+              border: 10px solid #9aa0a8; border-bottom-width: 18px; border-radius: 4px; box-shadow: inset 0 0 30px rgba(120,130,150,.12); }
+    #wbErr { color: #ff9aa8; font-size: .85em; min-height: 1.2em; margin-top: 6px; }
+    /* admin: chat moderation */
+    #modPanel .card { width: min(760px, 100%); }
+    #modList { max-height: 56vh; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; margin-top: 10px; }
+    .modline { display: flex; gap: 8px; align-items: center; padding: 4px 6px; border-radius: 5px; font-size: .88em; }
+    .modline:hover { background: rgba(255,255,255,.06); }
+    .modline .txt { flex: 1; min-width: 0; word-wrap: break-word; }
+    .modline .txt b { color: #ffd23f; }
+    .modline time { font-size: .75em; opacity: .5; margin-right: 5px; }
+    .modline button { flex: none; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,.3); background: transparent; color: var(--ink); font-size: .78em; }
+    .modline button:hover { background: var(--crimson); border-color: var(--crimson2); }
+    #modBtn, #kwBtn { display: none; }
+    #modBtn.show, #kwBtn.show { display: inline-block; }
+    /* Shoot Around (gyms) */
+    #hoopHud { display: none; } #hoopHud.show { display: block; }
+    .hoopPanel { position: absolute; left: 16px; top: 98px; width: 330px; background: rgba(14,22,38,.74); border: 1px solid rgba(255,255,255,.15);
+                 border-top: 3px solid #e8762b; border-radius: 8px; padding: 7px 12px 8px; box-shadow: 0 3px 12px rgba(0,0,0,.35); }
+    .hoopPanel h4 { margin: 0 0 4px; font-size: .75em; letter-spacing: 1px; text-transform: uppercase; display: flex; justify-content: space-between; }
+    .hoopPanel h4 span { text-transform: none; letter-spacing: 0; opacity: .7; font-weight: 400; }
+    .hoopNums { display: flex; justify-content: space-around; text-align: center; }
+    .hoopNums small { display: block; font-size: .62em; opacity: .7; text-transform: uppercase; letter-spacing: 1px; }
+    .hoopNums b { font-size: 1.45em; } #hoopArc.good { color: #4fd17a; }
+    #hoopBoardList { margin: 6px 0 4px; padding: 0; list-style: none; font-size: .78em; border-top: 1px solid rgba(255,255,255,.12); padding-top: 4px; }
+    #hoopBoardList li { display: flex; gap: 6px; padding: 1px 0; } #hoopBoardList li span { margin-left: auto; opacity: .8; }
+    #hoopBoardList li.me { color: #ffd23f; }
+    .hoopKeys { font-size: .68em; opacity: .75; line-height: 1.5; }
+    #hoopMeter { position: absolute; left: calc(50% + 70px); top: calc(50% - 90px); width: 16px; height: 180px; border: 2px solid rgba(255,255,255,.9); border-radius: 9px;
+                 background: rgba(0,0,0,.35); overflow: hidden; box-shadow: 0 0 8px rgba(0,0,0,.5); }
+    #hoopZone { position: absolute; left: 0; right: 0; background: rgba(79,209,122,.9); }
+    #hoopFill { position: absolute; left: 3px; right: 3px; bottom: 0; background: linear-gradient(#ffd23f, #e8762b); border-radius: 4px; opacity: .92; }
+    #hoopCall { position: absolute; left: 50%; top: 32%; transform: translate(-50%, -50%); font: 800 3.2em Georgia, serif; opacity: 0; text-shadow: 0 3px 10px rgba(0,0,0,.6); pointer-events: none; }
+    #hoopCall.in { color: #ffd23f; } #hoopCall.out { color: #ff9aa8; }
+    #hoopCall.pop { animation: hoopPop 1.2s ease-out; }
+    @keyframes hoopPop { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.6); } 15% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+                         70% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -70%) scale(1); } }
+    /* chess club (Room 23) */
+    #chessPanel .card { width: min(640px, 100%); }
+    #chessPanel .top { align-items: center; }
+    #chessSay { font: 600 1.25em 'Caveat', cursive; opacity: .9; margin: 4px 0 10px; }
+    #chessStatus { font-weight: 700; min-height: 1.3em; }
+    #chessStatus.win { color: #ffd23f; }
+    #chessBoard { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: min(62vh, 100%); aspect-ratio: 1; margin: 0 auto; border: 6px solid #4a3020; border-radius: 4px; box-shadow: 0 6px 18px rgba(0,0,0,.45); }
+    #chessBoard .sq { position: relative; min-width: 0; min-height: 0; border: 0; padding: 0; display: flex; align-items: center; justify-content: center; cursor: default; }
+    #chessBoard .sq.lt { background: #efdcb6; } #chessBoard .sq.dk { background: #a8794a; }
+    #chessBoard .sq.c-mine, #chessBoard .sq.c-to, #chessBoard .sq.c-cap { cursor: pointer; }
+    #chessBoard .sq.c-last { box-shadow: inset 0 0 0 100px rgba(255,210,63,.38); }
+    #chessBoard .sq.c-sel { box-shadow: inset 0 0 0 100px rgba(79,209,122,.5); }
+    #chessBoard .sq.c-chk { box-shadow: inset 0 0 18px 6px rgba(220,30,50,.9); }
+    #chessBoard .sq.c-to::after { content: ''; width: 28%; height: 28%; border-radius: 50%; background: rgba(28,43,79,.45); }
+    #chessBoard .sq.c-cap { box-shadow: inset 0 0 0 5px rgba(28,43,79,.55); }
+    .pc { font-size: min(5.6vh, 9vw); line-height: 1; font-family: 'Segoe UI Symbol', 'DejaVu Sans', 'Noto Sans Symbols 2', system-ui, serif; pointer-events: none; }
+    .pc.w { color: #fffaf0; text-shadow: 0 0 2px #000, 0 0 1px #000, 0 1px 2px rgba(0,0,0,.6); }
+    .pc.b { color: #1d1d1d; text-shadow: 0 0 2px rgba(255,255,255,.45); }
+    #chessPromo { text-align: center; margin-top: 8px; min-height: 1em; }
+    #chessPromo .btn { padding: 2px 10px; }
+    #chessPromo .pc { font-size: 2em; }
+    /* admin: keyword filter */
+    #kwPanel .card { width: min(1000px, 100%); }
+    #kwTabs { display: flex; gap: 6px; margin: 10px 0; }
+    #kwTabs button { padding: 5px 12px; border-radius: 5px; border: 1px solid rgba(255,255,255,.3); background: transparent; color: var(--ink); }
+    #kwTabs button.sel { background: var(--crimson); border-color: var(--crimson2); }
+    .kwbar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
+    .kwbar input[type=text] { min-width: 0; }
+    select { font: inherit; color: var(--ink); background: #0f1830; border: 1px solid #3b4d75; border-radius: 5px; padding: 6px 4px; }
+    .kwscroll { max-height: 44vh; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; margin-top: 8px; }
+    .kwrow { display: flex; gap: 5px; align-items: center; padding: 3px 5px; border-radius: 5px; font-size: .86em; }
+    .kwrow:hover { background: rgba(255,255,255,.05); }
+    .kwrow.off { opacity: .45; }
+    .kwrow .kt { width: 150px; } .kwrow .ku { flex: 1; min-width: 80px; }
+    .kwrow input[type=text], .kwrow select { padding: 4px 6px; font-size: .95em; }
+    .kwrow .txt { flex: 1; min-width: 0; word-wrap: break-word; line-height: 1.4; }
+    .kwrow time { font-size: .75em; opacity: .5; margin-right: 6px; }
+    .kwrow button { flex: none; padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,.3); background: transparent; color: var(--ink); font-size: .8em; }
+    .kwrow button:hover { background: var(--crimson); border-color: var(--crimson2); }
+    .kwtag { display: inline-block; background: #3a1a28; border: 1px solid var(--crimson2); border-radius: 4px; padding: 0 5px; font-size: .9em; }
+    .kwtag small { opacity: .6; }
+    #kwErr { color: #ff9aa8; min-height: 1.2em; font-size: .85em; }
+    #mapPanel .card { width: auto; max-width: 100%; padding: 14px; }
+    #boardPanel { pointer-events: none; }
+    #boardPanel .card { width: min(520px, 100%); }
+    @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } #types { grid-template-columns: repeat(2, 1fr); } #minimap { width: 140px; height: 140px; } #where { top: 164px; width: 214px; } h1 { font-size: 1.8em; } #keysHint { display: none; } }
+  </style>
+</head>
+<body>
+  <canvas id="view"></canvas>
+  <div id="loading">Loading TJ…</div>
+
+  <div id="hud">
+    <div id="crosshair"></div>
+    <div id="prompt"></div>
+    <div id="stats">
+      <div class="stat"><small>Points</small><b id="myPts">0</b></div>
+      <div class="stat"><small>Found</small><b id="myFound">0</b></div>
+      <div class="stat"><small>Stashes out</small><b id="myOut">0/5</b></div>
+    </div>
+    <div id="online">offline</div>
+    <div id="mapBox">
+      <div id="floorNav">
+        <div class="fl" id="f2"><b>2</b><small><span id="n2">0</span> hidden</small></div>
+        <div class="fl" id="f1"><b>1</b><small><span id="n1">0</span> hidden</small></div>
+      </div>
+      <canvas id="minimap" width="210" height="210"></canvas>
+    </div>
+    <div id="where"></div>
+    <div id="logBox" class="feedBox"><h4>📣 Events <span>Shift + wheel / PgUp: older</span></h4><div id="logList" class="feedList"></div><button class="newBtn">↓ new</button></div>
+    <div id="chatBox" class="feedBox">
+      <h4>💬 Chat <span><kbd>Enter</kbd> talk · wheel / PgUp: older</span></h4>
+      <div id="chatList" class="feedList"></div><button class="newBtn">↓ new</button>
+      <div id="chatRow"><input type="text" id="chatIn" maxlength="120" autocomplete="off" placeholder="Say something to everyone in TJ…"><span id="chatHint"><kbd>Enter</kbd> send · <kbd>Esc</kbd> cancel</span></div>
+    </div>
+    <div id="keysHint"><kbd>H</kbd> hide · <kbd>E</kbd> inspect · <kbd>Enter</kbd> chat · <kbd>I</kbd> write on a whiteboard · <kbd>M</kbd> map · <kbd>Tab</kbd> leaderboard · <kbd>V</kbd> camera · <kbd>Esc</kbd> menu</div>
+    <div id="toast"></div>
+    <div id="hoopHud">
+      <div id="hoopCall"></div>
+      <div class="hoopPanel">
+        <h4>🏀 Shoot Around <span>threes only · best streak</span></h4>
+        <div class="hoopNums"><div><small>Streak</small><b id="hoopStreak">0</b></div><div><small>Your best</small><b id="hoopBest">0</b></div><div><small>Arc</small><b id="hoopArc">50°</b></div></div>
+        <ol id="hoopBoardList"></ol>
+        <div class="hoopKeys"><kbd>WASD</kbd> pick your spot (behind the arc) · look up / down: arc · <b>hold the mouse</b>, let go in the green · <kbd>E</kbd> put the ball back</div>
+      </div>
+      <div id="hoopMeter"><div id="hoopZone"></div><div id="hoopFill"></div></div>
+    </div>
+    <div id="fps"></div>
+  </div>
+
+  <!-- title / pause menu -->
+  <div class="panel" id="menu">
+    <div class="card">
+      <div class="top">
+        <div>
+          <h1>TJ <span>HIDE</span> &amp; SEEK</h1>
+          <div class="sub">Thomas Jefferson High School for Science and Technology - both floors, built from the real floor plans.</div>
+        </div>
+        <span id="netState"><span class="dot"></span>connecting…</span>
+      </div>
+      <div class="cols">
+        <div>
+          <h3>How it works</h3>
+          <ul class="how">
+            <li>This is <b>one school that never resets</b>. Everyone who plays walks the same halls.</li>
+            <li>Aim at a desk, a shelf, the top of a locker or the floor and press <kbd>H</kbd> to hide a MacBook, a TI-84, a Hydro Flask, a Red Bull… with a note.</li>
+            <li>Your stash stays exactly there until someone finds it, even after you log off.</li>
+            <li>Within 2.5 m of a stash, press <kbd>E</kbd> to inspect it and read the note. Finders score 10 points plus 1 for every hour it stayed hidden; the hider scores too.</li>
+          </ul>
+          <h3>Controls</h3>
+          <div class="keys">
+            <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · mouse</span><span>Walk · look around (click the view to capture the mouse)</span>
+            <span><kbd>Shift</kbd> · <kbd>Space</kbd> · <kbd>C</kbd></span><span>Run · jump · crouch (look under desks)</span>
+            <span><kbd>H</kbd> · <kbd>E</kbd> · <kbd>X</kbd></span><span>Hide here · inspect a stash · pick your own stash back up</span>
+            <span><kbd>Enter</kbd> · <kbd>I</kbd></span><span>Chat with everyone · write over the whiteboard you are looking at</span>
+            <span><kbd>M</kbd> · <kbd>Tab</kbd> · <kbd>V</kbd></span><span>Map of both floors · leaderboard · 1st / 3rd person</span>
+          </div>
+        </div>
+        <div>
+          <h3>You</h3>
+          <div class="row"><input type="text" id="nameBox" readonly title="Click to change your name"><button class="btn ghost" id="muteBtn" title="Sound">🔊</button></div>
+          <div class="row" style="margin-top:8px"><span class="muted" style="font-size:.85em">Shirt</span><div id="looks"></div></div>
+          <div class="opts" style="margin-top:8px">
+            <label>Mouse <input type="range" id="sens" min="6" max="60"></label>
+            <label><input type="checkbox" id="lowres"> faster graphics</label>
+          </div>
+          <h3>Leaderboard</h3>
+          <table><thead><tr><th>#</th><th>Student</th><th>Pts</th><th>Found</th><th>Hidden</th></tr></thead><tbody id="menuBoard"></tbody></table>
+        </div>
+      </div>
+      <div class="btns">
+        <button class="btn" id="enterBtn">▶ Walk into TJ</button>
+        <button class="btn ghost" id="modBtn" title="Admins only">🛡 Moderate chat</button>
+        <button class="btn ghost" id="kwBtn" title="Admins only">🚫 Keyword filter</button>
+        <span class="muted" style="font-size:.85em">Best on a computer with a keyboard and mouse.</span>
+        <span style="flex:1"></span>
+        <a class="back" href="index.html">← Game Portal</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- hide -->
+  <div class="panel" id="hidePanel">
+    <div class="card">
+      <h2>Hide something</h2>
+      <div style="font-size:.88em">Spot: <span id="hideWhere"></span></div>
+      <h3>What are you leaving?</h3>
+      <div id="types"></div>
+      <h3>Your note <span id="hideCount" style="float:right">0/140</span></h3>
+      <textarea id="hideMsg" maxlength="140" placeholder="Leave a note for whoever finds it…"></textarea>
+      <div id="hideErr"></div>
+      <div class="btns"><button class="btn" id="hideOk">Hide it here</button><button class="btn ghost" id="hideCancel">Cancel (Esc)</button></div>
+    </div>
+  </div>
+
+  <!-- the Post-it -->
+  <div class="panel" id="notePanel">
+    <div id="note">
+      <div class="postit">
+        <div id="noteWait">Opening…</div>
+        <div id="noteBody" style="display:none">
+          <div id="noteItem"></div>
+          <div id="noteFrom"></div>
+          <div id="noteWhen"></div>
+          <div id="noteMsg"></div>
+          <div id="notePts"></div>
+        </div>
+      </div>
+      <button class="btn" id="noteClose">Done (E)</button>
+    </div>
+  </div>
+
+  <!-- write on a whiteboard -->
+  <div class="panel" id="wbPanel">
+    <div class="card">
+      <h2>Write on the whiteboard</h2>
+      <div style="font-size:.88em">Board in <span id="wbWhere" style="color:#ffd23f;font-weight:600"></span> · <span id="wbBy" class="muted"></span></div>
+      <h3>Your board <span id="wbCount" style="float:right">0/160</span></h3>
+      <textarea id="wbText" maxlength="160" placeholder="Write anything for the next class… (up to 6 lines)"></textarea>
+      <div id="wbErr"></div>
+      <div class="btns"><button class="btn" id="wbOk">Write it (Ctrl+Enter)</button><button class="btn ghost" id="wbWipe" title="Erase back to the teacher's lesson">Erase the board</button><button class="btn ghost" id="wbCancel">Cancel (Esc)</button>
+        <span class="muted" style="font-size:.8em">Everyone sees it, and it stays until someone writes over it. Be nice - messages with inappropriate words are blocked.</span></div>
+    </div>
+  </div>
+
+  <!-- chess club: a game against one of the student bots in Room 23 -->
+  <div class="panel" id="chessPanel">
+    <div class="card">
+      <div class="top"><h2 id="chessTitle">♟️ Chess</h2><span id="chessStatus"></span></div>
+      <div id="chessSay"></div>
+      <div id="chessBoard"></div>
+      <div id="chessPromo"></div>
+      <div class="btns"><button class="btn ghost" id="chessResign">Resign</button><button class="btn" id="chessNew" style="display:none">Play again</button>
+        <span class="muted" style="font-size:.8em">You play White. Beat them and the whole school hears about it.</span><span style="flex:1"></span>
+        <button class="btn ghost" id="chessClose">Back to TJ (Esc)</button></div>
+    </div>
+  </div>
+
+  <!-- admin: keyword filter -->
+  <div class="panel" id="kwPanel">
+    <div class="card">
+      <h2>🚫 Keyword filter</h2>
+      <div class="muted" style="font-size:.85em">English, pinyin and Chinese (Simplified / Traditional are matched the same). Changes apply immediately. Spaces, symbols, numbers, repeated letters, look-alike letters and full-width forms are normalised before matching.</div>
+      <div id="kwTabs"><button data-tab="words">Keywords</button><button data-tab="exc">Exceptions</button><button data-tab="log">Blocked log</button><button data-tab="test">Test</button></div>
+      <div id="kwErr"></div>
+      <div id="kwWords">
+        <div class="kwbar"><input type="text" id="kwNew" placeholder="new keyword" maxlength="40">
+          <select id="kwNewLang"><option value="en">en</option><option value="py">py</option><option value="zh">zh</option></select>
+          <select id="kwNewCat"><option>profanity</option><option>vulgar</option><option>sexual</option><option>slur</option><option>hate</option><option>harassment</option><option>threat</option><option>other</option></select>
+          <select id="kwNewMode"><option value="word">whole word</option><option value="sub">inside words</option></select>
+          <input type="text" id="kwNewUnless" placeholder="not when inside… (comma separated)" maxlength="200" style="flex:1">
+          <button class="btn" id="kwAdd" style="padding:6px 14px">Add</button></div>
+        <div class="kwbar"><input type="text" id="kwSearch" placeholder="search"><select id="kwLangF"><option value="">all languages</option><option>en</option><option>py</option><option>zh</option></select>
+          <select id="kwCatF"><option value="">all categories</option><option>profanity</option><option>vulgar</option><option>sexual</option><option>slur</option><option>hate</option><option>harassment</option><option>threat</option><option>other</option></select>
+          <span class="muted" id="kwCount" style="font-size:.85em"></span></div>
+        <div class="kwscroll" id="kwList"></div>
+        <div class="muted" style="font-size:.8em;margin-top:6px"><b>whole word</b> only matches the keyword as a word of its own (so "class" never trips "ass"); <b>inside words</b> also matches within longer words. Chinese keywords always match inside text. "not when inside" lists phrases that make a match harmless.</div>
+      </div>
+      <div id="kwExc" style="display:none">
+        <div class="muted" style="font-size:.85em">Words or phrases that are always fine, even though they contain a keyword.</div>
+        <div class="kwbar"><input type="text" id="kwExcNew" placeholder="allowed word or phrase" maxlength="60" style="flex:1"><button class="btn" id="kwExcAdd" style="padding:6px 14px">Add</button></div>
+        <div class="kwscroll" id="kwExcList"></div>
+      </div>
+      <div id="kwLog" style="display:none">
+        <div class="muted" style="font-size:.85em">Everything the filter blocked (usernames, chat, notes, whiteboards), newest first, with the keywords that triggered it. Kept on the server in tjhs-modlog.jsonl.</div>
+        <div class="kwscroll" id="kwLogList"></div>
+      </div>
+      <div id="kwTest" style="display:none">
+        <div class="kwbar"><input type="text" id="kwTestIn" placeholder="type text to try it against the filter" style="flex:1"><button class="btn" id="kwTestBtn" style="padding:6px 14px">Check</button></div>
+        <div id="kwTestOut" style="margin-top:8px"></div>
+      </div>
+      <div class="btns"><span style="flex:1"></span><button class="btn ghost" id="kwClose">Close (Esc)</button></div>
+    </div>
+  </div>
+
+  <!-- admin: chat moderation -->
+  <div class="panel" id="modPanel">
+    <div class="card">
+      <h2>🛡 Moderate chat</h2>
+      <div class="muted" style="font-size:.85em">Deleted lines disappear for everyone right away. Newest at the bottom.</div>
+      <div id="modList"></div>
+      <div class="btns"><button class="btn" id="modClear">Delete ALL chat</button><span style="flex:1"></span><button class="btn ghost" id="modClose">Close (Esc)</button></div>
+    </div>
+  </div>
+
+  <div class="panel" id="mapPanel">
+    <div class="card"><canvas id="fullmap"></canvas><div class="btns" style="margin-top:6px"><span class="muted" style="font-size:.85em">Red arrow = you · yellow = your stashes · blue = other students · red blocks = stairs</span><span style="flex:1"></span><button class="btn ghost" id="mapClose">Close (M)</button></div></div>
+  </div>
+  <div class="panel" id="boardPanel">
+    <div class="card"><h2>Leaderboard</h2><table><thead><tr><th>#</th><th>Student</th><th>Pts</th><th>Found</th><th>Hidden</th></tr></thead><tbody id="boardBody"></tbody></table></div>
+  </div>
+
+  <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    } }
+  </script>
+  <script src="tj_hide_seek/shared/SchoolMap.js?v=5"></script>
+  <script src="tj_hide_seek/shared/ChessClub.js?v=1"></script>
+  <script src="tj_hide_seek/shared/Hoops.js?v=2"></script>
+  <script src="identity.js?v=4"></script>
+  <script type="module" src="tj_hide_seek/client/main.js?v=18"></script>
+</body>
+</html>

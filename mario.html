@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-L8GMZRR0GY');
+    </script>
+    <title>Simple Mario</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #7ac5cd; /* Sky color */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            border: 2px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="800" height="480"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Player properties
+        const player = {
+            x: 50,
+            y: canvas.height - 50,
+            width: 32,
+            height: 48,
+            speed: 5,
+            velocityY: 0,
+            gravity: 0.8,
+            isJumping: false,
+            canShoot: true,
+            shootCooldown: 500, // Shooting cooldown (milliseconds)
+            lastShootTime: 0
+        };
+
+        // Mushroom properties
+        const mushroom = {
+            x: 300,
+            y: canvas.height - 80,
+            width: 32,
+            height: 32,
+            isAlive: true
+        };
+
+        // Array for bullets
+        const bullets = [];
+
+        // Ground height
+        const groundHeight = 30;
+
+        // Keyboard input state
+        const keys = {};
+
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            // Player movement
+            if (keys['ArrowLeft']) {
+                player.x -= player.speed;
+            }
+            if (keys['ArrowRight']) {
+                player.x += player.speed;
+            }
+            if (keys['ArrowUp'] && !player.isJumping) {
+                player.velocityY = -15;
+                player.isJumping = true;
+            }
+            if (keys[' ']) { // Spacebar to shoot
+                shoot();
+            }
+
+            // Gravity
+            player.velocityY += player.gravity;
+            player.y += player.velocityY;
+
+            // Ground collision
+            if (player.y > canvas.height - player.height - groundHeight) {
+                player.y = canvas.height - player.height - groundHeight;
+                player.velocityY = 0;
+                player.isJumping = false;
+            }
+
+            // Mushroom collision
+            if (mushroom.isAlive &&
+                player.x < mushroom.x + mushroom.width &&
+                player.x + player.width > mushroom.x &&
+                player.y < mushroom.y + mushroom.height &&
+                player.y + player.height > mushroom.y &&
+                player.y + player.height <= mushroom.y + 10 // Contact from above
+            ) {
+                mushroom.isAlive = false;
+                console.log("Got a mushroom!");
+                // Add logic for getting a mushroom here, e.g., growing bigger
+            }
+
+            // Update bullet positions
+            for (let i = 0; i < bullets.length; i++) {
+                bullets[i].x += bullets[i].speed;
+                // Remove bullets that go off-screen
+                if (bullets[i].x > canvas.width || bullets[i].x < 0) {
+                    bullets.splice(i, 1);
+                    i--;
+                }
+            }
+
+            // Bullet and mushroom collision
+            for (let i = 0; i < bullets.length; i++) {
+                if (mushroom.isAlive &&
+                    bullets[i].x < mushroom.x + mushroom.width &&
+                    bullets[i].x + bullets[i].width > mushroom.x &&
+                    bullets[i].y < mushroom.y + mushroom.height &&
+                    bullets[i].y + bullets[i].height > mushroom.y
+                ) {
+                    mushroom.isAlive = false;
+                    bullets.splice(i, 1);
+                    i--;
+                    console.log("Mushroom hit!");
+                    // Add logic for when the mushroom is hit
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw the ground
+            ctx.fillStyle = 'green';
+            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
+
+            // Draw the player
+            ctx.fillStyle = 'red';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            // Draw the mushroom
+            if (mushroom.isAlive) {
+                ctx.fillStyle = 'brown';
+                ctx.fillRect(mushroom.x, mushroom.y, mushroom.width, mushroom.height);
+                ctx.fillStyle = 'white';
+                ctx.fillRect(mushroom.x + 5, mushroom.y + 5, 10, 10);
+                ctx.fillRect(mushroom.x + 17, mushroom.y + 5, 10, 10);
+            }
+
+            // Draw the bullets
+            ctx.fillStyle = 'black';
+            bullets.forEach(bullet => {
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            });
+        }
+
+        function shoot() {
+            const currentTime = Date.now();
+            if (player.canShoot && currentTime - player.lastShootTime > player.shootCooldown) {
+                bullets.push({
+                    x: player.x + player.width,
+                    y: player.y + player.height / 2 - 5,
+                    width: 10,
+                    height: 10,
+                    speed: 10
+                });
+                player.lastShootTime = currentTime;
+            }
+        }
+
+        // Start the game loop
+        gameLoop();
+    </script>
+</body>
+</html>

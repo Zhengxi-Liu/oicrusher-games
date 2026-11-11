@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Element Core: PvP Roguelike Mage Duel | Online 1v1</title>
+  <meta name="description" content="Element Core: a real-time 1v1 top-down mage duel. Dodge, dash and blast through destructible cover, then draft roguelike spell cards every 45 seconds until the arena becomes a bullet hell. Best of 3, online or vs bot.">
+  <meta name="keywords" content="element core, roguelike pvp, mage duel, bullet hell, online 1v1, top-down shooter, card draft, browser game">
+  <link rel="canonical" href="https://oicrusher.me/game/element_core.html">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(ellipse at top, #1c0b3a 0%, #05020d 70%);
+      min-height: 100vh; color: #e8e8ff;
+      display: flex; flex-direction: column; align-items: center; padding: 16px;
+    }
+    header { text-align: center; margin-bottom: 12px; }
+    header h1 { font-size: 2.1em; letter-spacing: 3px; font-weight: 800; }
+    header h1 .c { color: #00f0ff; text-shadow: 0 0 14px rgba(0,240,255,.7); }
+    header h1 .m { color: #ff2bd6; text-shadow: 0 0 14px rgba(255,43,214,.7); }
+    header p { opacity: .7; margin-top: 4px; }
+
+    .stage { position: relative; width: 100%; max-width: 1280px; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(140,110,255,.45), 0 0 40px rgba(140,90,255,.25), 0 18px 40px rgba(0,0,0,.6); background: #030108; }
+    canvas { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+    canvas.aiming { cursor: none; }
+
+    .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(3,1,10,.6); backdrop-filter: blur(2px); padding: 12px; z-index: 3; }
+    .overlay.hidden { display: none; }
+    .panel { display: none; width: min(560px, 100%); max-height: 100%; overflow-y: auto; background: rgba(12,6,28,.95);
+      border: 1px solid rgba(140,110,255,.45); border-radius: 12px; padding: 20px 22px; text-align: center; box-shadow: 0 0 30px rgba(140,90,255,.25); }
+    .panel.show { display: block; }
+    .panel h2 { font-size: 1.6em; margin-bottom: 6px; }
+    .panel h3 { font-size: .85em; margin: 16px 0 8px; opacity: .7; text-transform: uppercase; letter-spacing: 2px; }
+    .panel p { opacity: .85; line-height: 1.45; }
+    .sub { font-size: .9em; opacity: .7; margin-top: 6px; }
+    .btns { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+    .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+    button { font: inherit; font-weight: 700; color: #05010c; cursor: pointer; background: #00f0ff; border: none; border-radius: 8px; padding: 10px 18px;
+      box-shadow: 0 0 14px rgba(0,240,255,.45); transition: transform .08s, filter .15s; }
+    button:hover { filter: brightness(1.12); }
+    button:active { transform: translateY(1px); }
+    button.mag { background: #ff2bd6; box-shadow: 0 0 14px rgba(255,43,214,.45); }
+    button.ghost { background: transparent; color: #e8e8ff; border: 1px solid rgba(232,232,255,.35); box-shadow: none; }
+    button:disabled { opacity: .4; cursor: default; }
+    .levels { display: flex; gap: 8px; } .levels button { flex: 1; }
+    input[type=text] { font: inherit; color: #e8e8ff; background: rgba(255,255,255,.06); border: 1px solid rgba(140,110,255,.5);
+      border-radius: 8px; padding: 9px 12px; outline: none; text-align: center; width: 220px; }
+    input[type=text]:focus { border-color: #ff2bd6; }
+    .list { text-align: left; background: rgba(0,0,0,.3); border-radius: 8px; padding: 6px; max-height: 170px; overflow-y: auto; }
+    .list .item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 8px; border-radius: 6px; }
+    .list .item:nth-child(odd) { background: rgba(255,255,255,.04); }
+    .list .item button { padding: 5px 12px; font-size: .88em; }
+    .list .empty { opacity: .55; text-align: center; padding: 10px; font-size: .92em; line-height: 1.5; }
+    .list .tag { opacity: .7; font-size: .88em; white-space: nowrap; }
+    .list .win { color: #ffe680; }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #39ff88; box-shadow: 0 0 8px #39ff88; margin-right: 8px; }
+    .muted { opacity: .55; font-size: .85em; }
+    .status { margin-top: 12px; min-height: 1.3em; font-size: .95em; }
+    .error { color: #ff8fb0; }
+    .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.25); border-top-color: #00f0ff; border-radius: 50%; animation: spin .9s linear infinite; vertical-align: -2px; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .invite { display: none; margin-top: 14px; padding: 12px; border-radius: 10px; border: 1px solid #ff2bd6; background: rgba(255,43,214,.12); animation: glow 1s ease-in-out infinite alternate; }
+    .invite.show { display: block; }
+    @keyframes glow { from { box-shadow: 0 0 0 rgba(255,43,214,0); } to { box-shadow: 0 0 20px rgba(255,43,214,.6); } }
+    .keys { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; text-align: left; margin: 14px auto 0; width: fit-content; font-size: .9em; }
+    kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); font-family: inherit; font-size: .85em; text-align: center; }
+    .note { display: none; margin-top: 10px; color: #ffd166; font-size: .9em; }
+
+    /* draft modal */
+    .draft { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+      background: rgba(3,1,10,.78); backdrop-filter: blur(3px); z-index: 2; padding: 12px; }
+    .draft.show { display: flex; }
+    .draft h2 { font-size: 1.6em; letter-spacing: 2px; text-shadow: 0 0 14px rgba(140,110,255,.8); }
+    .timer { width: min(520px, 90%); height: 6px; background: rgba(255,255,255,.12); border-radius: 3px; overflow: hidden; }
+    .timer div { height: 100%; background: linear-gradient(90deg, #00f0ff, #ff2bd6); }
+    .cards { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+    .card { --c: #00f0ff; position: relative; width: 210px; min-height: 250px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 14px;
+      background: linear-gradient(180deg, rgba(20,10,44,.98), rgba(8,4,20,.98)); color: #e8e8ff; border: 2px solid var(--c); border-radius: 14px;
+      box-shadow: 0 0 18px color-mix(in srgb, var(--c) 45%, transparent); font-weight: 400; text-align: center; }
+    .card:hover { transform: translateY(-4px); filter: brightness(1.15); }
+    .card.epic { box-shadow: 0 0 26px color-mix(in srgb, var(--c) 70%, transparent), inset 0 0 20px color-mix(in srgb, var(--c) 25%, transparent); }
+    .card .key { position: absolute; top: 8px; left: 10px; font-size: .8em; opacity: .55; }
+    .card .icon { font-size: 2.6em; color: var(--c); text-shadow: 0 0 16px var(--c); line-height: 1.2; }
+    .card .cname { font-weight: 800; font-size: 1.1em; color: var(--c); }
+    .card .desc { font-size: .9em; line-height: 1.4; opacity: .9; flex: 1; }
+    .card .lvl { font-size: .75em; text-transform: uppercase; letter-spacing: 1px; opacity: .6; }
+    .card.chosen { transform: scale(1.05); box-shadow: 0 0 34px var(--c); }
+    .card.dim { opacity: .3; }
+    .draft .opp { min-height: 1.3em; opacity: .8; }
+    .toast { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%) translateY(20px); opacity: 0; transition: .3s; z-index: 2;
+      background: rgba(12,6,28,.92); border: 1px solid rgba(140,110,255,.5); border-radius: 10px; padding: 8px 16px; white-space: pre; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .topbtns { position: absolute; bottom: 10px; right: 10px; display: flex; gap: 6px; z-index: 4; }
+    .topbtns button { padding: 5px 9px; font-size: .85em; background: rgba(0,0,0,.45); color: #e8e8ff; box-shadow: none; }
+    .help { margin-top: 12px; max-width: 1280px; width: 100%; text-align: center; opacity: .7; font-size: .9em; line-height: 1.6; }
+    .back { margin-top: 14px; color: #00f0ff; text-decoration: none; opacity: .85; }
+    .back:hover { opacity: 1; text-decoration: underline; }
+    @media (max-width: 640px) { header h1 { font-size: 1.4em; } .panel { padding: 14px; } .card { width: 100%; min-height: 0; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span class="c">ELEMENT</span> <span class="m">CORE</span></h1>
+    <p>PvP roguelike mage duel · best of 3</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="game"></canvas>
+
+    <div class="draft" id="draft">
+      <h2 id="draftTitle">Choose a card</h2>
+      <div class="timer"><div id="draftBar"></div></div>
+      <div class="cards" id="draftCards"></div>
+      <div class="opp"><span id="draftOpp"></span> &nbsp;<span class="muted" id="draftTime"></span></div>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <div class="topbtns">
+      <button id="soundBtn" title="Toggle sound">🔊</button>
+      <button id="menuBtn" title="Menu (Esc)">☰</button>
+    </div>
+
+    <div class="overlay" id="overlay">
+      <div class="panel show" id="pMain">
+        <h2>🔮 Element Core</h2>
+        <p>Pick an opening spell card, then blast your rival through crumbling cover. Every 45 seconds and after every round you draft another one. Builds stack until the arena becomes a bullet hell.</p>
+        <div class="row"><input type="text" id="nameInput" maxlength="16" placeholder="Your nickname" autocomplete="off"></div>
+        <div class="btns">
+          <button id="btnOnline">🌐 Online Duel</button>
+          <div class="levels">
+            <button class="mag" data-level="easy">Bot · Easy</button>
+            <button class="mag" data-level="normal">Bot · Normal</button>
+            <button class="mag" data-level="hard">Bot · Hard</button>
+          </div>
+        </div>
+        <div class="keys">
+          <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>Move (8 directions)</span>
+          <span>Mouse · <kbd>LMB</kbd></span><span>Aim · cast (hold)</span>
+          <span><kbd>Space</kbd></span><span>Dash with i-frames</span>
+          <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></span><span>Pick a card in the draft</span>
+        </div>
+        <p class="note" id="touchNote">This duel needs a mouse and keyboard.</p>
+      </div>
+
+      <div class="panel" id="pLobby">
+        <h2>🌐 Online Lobby</h2>
+        <p class="sub">You are <b id="lobbyName">?</b>. Challenge anyone online. Matches run on an authoritative server at 60 Hz.</p>
+        <div class="invite" id="inviteBox">
+          <div>🔮 <b id="inviteFrom"></b> challenges you!</div>
+          <div class="row"><button id="btnAccept">Accept</button><button class="ghost" id="btnDecline">Decline</button></div>
+        </div>
+        <div class="status" id="lobbyStatus"></div>
+        <div class="row" id="cancelRow" style="display:none"><button class="ghost" id="btnCancelInvite">Cancel challenge</button></div>
+        <h3>Online mages (<span id="onlineCount">0</span>)</h3>
+        <div class="list" id="playerList"><div class="empty">Loading…</div></div>
+        <h3>Recent duels</h3>
+        <div class="list" id="recentList"><div class="empty">—</div></div>
+        <div class="row"><button class="ghost" id="btnLobbyBack">← Back</button></div>
+      </div>
+
+      <div class="panel" id="pConn">
+        <h2>Connecting…</h2>
+        <div class="status"><span class="spinner"></span>Reaching the game server…</div>
+        <div class="row"><button class="ghost" id="btnConnCancel">Cancel</button></div>
+      </div>
+
+      <div class="panel" id="pPause">
+        <h2>Leave the duel?</h2>
+        <p class="sub">The match keeps running. Leaving counts as a forfeit.</p>
+        <div class="btns">
+          <button id="btnResume">⚔ Keep fighting</button>
+          <button class="ghost" id="btnQuit">Leave</button>
+        </div>
+      </div>
+
+      <div class="panel" id="pOver">
+        <h2 id="overTitle">Match over</h2>
+        <p id="overScore"></p>
+        <div class="status" id="overStatus"></div>
+        <div class="btns">
+          <button id="btnRematch">🔁 Rematch</button>
+          <button class="ghost" id="btnOverBack">← Back to lobby</button>
+        </div>
+      </div>
+
+      <div class="panel" id="pMsg">
+        <h2 id="msgTitle">Notice</h2>
+        <p id="msgText"></p>
+        <div class="row"><button id="btnMsgOk">OK</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="help">
+    Cover blocks bolts until it crumbles. Dash straight through enemy fire: the whole dash is invulnerable.
+    Cards stack: three Split Shots, Ricochet and Homing turn every cast into a storm.
+  </div>
+  <a class="back" href="index.html">← Back to Game Portal</a>
+
+  <script src="element_core/shared/Constants.js?v=2"></script>
+  <script src="element_core/shared/Movement.js?v=1"></script>
+  <script src="element_core/client/Audio.js?v=1"></script>
+  <script src="element_core/client/Renderer.js?v=2"></script>
+  <script src="element_core/client/InputHandler.js?v=1"></script>
+  <script src="element_core/client/Predictor.js?v=2"></script>
+  <script src="identity.js?v=2"></script>
+  <script src="element_core/client/main.js?v=4"></script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rooftop Tag 1v1 - 3D Parkour Capture the Flag in the Browser</title>
+  <meta name="description" content="Rooftop Tag: a 3D multiplayer capture-the-flag parkour game on neon school rooftops. Slide, wall-run, grapple and bounce off jump pads to steal the enemy flag. 1v1 or 2v2, bots included, free in the browser.">
+  <meta name="keywords" content="rooftop tag, capture the flag, parkour game, grappling hook, wall run, browser game, 3d multiplayer, three.js, krunker, tagpro">
+  <link rel="canonical" href="https://oicrusher.me/game/rooftop_tag.html">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --mag: #ff2fb4; --cyan: #22e6ff; --amber: #ffb02a; --ink: #e9e6ff; --panel: rgba(10,6,22,.93); }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: radial-gradient(ellipse at top, #1a0a2e, #05030c 70%); color: var(--ink);
+           min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 14px; }
+    #teamPick button { color: var(--tc); border-color: var(--tc); opacity: .55; min-width: 110px; }
+    #teamPick button.on { opacity: 1; background: color-mix(in srgb, var(--tc) 22%, transparent); box-shadow: 0 0 12px var(--tc); }
+    header { text-align: center; margin-bottom: 10px; }
+    header h1 { font-size: 2em; letter-spacing: 6px; font-weight: 900; font-style: italic;
+                background: linear-gradient(90deg, var(--mag), #b46cff 50%, var(--cyan)); -webkit-background-clip: text; background-clip: text; color: transparent;
+                filter: drop-shadow(0 0 12px rgba(255,47,180,.45)); }
+    header p { opacity: .65; margin-top: 2px; font-size: .9em; letter-spacing: 1px; }
+    .stage { position: relative; width: 100%; max-width: 1280px; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #000;
+             border: 1px solid #3a2560; box-shadow: 0 0 0 1px rgba(34,230,255,.18), 0 0 40px rgba(255,47,180,.18), 0 20px 50px rgba(0,0,0,.7); }
+    #view, #speedlines { display: block; width: 100%; height: 100%; }
+    #speedlines { position: absolute; inset: 0; pointer-events: none; }
+    .err { display: none; position: absolute; inset: 0; padding: 40px; text-align: center; color: #ff8a9a; }
+
+    /* ---------- menus */
+    .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(6,3,14,.5); padding: 12px; z-index: 5; }
+    .overlay.hidden { display: none; }
+    .panel { display: none; width: min(580px, 100%); max-height: 100%; overflow-y: auto; background: var(--panel); border: 1px solid #3c2a66; border-radius: 6px;
+             padding: 20px 24px; text-align: center; box-shadow: 0 0 30px rgba(180,108,255,.25); position: relative; }
+    .panel::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, var(--mag), var(--cyan)); border-radius: 6px 6px 0 0; }
+    .panel.show { display: block; }
+    .panel h2 { font-size: 1.5em; letter-spacing: 3px; margin-bottom: 6px; font-style: italic; color: #fff; text-shadow: 0 0 12px rgba(34,230,255,.6); }
+    .panel h3 { font-size: .78em; margin: 16px 0 8px; opacity: .6; text-transform: uppercase; letter-spacing: 3px; }
+    .panel p { opacity: .85; line-height: 1.5; }
+    .sub { font-size: .9em; opacity: .7; margin-top: 6px; }
+    .row { display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+    .btns { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+    button { font: inherit; font-weight: 800; letter-spacing: 2px; color: #0a0614; border: none; padding: 10px 18px; cursor: pointer; border-radius: 4px;
+             background: linear-gradient(90deg, var(--mag), var(--cyan)); }
+    button:hover { filter: brightness(1.15); box-shadow: 0 0 14px rgba(34,230,255,.5); }
+    button.ghost { background: transparent; color: var(--ink); border: 1px solid #5a4890; }
+    button:disabled { opacity: .4; cursor: default; }
+    input[type=text], select { font: inherit; color: var(--ink); background: #130c26; border: 1px solid #4a3a78; padding: 8px 10px; outline: none; border-radius: 4px; }
+    input[type=text] { text-align: center; width: 220px; }
+    input[type=text]:focus, select:focus { border-color: var(--cyan); box-shadow: 0 0 8px rgba(34,230,255,.4); }
+    #codeInput { width: 110px; letter-spacing: 4px; font-weight: 700; }
+    .list { text-align: left; background: rgba(0,0,0,.35); border: 1px solid #2c2050; max-height: 180px; overflow-y: auto; border-radius: 4px; }
+    .list .item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 10px; border-bottom: 1px solid #1d1636; }
+    .list .item button { padding: 5px 12px; font-size: .85em; }
+    .list .empty { opacity: .55; text-align: center; padding: 12px; font-size: .92em; }
+    .code { color: var(--cyan); letter-spacing: 2px; font-family: ui-monospace, Menlo, monospace; }
+    .muted { opacity: .55; font-size: .85em; }
+    .status { margin-top: 10px; min-height: 1.2em; color: #ff8a9a; font-size: .92em; }
+    .keys { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; text-align: left; margin: 14px auto 0; width: fit-content; font-size: .87em; }
+    kbd { display: inline-block; min-width: 20px; padding: 0 5px; border: 1px solid #5a4890; background: #1a1230; font-family: inherit; font-size: .85em; text-align: center; border-radius: 3px; }
+    .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid #444; border-top-color: var(--cyan); border-radius: 50%; animation: spin .9s linear infinite; vertical-align: -2px; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .tag-mag { color: var(--mag); } .tag-cyan { color: var(--cyan); }
+
+    /* ---------- HUD */
+    #hud { position: absolute; inset: 0; pointer-events: none; display: none; font-family: 'Trebuchet MS', 'Segoe UI', sans-serif; }
+    #hud.show { display: block; }
+    #crosshair { position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; transform: translate(-50%, -50%); }
+    #crosshair::before { content: ''; position: absolute; inset: 9px; border: 2px solid rgba(255,255,255,.9); border-radius: 50%; box-shadow: 0 0 6px rgba(34,230,255,.8); }
+    #crosshair::after { content: ''; position: absolute; left: 12px; top: 12px; width: 2px; height: 2px; background: #fff; }
+    #hitmark { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; transform: translate(-50%, -50%) rotate(45deg); opacity: 0; transition: opacity .08s; }
+    #hitmark::before, #hitmark::after { content: ''; position: absolute; background: #fff; box-shadow: 0 0 6px #ff2fb4; }
+    #hitmark::before { left: 16px; top: 0; width: 2px; height: 34px; clip-path: polygon(0 0,100% 0,100% 30%,0 30%,0 70%,100% 70%,100% 100%,0 100%); }
+    #hitmark::after { top: 16px; left: 0; height: 2px; width: 34px; clip-path: polygon(0 0,30% 0,30% 100%,0 100%,0 0,70% 0,100% 0,100% 100%,70% 100%); }
+    #hurt { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(255,0,80,0) 45%, rgba(220,0,90,.85) 100%); opacity: 0; }
+    #score { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); display: flex; gap: 14px; align-items: center; font-weight: 800; letter-spacing: 2px;
+             background: rgba(8,4,20,.6); padding: 4px 14px; border-radius: 4px; border: 1px solid rgba(180,108,255,.35); font-size: .95em; }
+    #score .t0 { color: var(--mag); text-shadow: 0 0 8px var(--mag); } #score .t1 { color: var(--cyan); text-shadow: 0 0 8px var(--cyan); }
+    #score b { font-size: 1.45em; } #score .clock { color: #fff; opacity: .85; font-size: .9em; min-width: 46px; text-align: center; }
+    #flags { position: absolute; left: 12px; top: 46px; display: flex; flex-direction: column; gap: 6px; }
+    .flag { background: rgba(8,4,20,.6); border-left: 4px solid; padding: 3px 10px; font-size: .68em; letter-spacing: 1px; min-width: 210px; border-radius: 0 4px 4px 0; white-space: nowrap; }
+    .flag b { font-size: 1.25em; letter-spacing: 1px; }
+    .flag.f0 { border-color: var(--mag); } .flag.f1 { border-color: var(--cyan); }
+    .flag .fi { font-size: 1.6em; float: left; margin-right: 8px; line-height: 1.3; }
+    .flag.f0 .fi { color: var(--mag); } .flag.f1 .fi { color: var(--cyan); }
+    .flag.s1 b { color: #ffd84a; animation: blink .7s steps(2) infinite; } .flag.s2 b { color: var(--amber); }
+    #feed { position: absolute; right: 12px; top: 10px; text-align: right; font-size: .82em; max-width: 46%; }
+    .fd { background: rgba(8,4,20,.55); padding: 3px 9px; margin-bottom: 3px; display: inline-block; float: right; clear: both; border-radius: 3px; }
+    #netInfo { position: absolute; left: 12px; bottom: 8px; font-size: .68em; opacity: .45; }
+    #roomTag { position: absolute; left: 12px; top: 10px; font-size: .72em; opacity: .55; }
+    #banner { position: absolute; left: 50%; top: 24%; transform: translateX(-50%); text-align: center; font-size: 2em; font-weight: 900; font-style: italic; letter-spacing: 3px;
+              color: #fff; text-shadow: 0 0 18px rgba(180,108,255,.9); opacity: 0; transition: opacity .25s; white-space: nowrap; }
+    #banner small { display: block; font-size: .42em; letter-spacing: 2px; opacity: .85; font-style: normal; margin-top: 4px; }
+    #banner.show { opacity: 1; }
+    #deathMsg { position: absolute; left: 50%; top: 58%; transform: translateX(-50%); font-size: 1.4em; text-align: center; display: none; text-shadow: 0 0 8px #000; }
+    #deathMsg.show { display: block; }
+    .bl { position: absolute; left: 18px; bottom: 22px; width: 230px; }
+    .lbl { font-size: .62em; letter-spacing: 3px; opacity: .7; }
+    #hpBox .num { font-size: 2.2em; font-weight: 900; line-height: 1; color: #fff; text-shadow: 0 0 10px rgba(34,230,255,.7); }
+    .bar { height: 6px; background: rgba(255,255,255,.12); border-radius: 3px; overflow: hidden; margin-top: 3px; }
+    #hpBar { height: 100%; width: 100%; background: linear-gradient(90deg, var(--cyan), #7dff6a); box-shadow: 0 0 8px var(--cyan); transition: width .15s; }
+    #hpBox.low #hpBar { background: #ff3a6a; } #hpBox.low .num { color: #ff5a7a; animation: blink .6s steps(2) infinite; }
+    @keyframes blink { 50% { opacity: .4; } }
+    .br { position: absolute; right: 18px; bottom: 22px; width: 230px; text-align: right; }
+    #speed { font-size: 2.6em; font-weight: 900; line-height: 1; color: #fff; font-style: italic; text-shadow: 0 0 12px rgba(255,47,180,.8); }
+    #speedUnit { font-size: .8em; opacity: .7; margin-left: 4px; }
+    #speedBar { height: 100%; width: 0; background: linear-gradient(90deg, #b46cff, var(--mag)); transition: width .1s; margin-left: auto; }
+    #speedBar.fast { background: linear-gradient(90deg, var(--mag), var(--amber)); box-shadow: 0 0 10px var(--amber); }
+    #moveState { font-size: .72em; letter-spacing: 3px; color: var(--cyan); min-height: 1.1em; margin-top: 3px; }
+    #hookIcon { position: absolute; left: calc(50% + 34px); top: calc(50% + 20px); width: 10px; height: 26px; border: 1px solid rgba(255,176,42,.6); border-radius: 2px; overflow: hidden; opacity: .8; }
+    #hookFill { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(255,176,42,.45); }
+    #hookIcon.ready #hookFill { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+    #hookIcon.active { border-color: #fff; }
+    #carrying { position: absolute; left: 50%; bottom: 70px; transform: translateX(-50%); font-weight: 900; letter-spacing: 3px; color: #ffd84a; display: none;
+                text-shadow: 0 0 10px #ffb02a; animation: blink 1s steps(2) infinite; }
+    #carrying.show { display: block; }
+    #minimap { position: absolute; right: 14px; bottom: 96px; width: 130px; height: 290px; border: 1px solid rgba(180,108,255,.4); border-radius: 4px; opacity: .9; }
+    #scoreboard { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); min-width: 460px; background: var(--panel); border: 1px solid #3c2a66; border-radius: 6px;
+                  padding: 14px 18px; display: none; }
+    #scoreboard.show { display: block; }
+    #scoreboard h3 { margin-bottom: 10px; font-size: 1em; letter-spacing: 2px; color: #fff; }
+    #scoreboard table { width: 100%; border-collapse: collapse; font-size: .9em; }
+    #scoreboard th, #scoreboard td { padding: 4px 8px; text-align: left; }
+    #scoreboard th { opacity: .6; font-weight: 600; border-bottom: 1px solid #3a2a5a; }
+    #scoreboard tr.me td { color: var(--amber); }
+    #scoreboard tr.th0 td { color: var(--mag); font-weight: 800; letter-spacing: 2px; padding-top: 10px; }
+    #scoreboard tr.th1 td { color: var(--cyan); font-weight: 800; letter-spacing: 2px; padding-top: 10px; }
+    #scoreboard .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; }
+    .topbtns { position: absolute; right: 10px; bottom: 60px; z-index: 6; }
+    .topbtns button { padding: 4px 8px; font-size: .8em; background: rgba(0,0,0,.5); color: #ddd; letter-spacing: 0; }
+    .help { margin-top: 12px; max-width: 1280px; width: 100%; text-align: center; opacity: .6; font-size: .88em; line-height: 1.6; }
+    .back { margin-top: 12px; color: var(--cyan); text-decoration: none; opacity: .85; }
+    @media (max-width: 760px) { #minimap { display: none; } #speed { font-size: 1.8em; } .bl, .br { width: 150px; } #scoreboard { min-width: 92%; } #banner { font-size: 1.3em; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ROOFTOP TAG</h1>
+    <p>Neon rooftop capture the flag · slide · wall-run · grapple · 1v1 or 2v2</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="view"></canvas>
+    <canvas id="speedlines"></canvas>
+    <div class="err" id="webglError">WebGL is not available in this browser, so the 3D view cannot start.</div>
+
+    <div id="hud">
+      <div id="crosshair"></div>
+      <div id="hookIcon"><div id="hookFill"></div></div>
+      <div id="hitmark"></div>
+      <div id="hurt"></div>
+      <div id="score"></div>
+      <div id="roomTag">room <span id="roomCode"></span> · Esc menu · Tab scores</div>
+      <div id="flags"></div>
+      <div id="feed"></div>
+      <div id="banner"></div>
+      <div id="deathMsg"></div>
+      <div id="carrying">⚑ CARRYING THE FLAG · GET HOME ⚑</div>
+      <canvas id="minimap" width="130" height="290"></canvas>
+      <div class="bl">
+        <div id="hpBox"><div class="lbl">INTEGRITY</div><span class="num" id="hp">100</span><div class="bar"><div id="hpBar"></div></div></div>
+      </div>
+      <div class="br">
+        <div class="lbl">VELOCITY</div>
+        <div><span id="speed">0.0</span><span id="speedUnit">m/s</span></div>
+        <div class="bar"><div id="speedBar"></div></div>
+        <div id="moveState"></div>
+      </div>
+      <div id="netInfo"></div>
+      <div id="scoreboard"></div>
+    </div>
+
+    <div class="topbtns"><button id="soundBtn" title="Toggle sound">🔊</button></div>
+
+    <div class="overlay" id="overlay">
+      <div class="panel show" id="pMain">
+        <h2>ROOFTOP TAG</h2>
+        <p>Night. Rain. Three school rooftops over a neon city. Steal the other team's flag and bring it home while yours is safe.
+           <b>First to 3 captures.</b> Falling off the roof costs you the flag.</p>
+        <div class="row"><input type="text" id="nameInput" maxlength="16" placeholder="Your name" autocomplete="off"></div>
+        <div class="btns"><button id="btnPlay">▶ PLAY ONLINE</button></div>
+        <div class="row" style="font-size:.85em">Mouse sensitivity <input type="range" id="sens" min="0.6" max="6" step="0.1" style="width:160px"></div>
+        <div class="keys">
+          <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · <kbd>Space</kbd></span><span>Run · jump (jump next to a wall = wall jump)</span>
+          <span><kbd>Shift</kbd> / <kbd>C</kbd></span><span>Crouch · while running: <b>slide</b> (fast down ramps)</span>
+          <span>Hold <kbd>W</kbd> along a wall</span><span><b>Wall run</b> (jump from it for a boost)</span>
+          <span><kbd>RMB</kbd> / <kbd>E</kbd> (hold)</span><span><b>Grappling hook</b> - bites the amber beams</span>
+          <span><kbd>LMB</kbd> · <kbd>Tab</kbd> · <kbd>Esc</kbd></span><span>Tagger (4 hits) · scores · menu</span>
+        </div>
+      </div>
+
+      <div class="panel" id="pLobby">
+        <h2>ROOFTOPS</h2>
+        <p class="sub">Signed in as <b id="lobbyName">?</b>. Rooms hold 4 runners (2v2); bots fill empty slots and step aside for humans. Pick a team, then join or create a room.</p>
+        <h3>Your team</h3>
+        <div class="row" id="teamPick">
+          <button class="ghost" data-team="0" style="--tc:var(--mag)">✦ MAGENTA</button>
+          <button class="ghost" data-team="-1" style="--tc:#cfc8ff">AUTO</button>
+          <button class="ghost" data-team="1" style="--tc:var(--cyan)">◆ CYAN</button>
+        </div>
+        <h3>Open rooms</h3>
+        <div class="list" id="roomList"><div class="empty">Loading…</div></div>
+        <div class="row"><input type="text" id="codeInput" maxlength="4" placeholder="CODE" autocomplete="off"><button id="btnJoinCode">JOIN</button></div>
+        <h3>New room</h3>
+        <div class="row">
+          <select id="mapSelect"></select>
+          <select id="modeSelect"><option value="1" selected>1v1 vs a bot</option><option value="3">2v2 with bots</option><option value="0">Empty - wait for friends</option></select>
+          <select id="botLevel"><option value="easy">easy bots</option><option value="normal" selected>normal bots</option><option value="hard">hard bots</option></select>
+          <button id="btnCreate">CREATE ROOM</button>
+        </div>
+        <div class="status" id="lobbyStatus"></div>
+        <div class="row"><button class="ghost" id="btnLobbyBack">← Back</button></div>
+      </div>
+
+      <div class="panel" id="pConn">
+        <h2>CONNECTING</h2>
+        <p><span class="spinner"></span>Reaching the game server…</p>
+        <div class="row"><button class="ghost" id="btnConnCancel">Cancel</button></div>
+      </div>
+
+      <div class="panel" id="pPause">
+        <h2>ROOM <span id="pauseCode" class="code"></span></h2>
+        <p class="sub" id="pauseBots"></p>
+        <div class="btns">
+          <button id="btnResume">▶ RESUME (click to capture the mouse)</button>
+          <div class="row" style="margin-top:0"><button class="ghost" id="btnSwitch">⇄ switch team</button><button class="ghost" id="btnAddBot">+ add bot</button><button class="ghost" id="btnKickBot">− remove bot</button></div>
+          <button class="ghost" id="btnLeave">Leave room</button>
+        </div>
+        <p class="sub">Share the room code: a friend who joins takes a bot's place.</p>
+      </div>
+
+      <div class="panel" id="pMsg">
+        <h2 id="msgTitle">NOTICE</h2>
+        <p id="msgText"></p>
+        <div class="row"><button id="btnMsgOk">OK</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="help">
+    Chain moves to go fast: slide down a ramp, jump into a wall run, wall-jump, hook the amber beam and swing over the gap.
+    The flag carrier runs a little slower and leaves a neon trail. A dropped flag goes home after 5 seconds, or at once if a teammate touches it.
+    Needs a desktop browser with a mouse (Pointer Lock).
+  </div>
+  <a class="back" href="index.html">← Back to Game Portal</a>
+
+  <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+    } }
+  </script>
+  <script src="identity.js?v=2"></script>
+  <script src="rooftop_tag/shared/Constants.js?v=2"></script>
+  <script src="rooftop_tag/shared/MapData.js?v=2"></script>
+  <script src="rooftop_tag/shared/Movement.js?v=2"></script>
+  <script type="module" src="rooftop_tag/client/main.js?v=3"></script>
+</body>
+</html>

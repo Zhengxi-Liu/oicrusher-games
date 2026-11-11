@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-L8GMZRR0GY');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>像素功夫格斗</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #222;
+            margin: 0;
+            font-family: sans-serif;
+            color: white;
+            flex-direction: column; /* 让标题和画布垂直排列 */
+        }
+        canvas {
+            border: 1px solid white;
+            background-color: #000;
+        }
+        #controls {
+            margin-top: 10px;
+            font-size: 0.9em;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>像素功夫格斗</h1>
+    <canvas id="gameCanvas" width="640" height="400"></canvas>
+    <div id="controls">
+        控制: A/D (←/→) - 移动 | J (或 Z) - 拳 | K (或 X) - 脚
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const CANVAS_WIDTH = canvas.width;
+        const CANVAS_HEIGHT = canvas.height;
+        const GROUND_Y = CANVAS_HEIGHT - 50; // 地面位置
+
+        // --- 游戏设置 ---
+        const PLAYER_HEALTH_MAX = 100;
+        const ENEMY_HEALTH_MAX = 100;
+        const PLAYER_SPEED = 5;
+        const ENEMY_SPEED = 2;
+        const PUNCH_DAMAGE = 10;
+        const KICK_DAMAGE = 15;
+        const ATTACK_REACH_PUNCH = 50; // 拳攻击距离
+        const ATTACK_REACH_KICK = 70;  // 脚攻击距离
+        const ATTACK_DURATION = 150; // 攻击动画持续时间 (ms)
+        const ATTACK_COOLDOWN = 300; // 攻击冷却时间 (ms)
+        const ENEMY_ATTACK_COOLDOWN_MIN = 500; // AI攻击最小间隔
+        const ENEMY_ATTACK_COOLDOWN_MAX = 1500;// AI攻击最大间隔
+
+        // --- 游戏对象 ---
+        const player = {
+            x: 100,
+            y: GROUND_Y,
+            width: 50,
+            height: 100,
+            color: 'blue',
+            health: PLAYER_HEALTH_MAX,
+            speed: PLAYER_SPEED,
+            dx: 0, // x方向速度
+            isAttacking: false,
+            attackType: null, // 'punch' or 'kick'
+            attackTimer: 0,
+            attackCooldownTimer: 0,
+            facingRight: true // 朝向
+        };
+
+        const enemy = {
+            x: CANVAS_WIDTH - 150,
+            y: GROUND_Y,
+            width: 50,
+            height: 100,
+            color: 'red',
+            health: ENEMY_HEALTH_MAX,
+            speed: ENEMY_SPEED,
+            isAttacking: false,
+            attackType: null,
+            attackTimer: 0,
+            attackCooldownTimer: 0,
+            aiAttackCooldown: Math.random() * (ENEMY_ATTACK_COOLDOWN_MAX - ENEMY_ATTACK_COOLDOWN_MIN) + ENEMY_ATTACK_COOLDOWN_MIN,
+            aiAttackTimer: 0,
+            facingRight: false // 朝向
+        };
+
+        // --- 游戏状态 ---
+        let gameOver = false;
+        let winner = null; // 'player' or 'enemy'
+        let lastTime = 0;
+
+        // --- 输入处理 ---
+        const keysPressed = {};
+
+        document.addEventListener('keydown', (e) => {
+            keysPressed[e.key.toLowerCase()] = true;
+             // 兼容常用按键 Z/X
+            if (e.key.toLowerCase() === 'z') keysPressed['j'] = true;
+            if (e.key.toLowerCase() === 'x') keysPressed['k'] = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keysPressed[e.key.toLowerCase()] = false;
+             // 兼容常用按键 Z/X
+            if (e.key.toLowerCase() === 'z') keysPressed['j'] = false;
+            if (e.key.toLowerCase() === 'x') keysPressed['k'] = false;
+        });
+
+        // --- 辅助函数 ---
+        function drawRect(x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y - h, w, h); // Y坐标是顶部，所以需要减去高度
+        }
+
+        function drawHealthBar(character, x, y, w, h, maxHealth) {
+            // 背景
+            ctx.fillStyle = '#555';
+            ctx.fillRect(x, y, w, h);
+            // 当前血量
+            const healthPercentage = character.health / maxHealth;
+            ctx.fillStyle = healthPercentage > 0.5 ? 'green' : (healthPercentage > 0.2 ? 'yellow' : 'red');
+            ctx.fillRect(x, y, w * healthPercentage, h);
+            // 边框
+            ctx.strokeStyle = 'white';
+            ctx.strokeRect(x, y, w, h);
+        }
+
+        function drawAttack(character) {
+            if (!character.isAttacking) return;
+
+            ctx.fillStyle = 'white';
+            let attackX, attackY, attackW, attackH;
+            const reach = character.attackType === 'punch' ? ATTACK_REACH_PUNCH : ATTACK_REACH_KICK;
+            const heightOffset = character.attackType === 'punch' ? character.height * 0.7 : character.height * 0.4; // 拳高脚低
+
+            if (character.facingRight) {
+                attackX = character.x + character.width;
+                attackY = character.y - heightOffset;
+                attackW = reach;
+                attackH = 10; // 攻击判定区域的高度
+            } else {
+                attackX = character.x - reach;
+                attackY = character.y - heightOffset;
+                attackW = reach;
+                attackH = 10;
+            }
+             // 绘制简单的攻击效果（比如一个短线或方块）
+            ctx.fillRect(attackX, attackY, attackW, attackH);
+        }
+
+        // 简单的矩形碰撞检测
+        function checkCollision(rect1, rect2) {
+             // rect1 是攻击判定区, rect2 是目标身体
+             // 注意 y 轴反转，rect.y 是底部坐标
+            return (
+                rect1.x < rect2.x + rect2.w &&
+                rect1.x + rect1.w > rect2.x &&
+                rect1.y > rect2.y - rect2.h && // 判定区的底部 > 目标身体的顶部
+                rect1.y - rect1.h < rect2.y    // 判定区的顶部 < 目标身体的底部
+            );
+        }
+
+        // --- 更新逻辑 ---
+        function update(deltaTime) {
+            if (gameOver) return;
+
+            const msDeltaTime = deltaTime; // deltaTime 已经是毫秒
+
+            // 更新计时器
+            player.attackTimer -= msDeltaTime;
+            player.attackCooldownTimer -= msDeltaTime;
+            enemy.attackTimer -= msDeltaTime;
+            enemy.attackCooldownTimer -= msDeltaTime;
+            enemy.aiAttackTimer += msDeltaTime;
+
+            if (player.attackTimer <= 0) player.isAttacking = false;
+            if (enemy.attackTimer <= 0) enemy.isAttacking = false;
+
+            // --- 玩家移动 ---
+            player.dx = 0;
+            if (keysPressed['a'] || keysPressed['arrowleft']) {
+                player.dx = -player.speed;
+                player.facingRight = false;
+            }
+            if (keysPressed['d'] || keysPressed['arrowright']) {
+                player.dx = player.speed;
+                player.facingRight = true;
+            }
+            player.x += player.dx;
+
+            // 边界检测
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > CANVAS_WIDTH) player.x = CANVAS_WIDTH - player.width;
+
+             // --- 玩家攻击 ---
+            if ((keysPressed['j'] || keysPressed['k']) && !player.isAttacking && player.attackCooldownTimer <= 0) {
+                player.isAttacking = true;
+                player.attackType = keysPressed['j'] ? 'punch' : 'kick';
+                player.attackTimer = ATTACK_DURATION;
+                player.attackCooldownTimer = ATTACK_COOLDOWN;
+
+                // --- 玩家攻击命中检测 ---
+                let attackBox = getAttackBox(player);
+                let enemyHitBox = { x: enemy.x, y: enemy.y, w: enemy.width, h: enemy.height };
+                if (checkCollision(attackBox, enemyHitBox)) {
+                    enemy.health -= (player.attackType === 'punch' ? PUNCH_DAMAGE : KICK_DAMAGE);
+                    enemy.health = Math.max(0, enemy.health); // 防止血量负数
+                     console.log("Player hit Enemy! Enemy Health:", enemy.health);
+                    if (enemy.health <= 0) {
+                        gameOver = true;
+                        winner = 'player';
+                    }
+                }
+            }
+
+            // --- 敌人 AI ---
+            // 1. 移动：朝向玩家移动
+            if (!enemy.isAttacking) {
+                if (enemy.x + enemy.width < player.x) {
+                    enemy.x += enemy.speed;
+                    enemy.facingRight = true;
+                } else if (enemy.x > player.x + player.width) {
+                    enemy.x -= enemy.speed;
+                    enemy.facingRight = false;
+                }
+            }
+             // 边界检测
+            if (enemy.x < 0) enemy.x = 0;
+            if (enemy.x + enemy.width > CANVAS_WIDTH) enemy.x = CANVAS_WIDTH - enemy.width;
+
+
+            // 2. 攻击：靠近玩家且冷却结束时，随机攻击
+            const distance = Math.abs((player.x + player.width / 2) - (enemy.x + enemy.width / 2));
+            const attackRange = ATTACK_REACH_KICK + player.width/2 + enemy.width/2; // 大致的攻击触发距离
+
+            if (distance < attackRange && !enemy.isAttacking && enemy.attackCooldownTimer <= 0 && enemy.aiAttackTimer >= enemy.aiAttackCooldown) {
+                enemy.isAttacking = true;
+                enemy.attackType = Math.random() < 0.5 ? 'punch' : 'kick';
+                enemy.attackTimer = ATTACK_DURATION;
+                enemy.attackCooldownTimer = ATTACK_COOLDOWN;
+                enemy.aiAttackTimer = 0; // 重置AI攻击计时
+                enemy.aiAttackCooldown = Math.random() * (ENEMY_ATTACK_COOLDOWN_MAX - ENEMY_ATTACK_COOLDOWN_MIN) + ENEMY_ATTACK_COOLDOWN_MIN; // 随机下一次攻击间隔
+
+                 // --- 敌人攻击命中检测 ---
+                let attackBox = getAttackBox(enemy);
+                let playerHitBox = { x: player.x, y: player.y, w: player.width, h: player.height };
+
+                if (checkCollision(attackBox, playerHitBox)) {
+                    player.health -= (enemy.attackType === 'punch' ? PUNCH_DAMAGE : KICK_DAMAGE);
+                    player.health = Math.max(0, player.health); // 防止血量负数
+                    console.log("Enemy hit Player! Player Health:", player.health);
+                    if (player.health <= 0) {
+                        gameOver = true;
+                        winner = 'enemy';
+                    }
+                }
+            }
+
+             // 确保角色面对面
+            if (player.x < enemy.x) {
+                player.facingRight = true;
+                enemy.facingRight = false;
+            } else {
+                 player.facingRight = false;
+                 enemy.facingRight = true;
+            }
+        }
+
+        // 获取攻击判定区域
+        function getAttackBox(character) {
+            let attackX, attackY, attackW, attackH;
+            const reach = character.attackType === 'punch' ? ATTACK_REACH_PUNCH : ATTACK_REACH_KICK;
+            const heightOffset = character.attackType === 'punch' ? character.height * 0.7 : character.height * 0.4;
+             const attackBoxHeight = 10; // 攻击判定区的高度
+
+            if (character.facingRight) {
+                attackX = character.x + character.width;
+                attackY = character.y - heightOffset;
+                attackW = reach;
+            } else {
+                attackX = character.x - reach;
+                attackY = character.y - heightOffset;
+                attackW = reach;
+            }
+            // 返回碰撞盒信息，注意 y 坐标需要调整 (因为fillRect是从左上角画，但我们的坐标系是底部)
+            // 这里返回的 y 是攻击区域的 *底部* y 坐标
+            return { x: attackX, y: attackY, w: attackW, h: attackBoxHeight };
+        }
+
+
+        // --- 渲染逻辑 ---
+        function render() {
+            // 清除画布
+            ctx.fillStyle = '#000'; // 背景色
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            // 绘制地面
+            ctx.fillStyle = '#888';
+            ctx.fillRect(0, GROUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_Y);
+
+
+            // 绘制角色
+            drawRect(player.x, player.y, player.width, player.height, player.color);
+            drawRect(enemy.x, enemy.y, enemy.width, enemy.height, enemy.color);
+
+             // 绘制攻击效果
+             drawAttack(player);
+             drawAttack(enemy);
+
+
+            // 绘制血条
+            drawHealthBar(player, 20, 20, 200, 20, PLAYER_HEALTH_MAX);
+            drawHealthBar(enemy, CANVAS_WIDTH - 220, 20, 200, 20, ENEMY_HEALTH_MAX);
+
+             // 显示血量文字 (可选)
+             ctx.fillStyle = 'white';
+             ctx.font = '16px Arial';
+             ctx.fillText(`Player HP: ${player.health}`, 25, 60);
+             ctx.fillText(`Enemy HP: ${enemy.health}`, CANVAS_WIDTH - 125, 60);
+
+
+            // 绘制游戏结束画面
+            if (gameOver) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+                ctx.fillStyle = 'white';
+                ctx.font = '40px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Game Over!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 40);
+
+                ctx.font = '30px Arial';
+                if (winner === 'player') {
+                    ctx.fillStyle = 'cyan';
+                    ctx.fillText('You Win!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 10);
+                } else if (winner === 'enemy') {
+                     ctx.fillStyle = 'orange';
+                    ctx.fillText('You Lose!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 10);
+                }
+                 ctx.font = '20px Arial';
+                 ctx.fillStyle = 'white';
+                 ctx.fillText('Refresh to play again', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 60);
+                ctx.textAlign = 'left'; // 重置对齐方式
+            }
+        }
+
+        // --- 游戏循环 ---
+        function gameLoop(timestamp) {
+            const deltaTime = timestamp - lastTime; // 计算时间差 (毫秒)
+            lastTime = timestamp;
+
+            // 防止deltaTime过大导致问题 (例如，切换标签页回来)
+            const maxDeltaTime = 100; // 例如，限制最大帧时间为100ms
+            const clampedDeltaTime = Math.min(deltaTime, maxDeltaTime);
+
+            update(clampedDeltaTime); // 使用限制后的deltaTime
+            render();
+
+            requestAnimationFrame(gameLoop); // 请求下一帧
+        }
+
+        // --- 启动游戏 ---
+        lastTime = performance.now(); // 初始化 lastTime
+        requestAnimationFrame(gameLoop); // 开始游戏循环
+
+    </script>
+</body>
+</html>

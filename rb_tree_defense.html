@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-L8GMZRR0GY');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Red-Black Tree Defense</title>
+<meta name="description" content="Red-Black Tree Defense: data packets invade a binary search tree. Rotate and recolor nodes in real time to keep it a valid red-black tree before latency spikes and stack overflows crash your server.">
+<link rel="canonical" href="https://oicrusher.me/game/rb_tree_defense.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* Layout: HUD strip on top, canvas board left, control/log panel right; stacks under 920px. Single dark terminal look by design. */
+  :root {
+    --bg: #030608;
+    --panel: #0a1016;
+    --panel2: #0d151d;
+    --line: #19283a;
+    --ink: #d9e7f5;
+    --muted: #7a8ca3;
+    --hi: #22e6ff;
+    --term: #4dff9a;
+    --red: #ff2d55;
+    --warn: #ffb020;
+    --toxic: #b4ff39;
+    --violet: #c56bff;
+    --display: 'Chakra Petch', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { background: var(--bg); color: var(--ink); }
+  body { margin: 0; font-family: var(--display); font-size: 15px; line-height: 1.5; }
+  button { font: inherit; color: inherit; }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--hi); outline-offset: 2px; }
+  kbd { font: 600 11px var(--mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; color: var(--ink); background: var(--panel2); }
+
+  .wrap { max-width: 1280px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+
+  header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; margin-bottom: 12px; }
+  .brand { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .brand .eyebrow { font: 600 11px var(--mono); letter-spacing: .24em; color: var(--muted); text-transform: uppercase; }
+  .brand h1 {
+    margin: 0; font-size: clamp(26px, 4.6vw, 42px); font-weight: 700; letter-spacing: .02em; line-height: 1.1; text-wrap: balance;
+    color: #fff; text-shadow: 0 0 8px rgba(255,45,85,.55), 0 0 26px rgba(255,45,85,.3);
+  }
+  .brand h1 .blk { color: #e9f1ff; text-shadow: 0 0 8px rgba(34,230,255,.45); }
+  .head-links { display: flex; gap: 8px; align-items: center; font-size: 13px; flex-wrap: wrap; }
+  .head-links a { color: var(--muted); text-decoration: none; border-bottom: 1px dashed var(--line); margin-right: 4px; }
+  .head-links a:hover { color: var(--hi); }
+  .iconbtn { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 13px; }
+  .iconbtn:hover { border-color: var(--hi); }
+
+  /* HUD */
+  .hud { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 6px; margin-bottom: 12px; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .tile.wide { grid-column: span 2; }
+  .tile .k { font: 600 10px var(--mono); letter-spacing: .1em; color: var(--muted); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile b { font: 600 19px var(--mono); color: var(--term); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tile b small { font-size: 11px; color: var(--muted); font-weight: 400; }
+  .tile.bad { border-color: rgba(255,45,85,.6); box-shadow: inset 0 0 18px rgba(255,45,85,.18); animation: pulse .8s ease-in-out infinite alternate; }
+  .tile.bad b { color: var(--red); }
+  .tile.warnt b { color: var(--warn); }
+  @keyframes pulse { from { box-shadow: inset 0 0 6px rgba(255,45,85,.1); } to { box-shadow: inset 0 0 22px rgba(255,45,85,.35); } }
+  .bar { height: 6px; background: #0e1a24; border-radius: 3px; overflow: hidden; margin: 3px 0 1px; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--term); transition: width .15s linear, background .2s; box-shadow: 0 0 8px currentColor; }
+
+  /* Main */
+  .main { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 12px; align-items: start; }
+  @media (max-width: 920px) { .main { grid-template-columns: minmax(0, 1fr); } }
+
+  .stage { position: relative; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #020407; touch-action: manipulation; }
+  canvas { display: block; width: 100%; cursor: crosshair; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+  .tbtn {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer;
+    font: 600 13px var(--mono); color: var(--ink); display: inline-flex; gap: 6px; align-items: center;
+  }
+  .tbtn:hover:not(:disabled) { border-color: var(--hi); color: #fff; }
+  .tbtn:disabled { opacity: .4; cursor: not-allowed; }
+  .tbtn.danger:hover:not(:disabled) { border-color: var(--red); }
+  .toolbar .hint { margin-left: auto; font: 12px var(--mono); color: var(--muted); }
+
+  /* floating node menu */
+  .fmenu {
+    position: absolute; left: 0; top: 0; display: flex; gap: 4px; padding: 4px; border-radius: 8px;
+    background: rgba(6,12,18,.92); border: 1px solid rgba(34,230,255,.5); box-shadow: 0 0 16px rgba(34,230,255,.25);
+    transform: translate(-50%, -100%); pointer-events: auto; z-index: 3;
+  }
+  .fmenu button {
+    width: 34px; height: 30px; border-radius: 5px; border: 1px solid var(--line); background: var(--panel2);
+    cursor: pointer; font: 600 15px var(--mono); display: grid; place-items: center; padding: 0;
+  }
+  .fmenu button:hover:not(:disabled) { border-color: var(--hi); color: var(--hi); }
+  .fmenu button:disabled { opacity: .3; cursor: not-allowed; }
+  .fmenu button.rc { color: var(--red); }
+
+  /* overlays inside stage */
+  .overlay {
+    position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; padding: 16px;
+    background: rgba(2,5,8,.82); backdrop-filter: blur(3px); overflow: auto;
+  }
+  .card { max-width: 560px; width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px 22px; margin: auto; }
+  .card h2 { margin: 0 0 6px; font-size: 26px; letter-spacing: .02em; }
+  .card p { margin: 6px 0; color: #b8c7d8; }
+  .card ul { margin: 8px 0 12px; padding-left: 18px; color: #b8c7d8; }
+  .card li { margin: 3px 0; }
+  .card .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .pbtn {
+    background: var(--hi); color: #001018; border: 0; border-radius: 6px; padding: 10px 18px; cursor: pointer;
+    font: 700 15px var(--display); letter-spacing: .04em; box-shadow: 0 0 18px rgba(34,230,255,.4);
+  }
+  .pbtn:hover { filter: brightness(1.1); }
+  .sbtn { background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 10px 16px; cursor: pointer; font: 600 14px var(--display); }
+  .sbtn:hover { border-color: var(--hi); }
+  .fatal h2 { color: var(--red); text-shadow: 0 0 12px rgba(255,45,85,.6); font-family: var(--mono); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; margin: 10px 0; }
+  .stats div { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font: 12px var(--mono); color: var(--muted); }
+  .stats b { display: block; font-size: 18px; color: var(--ink); }
+
+  .choice { max-width: 860px; width: 100%; margin: auto; }
+  .choice h2 { text-align: center; margin: 0 0 4px; font-size: 24px; color: var(--term); text-shadow: 0 0 10px rgba(77,255,154,.5); font-family: var(--mono); }
+  .choice > p { text-align: center; margin: 0 0 14px; color: var(--muted); font: 13px var(--mono); }
+  .skills { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+  .skill {
+    text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; cursor: pointer;
+    display: flex; flex-direction: column; gap: 6px; transition: transform .12s, border-color .12s, box-shadow .12s;
+  }
+  .skill:hover, .skill:focus-visible { transform: translateY(-3px); border-color: var(--term); box-shadow: 0 0 22px rgba(77,255,154,.25); }
+  .skill .tag { font: 600 10px var(--mono); letter-spacing: .14em; color: var(--violet); text-transform: uppercase; }
+  .skill .nm { font-size: 18px; font-weight: 700; }
+  .skill .ds { font-size: 13px; color: #b8c7d8; line-height: 1.45; }
+  .skill .lv { font: 11px var(--mono); color: var(--muted); margin-top: auto; }
+
+  /* side panel */
+  .side { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .panel h3 { margin: 0 0 8px; font: 600 11px var(--mono); letter-spacing: .2em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+  .selinfo { font: 13px var(--mono); color: #b8c7d8; min-height: 40px; }
+  .selinfo .key { font-size: 22px; font-weight: 600; color: #fff; }
+  .selinfo .pill { display: inline-block; padding: 0 7px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 6px; vertical-align: 3px; }
+  .pill.r { background: var(--red); color: #fff; box-shadow: 0 0 10px rgba(255,45,85,.6); }
+  .pill.b { background: #000; color: #fff; border: 1px solid #e9f1ff; }
+  .pill.m { background: rgba(180,255,57,.15); color: var(--toxic); border: 1px dashed var(--toxic); }
+  .acts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 8px; }
+  .acts .tbtn { justify-content: center; padding: 8px 4px; font-size: 12px; flex-direction: column; gap: 2px; }
+  .acts .tbtn span { font-size: 18px; line-height: 1; }
+  .acts .tbtn.rc span { color: var(--red); }
+
+  .inv { list-style: none; margin: 0; padding: 0; font: 12.5px var(--mono); }
+  .inv li { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; color: #b8c7d8; }
+  .inv li i { font-style: normal; width: 14px; flex: none; text-align: center; }
+  .inv li.ok i { color: var(--term); }
+  .inv li.no { color: #fff; }
+  .inv li.no i { color: var(--red); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; font: 12px var(--mono); }
+  .chip { border: 1px solid var(--line); background: var(--panel2); border-radius: 12px; padding: 2px 9px; color: var(--ink); }
+  .chip em { font-style: normal; color: var(--violet); }
+  .muted { color: var(--muted); font: 12px var(--mono); }
+
+  .log {
+    height: 230px; overflow-y: auto; font: 11.5px/1.45 var(--mono); background: #010302; border: 1px solid #0f2418; border-radius: 6px;
+    padding: 6px 8px; color: var(--term); overscroll-behavior: contain;
+  }
+  .log div { white-space: pre-wrap; word-break: break-word; }
+  .log .t { color: #3a6b4f; }
+  .log .warn { color: var(--warn); }
+  .log .err { color: var(--red); }
+  .log .ok { color: var(--hi); }
+  .log .op { color: #93a8bf; }
+  .log .buff { color: var(--violet); }
+  .log .ins { color: var(--toxic); }
+
+  details.cheat { font-size: 13px; color: #b8c7d8; }
+  details.cheat summary { cursor: pointer; font: 600 11px var(--mono); letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+  details.cheat ol { margin: 8px 0 0; padding-left: 18px; }
+  details.cheat li { margin: 4px 0; }
+
+  /* help dialog */
+  .modal { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.75); display: flex; padding: 16px; overflow: auto; }
+  .modal .card { max-width: 720px; }
+  .modal h4 { margin: 14px 0 4px; color: var(--hi); font-size: 15px; }
+  .modal table { border-collapse: collapse; font: 12.5px var(--mono); width: 100%; }
+  .modal td { border-top: 1px solid var(--line); padding: 4px 6px; vertical-align: top; color: #b8c7d8; }
+  .modal td:first-child { white-space: nowrap; color: var(--ink); }
+
+  @media (max-width: 560px) {
+    .tile.wide { grid-column: span 2; }
+    .tile b { font-size: 16px; }
+    .toolbar .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <span class="eyebrow">Data Structure · Tower Defense · Rogue-lite</span>
+      <h1>Red-<span class="blk">Black</span> Tree Defense</h1>
+    </div>
+    <div class="head-links">
+      <a href="index.html">← Game Portal</a>
+      <button class="iconbtn" id="btnHelp" type="button">? How to play</button>
+      <button class="iconbtn" id="btnSound" type="button" aria-pressed="true">🔊 Sound</button>
+    </div>
+  </header>
+
+  <section class="hud" aria-label="System dashboard">
+    <div class="tile"><span class="k">Nodes N</span><b id="hN">0</b></div>
+    <div class="tile" id="tH"><span class="k">Depth H</span><b id="hH">0</b></div>
+    <div class="tile"><span class="k" title="Theoretical optimal depth">Opt ⌊log₂N⌋+1</span><b id="hOpt">0</b></div>
+    <div class="tile"><span class="k" title="Red-black height guarantee">Bound 2log₂(N+1)</span><b id="hBound">0</b></div>
+    <div class="tile" id="tLat"><span class="k">Query latency</span><b id="hLat">0 ms</b></div>
+    <div class="tile wide" id="tStack"><span class="k">Call stack</span><div class="bar"><i id="bStack"></i></div><b id="hStack">0 / 12</b></div>
+    <div class="tile wide" id="tMem"><span class="k">Memory (HP)</span><div class="bar"><i id="bMem"></i></div><b id="hMem">128 / 128 MB</b></div>
+    <div class="tile"><span class="k">Wave</span><b id="hWave">0</b></div>
+    <div class="tile"><span class="k">Score</span><b id="hScore">0</b></div>
+  </section>
+
+  <div class="main">
+    <div class="board">
+      <div class="stage" id="stage">
+        <canvas id="cv" aria-label="Red-black tree playfield"></canvas>
+        <div class="fmenu" id="fmenu" hidden>
+          <button type="button" data-act="L" title="Left Rotate (Q)">⟲</button>
+          <button type="button" data-act="C" class="rc" title="Recolor (W)">◐</button>
+          <button type="button" data-act="R" title="Right Rotate (E)">⟳</button>
+        </div>
+
+        <div class="overlay" id="ovStart">
+          <div class="card">
+            <h2>Red-Black Tree Defense</h2>
+            <p>Your server's index is a binary search tree. Data packets are flooding in. Each one slides down the tree (smaller ← → larger) and docks as a <b style="color:var(--red)">red</b> leaf.</p>
+            <ul>
+              <li>Click a node, then <b>Left Rotate</b>, <b>Right Rotate</b> or <b>Recolor</b> it.</li>
+              <li>The moment the whole tree is a valid red-black tree, GC wipes out every docked packet.</li>
+              <li>Let it lean: latency spikes eat your memory. Too deep: <b style="color:var(--red)">Stack Overflow</b>.</li>
+            </ul>
+            <div class="row">
+              <button class="pbtn" id="btnStart" type="button">▶ Boot server</button>
+              <button class="sbtn" id="btnHelp2" type="button">How to play</button>
+              <button class="sbtn" id="btnLbStart" type="button">🏆 Top 20</button>
+            </div>
+            <p class="muted" id="bestLine" style="margin-top:12px"></p>
+          </div>
+        </div>
+
+        <div class="overlay" id="ovChoose" hidden>
+          <div class="choice">
+            <h2 id="chTitle">&gt; WAVE CLEARED</h2>
+            <p>Pick one patch to hot-deploy · keys <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></p>
+            <div class="skills" id="skills"></div>
+          </div>
+        </div>
+
+        <div class="overlay" id="ovPause" hidden>
+          <div class="card" style="text-align:center">
+            <h2>⏸ SIGSTOP</h2>
+            <p>Process suspended. Packets are frozen in flight.</p>
+            <div class="row" style="justify-content:center"><button class="pbtn" id="btnResume" type="button">Resume (P)</button></div>
+          </div>
+        </div>
+
+        <div class="overlay" id="ovOver" hidden>
+          <div class="card fatal">
+            <h2 id="ovReason">STACK OVERFLOW</h2>
+            <p id="ovDetail"></p>
+            <div class="stats" id="ovStats"></div>
+            <div class="row">
+              <button class="pbtn" id="btnRestart" type="button">↻ Reboot (Enter)</button>
+              <button class="sbtn" id="btnLbOver" type="button">🏆 Top 20</button>
+              <a class="sbtn" href="index.html" style="text-decoration:none">Game Portal</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="tbtn" id="btnPause" type="button">⏸ Pause <kbd>P</kbd></button>
+        <button class="tbtn" id="btnDuck" type="button" title="Auto-apply one insert-fixup step">🦆 Duck ×<span id="duckN">1</span> <kbd>F</kbd></button>
+        <button class="tbtn danger" id="btnReindex" type="button" title="Rebuild a perfectly balanced tree. Costs 20 MB.">⚡ REINDEX −20MB <kbd>X</kbd></button>
+        <span class="hint">click node · <kbd>Q</kbd> ⟲ · <kbd>W</kbd> ◐ · <kbd>E</kbd> ⟳ · arrows move</span>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="panel">
+        <h3><span>Selected node</span><span id="selDepth"></span></h3>
+        <div class="selinfo" id="selInfo">Click a node in the tree (or press ↑) to select it.</div>
+        <div class="acts">
+          <button class="tbtn" id="aL" type="button" disabled><span>⟲</span>Left Rot <kbd>Q</kbd></button>
+          <button class="tbtn rc" id="aC" type="button" disabled><span>◐</span>Recolor <kbd>W</kbd></button>
+          <button class="tbtn" id="aR" type="button" disabled><span>⟳</span>Right Rot <kbd>E</kbd></button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3><span>RB invariants</span><span id="invState"></span></h3>
+        <ul class="inv" id="inv">
+          <li id="iv2"><i>✓</i><span>Root is black</span></li>
+          <li id="iv4"><i>✓</i><span>No red node has a red child</span></li>
+          <li id="iv5"><i>✓</i><span>Equal black-height on every path</span></li>
+          <li id="ivH"><i>✓</i><span>H ≤ 2·log₂(N+1)</span></li>
+        </ul>
+      </div>
+
+      <div class="panel">
+        <h3><span>Patches loaded</span><span id="queueLeft"></span></h3>
+        <div class="chips" id="buffs"><span class="muted">none yet — clear a wave</span></div>
+      </div>
+
+      <div class="panel">
+        <h3><span>syslog</span><span>tail -f</span></h3>
+        <div class="log" id="log" role="log" aria-live="polite"></div>
+      </div>
+
+      <div class="panel">
+        <details class="cheat">
+          <summary>Insert fix-up cheat sheet</summary>
+          <ol>
+            <li><b>Uncle red</b>: recolor parent + uncle → black, grandparent → red. Repeat higher up.</li>
+            <li><b>Uncle black, zig-zag</b> (node is inner child): rotate the <i>parent</i> outward so it becomes a straight line.</li>
+            <li><b>Uncle black, straight line</b>: parent → black, grandparent → red, rotate the <i>grandparent</i> the opposite way.</li>
+            <li>Finally make the root black.</li>
+          </ol>
+        </details>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="modal" id="help" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="card">
+    <h2 id="helpTitle">How to play</h2>
+    <p>Packets (purple hexagons) enter at the top and walk down the tree by BST rules: smaller goes left, larger goes right. When they hit an empty slot they dock as a <b style="color:var(--red)">red</b> node with a toxic dashed ring. Docked packets are dormant for a few seconds, then start <b>leaking memory</b>.</p>
+    <p>Whenever the entire tree satisfies every red-black rule, the tree lights up, <b>Garbage Collection</b> fires and every docked packet is destroyed for points. Clear a wave (all packets collected, tree valid) to compact memory and pick 1 of 3 patches.</p>
+    <h4>Red-black rules</h4>
+    <table>
+      <tr><td>Rule 2</td><td>The root is black.</td></tr>
+      <tr><td>Rule 3</td><td>Empty (NIL) leaves count as black — always true here.</td></tr>
+      <tr><td>Rule 4</td><td>A red node never has a red child (orange pulsing edge).</td></tr>
+      <tr><td>Rule 5</td><td>Every path from a node down to a NIL leaf passes the same number of black nodes (yellow <b>bh</b> badge marks mismatches).</td></tr>
+    </table>
+    <h4>Failure modes</h4>
+    <table>
+      <tr><td>Latency spike</td><td>Tree depth H &gt; 2·log₂(N+1): memory drains every second, faster the deeper you go.</td></tr>
+      <tr><td>Stack Overflow</td><td>H exceeds the call-stack limit (12 levels): instant crash.</td></tr>
+      <tr><td>Out of Memory</td><td>Memory hits 0 MB.</td></tr>
+    </table>
+    <h4>Controls</h4>
+    <table>
+      <tr><td>Click / tap</td><td>Select a node (floating menu appears)</td></tr>
+      <tr><td>Q · W · E</td><td>Left Rotate · Recolor · Right Rotate</td></tr>
+      <tr><td>Arrows</td><td>↑ parent, ← left child, → right child</td></tr>
+      <tr><td>F</td><td>Rubber duck: auto-apply one insert fix-up step (limited charges per wave)</td></tr>
+      <tr><td>X</td><td>REINDEX: rebuild a perfect tree instantly for 20 MB (packets collected without points)</td></tr>
+      <tr><td>P / Esc</td><td>Pause</td></tr>
+    </table>
+    <h4>Rotations</h4>
+    <p><b>Left Rotate(x)</b>: x's right child y moves up into x's place; x sinks to become y's left child; y's old left subtree becomes x's right subtree. <b>Right Rotate</b> is the mirror image. In-order (sorted) order never changes.</p>
+    <div class="row"><button class="pbtn" id="btnHelpClose" type="button">Got it</button></div>
+  </div>
+</div>
+
+<script src="identity.js?v=2"></script>
+<script src="leaderboard.js?v=2"></script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage'), fmenu = $('fmenu');
+let W = 900, HC = 560, DPR = 1;
+const TOPY = 96;
+
+// ------------------------------------------------------------------ storage
+function sget(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
+function sset(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+// ------------------------------------------------------------------ audio
+let actx = null, muted = sget('rbtd_muted', '0') === '1';
+function ac() {
+  if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); }
+  if (actx && actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function tone({ type = 'sine', f0 = 440, f1 = 0, dur = 0.12, vol = 0.1, delay = 0, lp = 0 }) {
+  if (muted) return; const a = ac(); if (!a) return;
+  const t = a.currentTime + delay, o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, t);
+  if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  let out = o;
+  if (lp) { const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(lp, t); f.Q.value = 9; o.connect(f); out = f; }
+  out.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.03);
+}
+function noise(dur = 0.15, vol = 0.05, delay = 0, hp = 1500) {
+  if (muted) return; const a = ac(); if (!a) return;
+  const t = a.currentTime + delay, len = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  s.buffer = buf; f.type = 'highpass'; f.frequency.value = hp; g.gain.value = vol;
+  s.connect(f); f.connect(g); g.connect(a.destination); s.start(t);
+}
+const sfx = {
+  rotate() { tone({ type: 'sawtooth', f0: 120, f1: 760, dur: 0.24, vol: 0.08, lp: 1800 }); tone({ type: 'sine', f0: 55, f1: 240, dur: 0.22, vol: 0.12 }); noise(0.2, 0.035, 0, 3000); },
+  recolor() { tone({ type: 'square', f0: 520, f1: 1040, dur: 0.08, vol: 0.05 }); },
+  select() { tone({ type: 'sine', f0: 1500, dur: 0.035, vol: 0.035 }); },
+  insert() { tone({ type: 'triangle', f0: 320, f1: 90, dur: 0.15, vol: 0.13 }); },
+  spawn() { tone({ type: 'sine', f0: 900, f1: 1400, dur: 0.06, vol: 0.025 }); },
+  warn() { tone({ type: 'square', f0: 880, dur: 0.09, vol: 0.05 }); tone({ type: 'square', f0: 640, dur: 0.12, vol: 0.05, delay: 0.11 }); },
+  gc() { [523, 659, 784, 1047].forEach((f, i) => tone({ type: 'sine', f0: f, dur: 0.28, vol: 0.07, delay: i * 0.06 })); noise(0.35, 0.025, 0, 5000); },
+  wave() { [392, 523, 784].forEach((f, i) => tone({ type: 'triangle', f0: f, dur: 0.18, vol: 0.07, delay: i * 0.09 })); },
+  over() { tone({ type: 'sawtooth', f0: 420, f1: 38, dur: 1.3, vol: 0.12, lp: 900 }); noise(0.7, 0.07); },
+  pick() { tone({ type: 'sine', f0: 660, f1: 1320, dur: 0.16, vol: 0.08 }); },
+  deny() { tone({ type: 'square', f0: 150, dur: 0.08, vol: 0.05 }); },
+  duck() { tone({ type: 'square', f0: 720, f1: 480, dur: 0.09, vol: 0.05 }); tone({ type: 'square', f0: 740, f1: 470, dur: 0.1, vol: 0.05, delay: 0.12 }); },
+  leak() { tone({ type: 'sine', f0: 200, f1: 140, dur: 0.08, vol: 0.03 }); },
+};
+
+// ------------------------------------------------------------------ skills
+const SKILLS = [
+  { id: 'prefetch', name: 'Cache Prefetch', tag: 'L1 hit', max: 2, desc: 'See 3 more packets in the ingress queue, plus a dashed prediction of where each packet will dock.' },
+  { id: 'compact', name: 'Memory Compaction', tag: 'defrag', max: 9, desc: '+32 MB memory limit, and the heap is defragmented back to full.', apply() { G.maxHP += 32; G.hp = G.maxHP; } },
+  { id: 'jit', name: 'JIT Compilation', tag: 'hotspot', max: 3, desc: 'GC fires the instant the tree turns valid (no warm-up), and collected packets score +50%.' },
+  { id: 'tco', name: 'Tail-Call Optimization', tag: 'stack', max: 3, desc: 'Call-stack limit +2 levels before a Stack Overflow.', apply() { G.stackLimit += 2; } },
+  { id: 'g1', name: 'G1 Garbage Collector', tag: 'low pause', max: 3, desc: 'Memory leaked by docked packets −40%.' },
+  { id: 'lazy', name: 'Lazy Evaluation', tag: 'thunk', max: 3, desc: 'Docked packets stay dormant 3 s longer before they start leaking.' },
+  { id: 'duck', name: 'Rubber Duck Debugging', tag: 'quack', max: 3, desc: '+2 Duck charges every wave. The duck applies one textbook insert fix-up step (F).' },
+  { id: 'rate', name: 'Rate Limiter', tag: 'HTTP 429', max: 3, desc: 'Packets arrive 20% less often.' },
+  { id: 'nagle', name: "Nagle's Algorithm", tag: 'tcp', max: 3, desc: 'Packets crawl through the tree 22% slower. More time to react.' },
+  { id: 'hot', name: 'Hot Reload', tag: 'HMR', max: 3, desc: 'Every GC cycle restores 4 MB of memory.' },
+  { id: 'lb', name: 'Load Balancer', tag: 'L7', max: 2, desc: 'Damage from High Latency Spikes is halved.' },
+  { id: 'canary', name: 'Stack Canary', tag: '-fstack-protector', max: 1, desc: 'Once, a Stack Overflow is caught: the tree is auto-reindexed instead of crashing.', apply() { G.canary++; } },
+];
+const sk = id => (G.skills[id] || 0);
+const gcDelay = () => (sk('jit') ? 0 : 0.6);
+const scoreMul = () => 1 + 0.5 * sk('jit');
+const leakMul = () => Math.pow(0.6, sk('g1'));
+const grace = () => 4 + 3 * sk('lazy');
+const previewN = () => 3 + 3 * sk('prefetch');
+const spikeMul = () => Math.pow(0.5, sk('lb'));
+
+// ------------------------------------------------------------------ tree
+let nid = 0;
+class Node {
+  constructor(key, red) {
+    this.key = key; this.red = red; this.left = this.right = this.parent = null; this.id = ++nid;
+    this.x = 0; this.y = 0; this.tx = 0; this.ty = 0; this.placed = false; this.depth = 1;
+    this.colorT = red ? 1 : 0; this.flash = 0; this.monster = false; this.bornAt = 0; this.leakAcc = 0; this.bh = 1;
+  }
+}
+let root = null;
+
+function rotateLeft(x) {
+  const y = x.right; if (!y) return null;
+  x.right = y.left; if (y.left) y.left.parent = x;
+  y.parent = x.parent;
+  if (!x.parent) root = y; else if (x === x.parent.left) x.parent.left = y; else x.parent.right = y;
+  y.left = x; x.parent = y;
+  return y;
+}
+function rotateRight(x) {
+  const y = x.left; if (!y) return null;
+  x.left = y.right; if (y.right) y.right.parent = x;
+  y.parent = x.parent;
+  if (!x.parent) root = y; else if (x === x.parent.right) x.parent.right = y; else x.parent.left = y;
+  y.right = x; x.parent = y;
+  return y;
+}
+function inorder() { const out = []; (function rec(n) { if (!n) return; rec(n.left); out.push(n); rec(n.right); })(root); return out; }
+
+// Perfectly balanced rebuild from sorted nodes; deepest level red, everything else black (always a valid RB tree).
+function buildBalanced(nodes) {
+  let maxD = 0;
+  const b = (lo, hi, par, d) => {
+    if (lo > hi) return null;
+    const m = (lo + hi) >> 1, n = nodes[m];
+    n.parent = par; n.depth = d; if (d > maxD) maxD = d;
+    n.left = b(lo, m - 1, n, d + 1); n.right = b(m + 1, hi, n, d + 1);
+    return n;
+  };
+  root = b(0, nodes.length - 1, null, 1);
+  nodes.forEach(n => { n.red = n.depth === maxD && maxD > 1; });
+  if (!analyze().valid) nodes.forEach(n => { n.red = false; });
+}
+
+function analyze() {
+  const r = { N: 0, H: 0, deepest: null, sumDepth: 0, redRoot: !!(root && root.red), rr: [], bh: [], monsters: 0, list: [] };
+  (function rec(n, d) {
+    if (!n) return 1;
+    r.N++; r.sumDepth += d; r.list.push(n); n.depth = d;
+    if (n.monster) r.monsters++;
+    if (d > r.H) { r.H = d; r.deepest = n; }
+    if (n.red) {
+      if (n.left && n.left.red) r.rr.push([n, n.left]);
+      if (n.right && n.right.red) r.rr.push([n, n.right]);
+    }
+    const l = rec(n.left, d + 1), rr = rec(n.right, d + 1);
+    n.bhL = l; n.bhR = rr; n.bh = Math.max(l, rr);
+    if (l !== rr) r.bh.push(n);
+    return Math.max(l, rr) + (n.red ? 0 : 1);
+  })(root, 1);
+  r.valid = !r.redRoot && !r.rr.length && !r.bh.length;
+  r.bound = r.N ? 2 * Math.log2(r.N + 1) : 0;
+  r.allowed = Math.floor(r.bound + 1e-9);
+  r.spike = r.N > 0 && r.H > r.allowed;
+  r.opt = r.N ? Math.floor(Math.log2(r.N)) + 1 : 0;
+  r.violations = (r.redRoot ? 1 : 0) + r.rr.length + r.bh.length;
+  r.latency = r.N ? (r.sumDepth / r.N) * 0.9 + r.H * 0.35 + r.violations * 1.6 + (r.spike ? (r.H - r.allowed) * 7 : 0) : 0;
+  return r;
+}
+
+// One textbook RB insert-fixup step. Returns a description, null if nothing to fix, false if not fixable this way.
+function duckStep() {
+  const a = analyze();
+  if (a.rr.length) {
+    let [p, z] = a.rr.reduce((best, e) => (e[1].depth > best[1].depth ? e : best));
+    const g = p.parent;
+    if (!g) { p.red = false; return `root ${p.key} recolored BLACK`; }
+    const u = g.left === p ? g.right : g.left;
+    if (u && u.red) {
+      p.red = false; u.red = false; g.red = true;
+      return `Case 1 (uncle ${u.key} red): recolor ${p.key},${u.key} → BLACK, ${g.key} → RED`;
+    }
+    if (p === g.left) {
+      if (z === p.right) { rotateLeft(p); [p, z] = [z, p]; p.red = false; g.red = true; rotateRight(g); return `Case 2+3: LEFT_ROTATE(${z.key}), RIGHT_ROTATE(${g.key}) — ${p.key} rises`; }
+      p.red = false; g.red = true; rotateRight(g); return `Case 3: ${p.key} → BLACK, ${g.key} → RED, RIGHT_ROTATE(${g.key})`;
+    } else {
+      if (z === p.left) { rotateRight(p); [p, z] = [z, p]; p.red = false; g.red = true; rotateLeft(g); return `Case 2+3: RIGHT_ROTATE(${z.key}), LEFT_ROTATE(${g.key}) — ${p.key} rises`; }
+      p.red = false; g.red = true; rotateLeft(g); return `Case 3: ${p.key} → BLACK, ${g.key} → RED, LEFT_ROTATE(${g.key})`;
+    }
+  }
+  if (a.redRoot) { root.red = false; return `root ${root.key} recolored BLACK`; }
+  if (a.bh.length) return false;
+  return null;
+}
+
+// ------------------------------------------------------------------ game state
+let G, A;
+function newGame() {
+  G = {
+    state: 'title', paused: false, time: 0, wave: 0, hp: 128, maxHP: 128, score: 0, stackLimit: 12,
+    packets: [], queue: [], spawnTimer: 0, spawnInterval: 3, travelSpeed: 160, sel: null,
+    validTimer: 0, glow: 0, shake: 0, ops: 0, waveOps: 0, sanitized: 0, gcCount: 0, skills: {}, duck: 1, canary: 0,
+    spiking: false, prevViol: new Set(), countdown: 0, compactT: 0, maxH: 0,
+    ghosts: [], particles: [], floats: [], arcs: [], spikeTick: 0,
+  };
+  root = null; nid = 0;
+  const seed = [50, 25, 75].map(k => new Node(k, false));
+  root = seed[0]; root.left = seed[1]; root.right = seed[2]; seed[1].parent = seed[2].parent = root;
+  seed[1].red = seed[2].red = true; seed[1].colorT = seed[2].colorT = 1;
+  A = analyze();
+}
+
+// ------------------------------------------------------------------ log
+const logEl = $('log');
+function fmtT() { const t = G ? G.time : 0; const m = Math.floor(t / 60), s = (t % 60).toFixed(1).padStart(4, '0'); return `${String(m).padStart(2, '0')}:${s}`; }
+function log(cls, msg) {
+  const d = document.createElement('div');
+  d.innerHTML = `<span class="t">${fmtT()}</span> <span class="${cls}"></span>`;
+  d.lastChild.textContent = msg;
+  logEl.appendChild(d);
+  while (logEl.childNodes.length > 120) logEl.removeChild(logEl.firstChild);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ------------------------------------------------------------------ waves
+function genWave(w) {
+  const count = Math.min(5 + 2 * w, 23);
+  const used = new Set(inorder().map(n => n.key));
+  const keys = [];
+  const take = k => { if (k >= 1 && k <= 99 && !used.has(k)) { used.add(k); keys.push(k); return true; } return false; };
+  let guard = 0;
+  while (keys.length < count && guard++ < 500) {
+    const r = Math.random();
+    if (w === 1 || r < 0.42) {
+      take(1 + Math.floor(Math.random() * 99));
+    } else {
+      // monotone run -> builds a linked-list-like spine unless the player rebalances
+      const len = Math.min(count - keys.length, 3 + Math.floor(Math.random() * Math.min(1 + w, 5)));
+      const step = 1 + Math.floor(Math.random() * 4);
+      const asc = r < 0.72;
+      const span = len * step;
+      let s = asc ? 1 + Math.floor(Math.random() * Math.max(1, 99 - span)) : span + Math.floor(Math.random() * Math.max(1, 99 - span));
+      for (let i = 0; i < len; i++) take(asc ? s + i * step : s - i * step);
+    }
+  }
+  return keys;
+}
+
+function startWave() {
+  G.wave++;
+  G.queue = genWave(G.wave);
+  G.spawnInterval = Math.max(1.25, 3.9 - 0.27 * (G.wave - 1)) * Math.pow(1.2, sk('rate'));
+  G.travelSpeed = Math.min(330, 150 + 14 * G.wave) * Math.pow(0.78, sk('nagle'));
+  G.state = 'countdown'; G.countdown = 2.4; G.spawnTimer = 0; G.waveOps = 0;
+  G.duck = 1 + 2 * sk('duck');
+  log('warn', `[Ingress] Wave ${G.wave}: ${G.queue.length} packets inbound.`);
+  sfx.wave();
+}
+
+function spawnPacket(key) {
+  const p = { key, x: W / 2 + (Math.random() - 0.5) * 80, y: 16, at: null, trail: [] };
+  G.packets.push(p); retarget(p); sfx.spawn();
+}
+// Point a packet at the next node it should reach on its correct BST search path (used after restructures).
+function retarget(p) {
+  if (!root) { p.at = null; return; }
+  let n = root;
+  for (;;) {
+    if (n.ty >= p.y - 4) { p.at = n; return; }
+    const nx = p.key < n.key ? n.left : n.right;
+    if (!nx) { p.at = n; return; }
+    n = nx;
+  }
+}
+function retargetAll() { layout(); G.packets.forEach(retarget); }
+
+function movePackets(dt) {
+  for (const p of G.packets.slice()) {
+    const tx = p.at ? p.at.x : W / 2, ty = p.at ? p.at.y : TOPY;
+    const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy), step = G.travelSpeed * dt;
+    p.trail.push([p.x, p.y]); if (p.trail.length > 10) p.trail.shift();
+    if (d <= step) { p.x = tx; p.y = ty; arrive(p); }
+    else { p.x += dx / d * step; p.y += dy / d * step; }
+  }
+}
+function arrive(p) {
+  if (!p.at) { if (!root) dock(p, null, null); else p.at = root; return; }
+  const n = p.at;
+  if (p.key === n.key) { G.packets.splice(G.packets.indexOf(p), 1); return; }
+  const side = p.key < n.key ? 'left' : 'right';
+  if (n[side]) p.at = n[side]; else dock(p, n, side);
+}
+function dock(p, parent, side) {
+  G.packets.splice(G.packets.indexOf(p), 1);
+  const n = new Node(p.key, true);
+  n.monster = true; n.bornAt = G.time; n.x = p.x; n.y = p.y; n.placed = true; n.colorT = 1;
+  n.parent = parent;
+  if (!parent) root = n; else parent[side] = n;
+  burst(p.x, p.y, '#c56bff', 10);
+  sfx.insert();
+  log('ins', parent ? `[Insert] Packet ${p.key} docked as ${side} child of ${parent.key}.` : `[Insert] Packet ${p.key} became the root.`);
+  G.packets.forEach(retarget);
+}
+
+// ------------------------------------------------------------------ player actions
+const canAct = () => (G.state === 'play' || G.state === 'countdown') && !G.paused;
+function act(kind) {
+  if (!canAct()) return;
+  const n = G.sel;
+  if (!n) { sfx.deny(); floatAt(W / 2, TOPY - 40, 'select a node first', '#ffb020'); return; }
+  if (kind === 'C') {
+    n.red = !n.red; sfx.recolor(); n.flash = 0.6;
+    log('op', `[Op] RECOLOR(${n.key}) → ${n.red ? 'RED' : 'BLACK'}`);
+  } else {
+    const y = kind === 'L' ? rotateLeft(n) : rotateRight(n);
+    if (!y) { sfx.deny(); floatAt(n.x, n.y - 30, `no ${kind === 'L' ? 'right' : 'left'} child`, '#ffb020'); return; }
+    sfx.rotate(); G.arcs.push({ a: n, b: y, t: 0.4 }); n.flash = y.flash = 0.5;
+    log('op', `[Op] ${kind === 'L' ? 'LEFT' : 'RIGHT'}_ROTATE(${n.key}) → ${y.key} rises`);
+    retargetAll();
+  }
+  G.ops++; G.waveOps++;
+}
+function duck() {
+  if (!canAct()) return;
+  if (G.duck <= 0) { sfx.deny(); log('op', '[Duck] No duck charges left this wave.'); return; }
+  const r = duckStep();
+  if (r === null) { log('op', '[Duck] 🦆 The duck stares at your tree. Nothing to fix.'); return; }
+  if (r === false) { sfx.deny(); log('warn', '[Duck] 🦆 Quack? Black-height mismatch — the duck only knows insert fix-up. Fix it by hand or REINDEX.'); return; }
+  G.duck--; sfx.duck(); G.ops++; G.waveOps++;
+  log('buff', `[Duck] 🦆 ${r}`);
+  retargetAll();
+}
+function reindex(free) {
+  if (!free && !canAct()) return;
+  const list = inorder();
+  if (!list.length) return;
+  if (!free) { G.hp -= 20; G.shake = 8; floatAt(W / 2, TOPY - 30, '−20 MB', '#ff2d55'); }
+  list.forEach(n => { if (n.monster) { n.monster = false; burst(n.x, n.y, '#22e6ff', 6); } });
+  buildBalanced(list);
+  G.glow = 0.8; sfx.rotate(); setTimeout(sfx.rotate, 120);
+  log('warn', free ? '[Canary] Stack smashing detected! Emergency REINDEX — canary consumed.' : `[Op] REINDEX: rebuilt balanced tree of ${list.length} nodes (−20 MB).`);
+  if (!free) { G.ops++; G.waveOps++; }
+  retargetAll();
+}
+
+function triggerGC() {
+  let cnt = 0;
+  A.list.forEach(n => { if (n.monster) { n.monster = false; n.flash = 1; burst(n.x, n.y, '#4dff9a', 16); cnt++; } });
+  const pts = Math.round(cnt * 50 * G.wave * scoreMul());
+  G.score += pts; G.sanitized += cnt; G.gcCount++; G.glow = 1; G.validTimer = 0;
+  if (sk('hot')) heal(4 * sk('hot'));
+  floatAt(W / 2, TOPY - 44, `GC ✓ +${pts}`, '#4dff9a', 1.4);
+  log('ok', `[Success] Red-Black Tree Balanced! Triggering GC. ${cnt} packet${cnt > 1 ? 's' : ''} collected (+${pts}).`);
+  sfx.gc();
+}
+function heal(mb) { G.hp = Math.min(G.maxHP, G.hp + mb); }
+
+function waveClear() {
+  G.state = 'compact'; G.compactT = 1.7;
+  const nodes = inorder();
+  const keep = Math.min(nodes.length, 5 + Math.floor(G.wave * 0.6));
+  let kept = nodes;
+  if (nodes.length > keep) { kept = []; for (let i = 0; i < keep; i++) kept.push(nodes[Math.round(i * (nodes.length - 1) / (keep - 1))]); }
+  const keptSet = new Set(kept);
+  const removed = nodes.filter(n => !keptSet.has(n));
+  removed.forEach(n => { G.ghosts.push({ x: n.x, y: n.y, key: n.key, red: n.red, t: 1 }); burst(n.x, n.y, '#22e6ff', 8); });
+  if (G.sel && !keptSet.has(G.sel)) G.sel = null;
+  buildBalanced(kept);
+  const freed = Math.round(removed.length * 1.5);
+  const bonus = 250 * G.wave + Math.round(G.hp);
+  G.score += bonus; heal(freed); G.glow = 1;
+  log('ok', `[GC] Wave ${G.wave} cleared in ${G.waveOps} ops. Memory Compaction freed ${removed.length} nodes (+${freed} MB). Bonus +${bonus}.`);
+  sfx.gc();
+}
+
+function openChoice() {
+  const pool = SKILLS.filter(s => sk(s.id) < s.max);
+  if (!pool.length) { startWave(); return; }
+  const picks = [];
+  while (picks.length < 3 && pool.length) picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  const box = $('skills'); box.innerHTML = '';
+  picks.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'skill';
+    b.innerHTML = `<span class="tag"></span><span class="nm"></span><span class="ds"></span><span class="lv"></span>`;
+    b.children[0].textContent = `[${i + 1}] ${s.tag}`;
+    b.children[1].textContent = s.name;
+    b.children[2].textContent = s.desc;
+    b.children[3].textContent = `level ${sk(s.id)} → ${sk(s.id) + 1} / ${s.max}`;
+    b.addEventListener('click', () => choose(s));
+    box.appendChild(b);
+  });
+  G.choices = picks;
+  $('chTitle').textContent = `> WAVE ${G.wave} CLEARED — PATCH AVAILABLE`;
+  G.state = 'choose'; $('ovChoose').hidden = false;
+  box.firstChild.focus({ preventScroll: true });
+}
+function choose(s) {
+  if (G.state !== 'choose') return;
+  G.skills[s.id] = sk(s.id) + 1;
+  if (s.apply) s.apply();
+  sfx.pick();
+  log('buff', `[Patch] Deployed ${s.name} (lv ${sk(s.id)}).`);
+  $('ovChoose').hidden = true;
+  renderBuffs();
+  startWave();
+}
+function renderBuffs() {
+  const box = $('buffs'); box.innerHTML = '';
+  const owned = SKILLS.filter(s => sk(s.id));
+  if (!owned.length) { box.innerHTML = '<span class="muted">none yet — clear a wave</span>'; return; }
+  owned.forEach(s => { const c = document.createElement('span'); c.className = 'chip'; c.title = s.desc; c.innerHTML = `<span></span> <em></em>`; c.children[0].textContent = s.name; c.children[1].textContent = '×' + sk(s.id); box.appendChild(c); });
+}
+
+function gameOver(kind) {
+  G.state = 'over'; G.shake = 16; sfx.over();
+  const best = Math.max(+sget('rbtd_best', '0') || 0, G.score); sset('rbtd_best', String(best));
+  let title, detail;
+  if (kind === 'overflow') {
+    title = 'STACK OVERFLOW';
+    detail = `Tree depth ${A.H} blew past the ${G.stackLimit}-frame call stack. Node ${A.deepest ? A.deepest.key : '?'} was one recursion too far.`;
+    log('err', `[Fatal] java.lang.StackOverflowError at depth ${A.H} (node ${A.deepest ? A.deepest.key : '?'}).`);
+  } else {
+    title = 'OUT OF MEMORY';
+    detail = 'Leaking packets and latency spikes exhausted the heap. The OOM killer took your server.';
+    log('err', '[Fatal] OOM killer invoked: memory exhausted.');
+  }
+  $('ovReason').textContent = title; $('ovDetail').textContent = detail;
+  const st = [['Score', G.score], ['Best', best], ['Wave', G.wave], ['Packets GC\'d', G.sanitized], ['Operations', G.ops], ['Max depth', G.maxH]];
+  $('ovStats').innerHTML = st.map(([k, v]) => `<div>${k}<b>${v}</b></div>`).join('');
+  $('ovOver').hidden = false; fmenu.hidden = true;
+  setTimeout(() => $('btnRestart').focus({ preventScroll: true }), 50);
+  leaderboard.gameOver(G.score);
+}
+
+function startGame() {
+  ac();
+  newGame();
+  logEl.innerHTML = '';
+  log('ok', '[Boot] rbtree-index v1.0 online. Seed tree {25, 50, 75} loaded.');
+  ['ovStart', 'ovOver', 'ovChoose', 'ovPause'].forEach(id => { $(id).hidden = true; });
+  renderBuffs();
+  startWave();
+}
+
+function setPaused(v) {
+  if (!G || !['play', 'countdown', 'compact'].includes(G.state)) return;
+  G.paused = v; $('ovPause').hidden = !v;
+  if (v) $('btnResume').focus({ preventScroll: true });
+}
+
+// ------------------------------------------------------------------ effects
+function burst(x, y, color, n) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, s = 40 + Math.random() * 140;
+    G.particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.5 + Math.random() * 0.5, max: 1, color, size: 1.5 + Math.random() * 2 });
+  }
+}
+function floatAt(x, y, text, color, life = 1) { G.floats.push({ x, y, text, color, t: life, max: life }); }
+
+// ------------------------------------------------------------------ layout
+let SP = 50, YSP = 60, R = 18;
+function layout() {
+  const list = [];
+  (function rec(n, d) { if (!n) return; rec(n.left, d + 1); n.depth = d; list.push(n); rec(n.right, d + 1); })(root, 1);
+  const N = list.length;
+  let maxD = 0; list.forEach(n => { if (n.depth > maxD) maxD = n.depth; });
+  const padX = 26;
+  SP = N > 1 ? Math.min(62, (W - 2 * padX) / (N - 1)) : 62;
+  const levels = Math.max(maxD, 5);
+  YSP = Math.min(76, (HC - TOPY - 30) / (levels - 1));
+  R = Math.max(8, Math.min(19, SP * 0.44, YSP * 0.42));
+  const x0 = W / 2 - (N > 1 ? SP * (N - 1) / 2 : 0);
+  list.forEach((n, i) => { n.tx = x0 + i * SP; n.ty = TOPY + (n.depth - 1) * YSP; });
+  return list;
+}
+
+// ------------------------------------------------------------------ update
+function step(dt, vdt) {
+  const list = layout();
+  const k = 1 - Math.exp(-vdt * 9), kc = 1 - Math.exp(-vdt * 12);
+  list.forEach(n => {
+    if (!n.placed) { n.x = n.tx; n.y = n.ty; n.placed = true; }
+    n.x += (n.tx - n.x) * k; n.y += (n.ty - n.y) * k;
+    n.colorT += ((n.red ? 1 : 0) - n.colorT) * kc;
+    n.flash = Math.max(0, n.flash - vdt * 1.6);
+  });
+  for (const p of G.particles) { p.x += p.vx * vdt; p.y += p.vy * vdt; p.vx *= 0.94; p.vy *= 0.94; p.life -= vdt; }
+  G.particles = G.particles.filter(p => p.life > 0);
+  for (const f of G.floats) { f.t -= vdt; f.y -= 22 * vdt; }
+  G.floats = G.floats.filter(f => f.t > 0);
+  for (const g of G.ghosts) g.t -= vdt * 1.2;
+  G.ghosts = G.ghosts.filter(g => g.t > 0);
+  for (const a of G.arcs) a.t -= vdt;
+  G.arcs = G.arcs.filter(a => a.t > 0);
+  G.glow = Math.max(0, G.glow - vdt * 0.9);
+  G.shake = Math.max(0, G.shake - vdt * 30);
+
+  A = analyze();
+  if (G.paused || dt === 0) return;
+  if (!['countdown', 'play', 'compact'].includes(G.state)) return;
+  G.time += dt;
+
+  if (G.state === 'countdown') { G.countdown -= dt; if (G.countdown <= 0) G.state = 'play'; }
+  if (G.state === 'compact') { G.compactT -= dt; if (G.compactT <= 0) openChoice(); return; }
+
+  if (G.state === 'play') {
+    G.spawnTimer -= dt;
+    if (G.queue.length && G.spawnTimer <= 0) { spawnPacket(G.queue.shift()); G.spawnTimer = G.spawnInterval; }
+    movePackets(dt);
+    A = analyze();
+  }
+  G.maxH = Math.max(G.maxH, A.H);
+
+  // Stack overflow
+  if (A.H > G.stackLimit) {
+    if (G.canary > 0) { G.canary--; reindex(true); A = analyze(); }
+    else { gameOver('overflow'); return; }
+  }
+
+  // Latency spike
+  if (A.spike && !G.spiking) {
+    log('warn', `[Warning] Unbalanced tree detected! Node ${A.deepest.key} causes depth ${A.H}.`);
+    log('err', `[Latency] High Latency Spike: ${A.latency.toFixed(1)} ms (H=${A.H} > 2·log₂(${A.N}+1)=${A.bound.toFixed(2)}).`);
+    sfx.warn(); G.shake = 7;
+  }
+  G.spiking = A.spike;
+  if (A.spike) {
+    const dmg = (A.H - A.allowed) * 2.5 * spikeMul();
+    G.hp -= dmg * dt;
+    G.spikeTick += dt;
+    if (G.spikeTick >= 1) { G.spikeTick = 0; floatAt(A.deepest.x, A.deepest.y + 24, `−${dmg.toFixed(1)} MB`, '#ff2d55'); }
+  } else G.spikeTick = 0;
+
+  // Memory leaks from dormant-expired packets
+  const gr = grace(), lm = 0.7 * leakMul();
+  A.list.forEach(n => {
+    if (n.monster && G.time - n.bornAt > gr) {
+      G.hp -= lm * dt; n.leakAcc += lm * dt;
+      if (n.leakAcc >= 1) { n.leakAcc -= 1; floatAt(n.x, n.y - R - 6, '−1 MB', '#b4ff39', 0.9); sfx.leak(); }
+    }
+  });
+
+  // Violation diagnostics (log each new violation once)
+  const now = new Set(); const msgs = [];
+  if (A.redRoot) { now.add('root' + root.id); if (!G.prevViol.has('root' + root.id)) msgs.push(`[Violation] Root ${root.key} is RED. Rule 2: the root must be black.`); }
+  A.rr.forEach(([p, c]) => { const kk = 'rr' + p.id + '-' + c.id; now.add(kk); if (!G.prevViol.has(kk)) msgs.push(`[Violation] Red-red conflict ${p.key} → ${c.key}. Rule 4: a red node cannot have a red child.`); });
+  A.bh.forEach(n => { const kk = 'bh' + n.id; now.add(kk); if (!G.prevViol.has(kk)) msgs.push(`[Violation] Black-height mismatch at ${n.key}: left ${n.bhL} vs right ${n.bhR}.`); });
+  msgs.slice(0, 3).forEach(m => log('warn', m));
+  G.prevViol = now;
+
+  // Garbage collection
+  if (A.valid && A.monsters > 0) { G.validTimer += dt; if (G.validTimer >= gcDelay()) { triggerGC(); A = analyze(); } }
+  else G.validTimer = 0;
+
+  if (G.hp <= 0) { G.hp = 0; gameOver('oom'); return; }
+
+  if (G.state === 'play' && !G.queue.length && !G.packets.length && A.valid && A.monsters === 0) waveClear();
+}
+
+// ------------------------------------------------------------------ render
+const BLACK_F = [6, 9, 14], RED_F = [255, 45, 85], BLACK_S = [233, 241, 255], RED_S = [255, 200, 212];
+const mix = (a, b, t) => `rgb(${Math.round(a[0] + (b[0] - a[0]) * t)},${Math.round(a[1] + (b[1] - a[1]) * t)},${Math.round(a[2] + (b[2] - a[2]) * t)})`;
+let vt = 0;
+function hexPath(x, y, r) {
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i + Math.PI / 6, px = x + r * Math.cos(a), py = y + r * Math.sin(a); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+  ctx.closePath();
+}
+function render() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = '#020407'; ctx.fillRect(0, 0, W, HC);
+  if (G.shake > 0) ctx.translate((Math.random() - 0.5) * G.shake, (Math.random() - 0.5) * G.shake);
+
+  // grid
+  ctx.strokeStyle = 'rgba(34,230,255,0.045)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = (W / 2) % 32; x < W; x += 32) { ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, HC); }
+  for (let y = 0; y < HC; y += 32) { ctx.moveTo(0, y + 0.5); ctx.lineTo(W, y + 0.5); }
+  ctx.stroke();
+
+  // ingress band
+  ctx.fillStyle = 'rgba(197,107,255,0.06)'; ctx.fillRect(0, 0, W, 40);
+  ctx.strokeStyle = 'rgba(197,107,255,0.35)'; ctx.setLineDash([6, 6]); ctx.lineDashOffset = -vt * 30;
+  ctx.beginPath(); ctx.moveTo(0, 40.5); ctx.lineTo(W, 40.5); ctx.stroke(); ctx.setLineDash([]);
+  ctx.font = '600 11px "IBM Plex Mono", monospace'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  ctx.fillStyle = '#c56bff'; ctx.fillText('INGRESS ▸', 10, 20);
+  if (G.state !== 'title') {
+    const q = G.queue.slice(0, previewN());
+    let qx = 84;
+    q.forEach((k, i) => {
+      ctx.globalAlpha = 1 - i * 0.12;
+      ctx.strokeStyle = '#c56bff'; ctx.fillStyle = 'rgba(197,107,255,0.15)';
+      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(qx, 9, 30, 22, 4) : ctx.rect(qx, 9, 30, 22); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#f0dcff'; ctx.textAlign = 'center'; ctx.fillText(String(k), qx + 15, 20); ctx.textAlign = 'left';
+      qx += 36;
+    });
+    ctx.globalAlpha = 1;
+    const more = G.queue.length - q.length;
+    if (more > 0) { ctx.fillStyle = '#7a8ca3'; ctx.fillText(`+${more}`, qx + 2, 20); }
+    ctx.textAlign = 'right'; ctx.fillStyle = '#7a8ca3';
+    ctx.fillText(`WAVE ${G.wave} · ${G.queue.length + G.packets.length} in flight`, W - 10, 20);
+  }
+
+  // level guides
+  const levels = Math.max(A.H, 5);
+  ctx.textAlign = 'left'; ctx.font = '10px "IBM Plex Mono", monospace';
+  for (let d = 1; d <= levels; d++) {
+    const y = TOPY + (d - 1) * YSP; if (y > HC - 4) break;
+    ctx.fillStyle = 'rgba(122,140,163,0.45)'; ctx.fillText('d' + d, 6, y);
+    ctx.strokeStyle = 'rgba(122,140,163,0.07)'; ctx.beginPath(); ctx.moveTo(26, y + 0.5); ctx.lineTo(W, y + 0.5); ctx.stroke();
+  }
+  // RB bound line + stack limit line
+  if (A.N) {
+    const yb = TOPY + (A.allowed - 0.5) * YSP;
+    if (yb < HC) {
+      ctx.strokeStyle = A.spike ? `rgba(255,45,85,${0.6 + 0.4 * Math.sin(vt * 10)})` : 'rgba(255,176,32,0.45)';
+      ctx.setLineDash([8, 6]); ctx.lineWidth = A.spike ? 2 : 1;
+      ctx.beginPath(); ctx.moveTo(26, yb); ctx.lineTo(W, yb); ctx.stroke(); ctx.setLineDash([]); ctx.lineWidth = 1;
+      ctx.textAlign = 'right'; ctx.fillStyle = A.spike ? '#ff2d55' : 'rgba(255,176,32,0.8)';
+      ctx.fillText(`RB bound 2·log₂(N+1) = ${A.bound.toFixed(2)}`, W - 8, yb - 8);
+    }
+    const ys = TOPY + (G.stackLimit - 0.5) * YSP;
+    if (ys < HC) {
+      ctx.strokeStyle = 'rgba(255,45,85,0.85)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(26, ys); ctx.lineTo(W, ys); ctx.stroke(); ctx.lineWidth = 1;
+      ctx.textAlign = 'right'; ctx.fillStyle = '#ff2d55'; ctx.fillText(`STACK LIMIT (${G.stackLimit})`, W - 8, ys + 10);
+    }
+  }
+  if (A.spike) { // red vignette
+    const g = ctx.createRadialGradient(W / 2, HC / 2, Math.min(W, HC) * 0.35, W / 2, HC / 2, Math.max(W, HC) * 0.75);
+    g.addColorStop(0, 'rgba(255,45,85,0)'); g.addColorStop(1, `rgba(255,45,85,${0.16 + 0.08 * Math.sin(vt * 8)})`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, HC);
+  }
+
+  const rrEdges = new Set(A.rr.map(([p, c]) => c.id));
+  const glow = G.glow;
+
+  // edges
+  ctx.lineCap = 'round';
+  A.list.forEach(n => {
+    for (const c of [n.left, n.right]) {
+      if (!c) continue;
+      const bad = rrEdges.has(c.id) && c.parent === n;
+      if (bad) {
+        ctx.strokeStyle = `rgba(255,176,32,${0.65 + 0.35 * Math.sin(vt * 12)})`; ctx.lineWidth = 4;
+        ctx.shadowColor = '#ffb020'; ctx.shadowBlur = 12;
+      } else if (glow > 0) {
+        ctx.strokeStyle = `rgba(34,230,255,${0.35 + 0.65 * glow})`; ctx.lineWidth = 2 + glow * 2;
+        ctx.shadowColor = '#22e6ff'; ctx.shadowBlur = 18 * glow;
+      } else {
+        ctx.strokeStyle = 'rgba(80,120,150,0.75)'; ctx.lineWidth = 2; ctx.shadowBlur = 0;
+      }
+      ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(c.x, c.y); ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+  });
+
+  // rotation lightning
+  G.arcs.forEach(a => {
+    const al = a.t / 0.4;
+    ctx.strokeStyle = `rgba(150,245,255,${al})`; ctx.lineWidth = 1.5; ctx.shadowColor = '#22e6ff'; ctx.shadowBlur = 14;
+    for (let k = 0; k < 2; k++) {
+      ctx.beginPath(); ctx.moveTo(a.a.x, a.a.y);
+      const nx = -(a.b.y - a.a.y), ny = a.b.x - a.a.x, len = Math.hypot(nx, ny) || 1;
+      for (let i = 1; i < 8; i++) { const t = i / 8, j = (Math.random() - 0.5) * 16; ctx.lineTo(a.a.x + (a.b.x - a.a.x) * t + nx / len * j, a.a.y + (a.b.y - a.a.y) * t + ny / len * j); }
+      ctx.lineTo(a.b.x, a.b.y); ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+  });
+
+  // ghosts (freed by compaction)
+  G.ghosts.forEach(g => {
+    ctx.globalAlpha = Math.max(0, g.t) * 0.7;
+    ctx.strokeStyle = '#22e6ff'; ctx.lineWidth = 1.5; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.arc(g.x, g.y - (1 - g.t) * 20, R * (1 + (1 - g.t) * 0.6), 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#22e6ff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `600 ${Math.round(R * 0.8)}px "IBM Plex Mono", monospace`;
+    ctx.fillText(String(g.key), g.x, g.y - (1 - g.t) * 20);
+    ctx.globalAlpha = 1;
+  });
+
+  // nodes
+  const bhBad = new Set(A.bh.map(n => n.id));
+  const gr = grace();
+  A.list.forEach(n => {
+    const t = n.colorT;
+    // monster ring
+    if (n.monster) {
+      const age = G.time - n.bornAt, leaking = age > gr;
+      ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.lineDashOffset = -vt * 24;
+      ctx.strokeStyle = leaking ? `rgba(180,255,57,${0.6 + 0.4 * Math.sin(vt * 14)})` : 'rgba(180,255,57,0.55)';
+      const jr = leaking ? (Math.random() - 0.5) * 1.5 : 0;
+      ctx.beginPath(); ctx.arc(n.x + jr, n.y, R + 5, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      if (!leaking) { // dormant timer
+        ctx.strokeStyle = '#b4ff39'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(n.x, n.y, R + 9, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - age / gr)); ctx.stroke();
+      }
+    }
+    // selection
+    if (G.sel === n) {
+      ctx.strokeStyle = '#22e6ff'; ctx.lineWidth = 2; ctx.shadowColor = '#22e6ff'; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.arc(n.x, n.y, R + (n.monster ? 13 : 7), 0, Math.PI * 2); ctx.stroke();
+      ctx.shadowBlur = 0;
+      const rr = R + (n.monster ? 17 : 11);
+      for (let i = 0; i < 4; i++) { const a = vt * 1.5 + i * Math.PI / 2; ctx.beginPath(); ctx.moveTo(n.x + Math.cos(a) * rr, n.y + Math.sin(a) * rr); ctx.lineTo(n.x + Math.cos(a) * (rr + 6), n.y + Math.sin(a) * (rr + 6)); ctx.stroke(); }
+    }
+    // body
+    ctx.fillStyle = mix(BLACK_F, RED_F, t);
+    ctx.strokeStyle = mix(BLACK_S, RED_S, t);
+    ctx.lineWidth = 2;
+    if (glow > 0) { ctx.shadowColor = '#22e6ff'; ctx.shadowBlur = 24 * glow; }
+    else if (t > 0.05) { ctx.shadowColor = '#ff2d55'; ctx.shadowBlur = 16 * t; }
+    ctx.beginPath(); ctx.arc(n.x, n.y, R, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.shadowBlur = 0;
+    if (n.flash > 0) { ctx.fillStyle = `rgba(255,255,255,${n.flash * 0.6})`; ctx.beginPath(); ctx.arc(n.x, n.y, R, 0, Math.PI * 2); ctx.fill(); }
+    if (n === root && A.redRoot) {
+      ctx.strokeStyle = `rgba(255,176,32,${0.6 + 0.4 * Math.sin(vt * 10)})`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(n.x, n.y, R + 4, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#ffb020'; ctx.font = '600 10px "IBM Plex Mono", monospace'; ctx.textAlign = 'center';
+      ctx.fillText('root must be BLACK', n.x, n.y - R - 14);
+    }
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `600 ${Math.round(R * 0.82)}px "IBM Plex Mono", monospace`;
+    ctx.fillText(String(n.key), n.x, n.y + 1);
+    if (bhBad.has(n.id)) {
+      const bx = n.x + R * 0.85, by = n.y - R * 0.85;
+      ctx.fillStyle = '#ffb020'; ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#000'; ctx.font = '700 8px "IBM Plex Mono", monospace'; ctx.fillText('bh', bx, by + 0.5);
+    }
+  });
+
+  // packets
+  G.packets.forEach(p => {
+    if (sk('prefetch') && root) { // predicted landing slot
+      let n = p.at || root, path = [[p.x, p.y]], side = null;
+      for (;;) { path.push([n.x, n.y]); const s = p.key < n.key ? 'left' : 'right'; if (!n[s]) { side = s; break; } n = n[s]; }
+      const sx = n.x + (side === 'left' ? -1 : 1) * Math.max(SP * 0.5, 14), sy = n.y + YSP * 0.8;
+      path.push([sx, sy]);
+      ctx.strokeStyle = 'rgba(197,107,255,0.45)'; ctx.setLineDash([3, 5]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); path.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
+      ctx.beginPath(); ctx.arc(sx, sy, R * 0.7, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    p.trail.forEach(([x, y], i) => { ctx.fillStyle = `rgba(197,107,255,${(i / p.trail.length) * 0.35})`; ctx.beginPath(); ctx.arc(x, y, 3 + i * 0.4, 0, Math.PI * 2); ctx.fill(); });
+    const pr = Math.max(12, R * 0.9);
+    ctx.shadowColor = '#c56bff'; ctx.shadowBlur = 16;
+    ctx.fillStyle = 'rgba(40,10,60,0.9)'; ctx.strokeStyle = '#d98bff'; ctx.lineWidth = 2;
+    hexPath(p.x + (Math.random() - 0.5) * 1.2, p.y, pr); ctx.fill(); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#f4e4ff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `600 ${Math.round(pr * 0.85)}px "IBM Plex Mono", monospace`;
+    ctx.fillText(String(p.key), p.x, p.y + 1);
+  });
+
+  // particles
+  G.particles.forEach(p => { ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.color; ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size); });
+  ctx.globalAlpha = 1;
+  // floating text
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  G.floats.forEach(f => { ctx.globalAlpha = Math.min(1, f.t / f.max * 1.5); ctx.fillStyle = f.color; ctx.font = '600 13px "IBM Plex Mono", monospace'; ctx.fillText(f.text, f.x, f.y); });
+  ctx.globalAlpha = 1;
+
+  // banners
+  if (G.state === 'countdown') {
+    ctx.font = '700 40px "Chakra Petch", sans-serif'; ctx.fillStyle = '#c56bff'; ctx.shadowColor = '#c56bff'; ctx.shadowBlur = 20;
+    ctx.fillText(`WAVE ${G.wave}`, W / 2, HC * 0.55); ctx.shadowBlur = 0;
+    ctx.font = '13px "IBM Plex Mono", monospace'; ctx.fillStyle = '#d9e7f5';
+    ctx.fillText(`${G.queue.length} packets inbound in ${Math.max(0, G.countdown).toFixed(1)}s`, W / 2, HC * 0.55 + 34);
+  } else if (G.state === 'compact') {
+    ctx.font = '700 30px "IBM Plex Mono", monospace'; ctx.fillStyle = '#22e6ff'; ctx.shadowColor = '#22e6ff'; ctx.shadowBlur = 20;
+    ctx.fillText('MEMORY COMPACTION', W / 2, HC * 0.6); ctx.shadowBlur = 0;
+  } else if (G.state === 'play' && A.valid && A.monsters > 0 && gcDelay() > 0) {
+    ctx.font = '600 12px "IBM Plex Mono", monospace'; ctx.fillStyle = '#4dff9a';
+    ctx.fillText(`tree valid · GC in ${Math.max(0, gcDelay() - G.validTimer).toFixed(1)}s`, W / 2, TOPY - 40);
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+// ------------------------------------------------------------------ DOM HUD
+let hudAcc = 1;
+const setText = (id, v) => { const e = $(id); if (e.textContent !== String(v)) e.textContent = v; };
+function hud(vdt) {
+  // floating menu every frame so it tracks animation
+  const n = G.sel;
+  if (n && A.list.includes(n) && canAct()) {
+    fmenu.hidden = false;
+    const above = n.y - R - 50 > 0;
+    fmenu.style.left = n.x + 'px';
+    fmenu.style.top = (above ? n.y - R - (n.monster ? 16 : 10) : n.y + R + 50) + 'px';
+    const [bl, , br] = fmenu.children;
+    bl.disabled = !n.right; br.disabled = !n.left;
+  } else fmenu.hidden = true;
+
+  hudAcc += vdt; if (hudAcc < 0.1) return; hudAcc = 0;
+  setText('hN', A.N); setText('hH', A.H); setText('hOpt', A.opt); setText('hBound', A.bound.toFixed(2));
+  $('tH').classList.toggle('bad', A.spike);
+  setText('hLat', A.latency.toFixed(1) + ' ms');
+  $('tLat').classList.toggle('bad', A.spike); $('tLat').classList.toggle('warnt', !A.spike && A.violations > 0);
+  setText('hStack', `${A.H} / ${G.stackLimit}`);
+  const sf = Math.min(1, A.H / G.stackLimit);
+  const bs = $('bStack'); bs.style.width = sf * 100 + '%'; bs.style.background = sf > 0.8 ? '#ff2d55' : sf > 0.6 ? '#ffb020' : '#4dff9a';
+  $('tStack').classList.toggle('bad', A.H >= G.stackLimit - 1);
+  setText('hMem', `${Math.max(0, Math.ceil(G.hp))} / ${G.maxHP} MB`);
+  const mf = Math.max(0, G.hp / G.maxHP);
+  const bm = $('bMem'); bm.style.width = mf * 100 + '%'; bm.style.background = mf < 0.25 ? '#ff2d55' : mf < 0.5 ? '#ffb020' : '#4dff9a';
+  $('tMem').classList.toggle('bad', mf < 0.25 && G.state !== 'title');
+  setText('hWave', G.wave); setText('hScore', G.score);
+  setText('duckN', G.duck);
+  setText('queueLeft', G.state === 'title' ? '' : `${G.queue.length + G.packets.length} packets left`);
+  $('btnDuck').disabled = !canAct() || G.duck <= 0;
+  $('btnReindex').disabled = !canAct() || !A.N;
+  $('btnPause').disabled = !['play', 'countdown', 'compact'].includes(G.state);
+
+  const inv = (id, ok, txt) => { const li = $(id); li.className = ok ? 'ok' : 'no'; li.firstChild.textContent = ok ? '✓' : '✗'; if (txt) li.lastChild.textContent = txt; };
+  inv('iv2', !A.redRoot);
+  inv('iv4', !A.rr.length, A.rr.length ? `No red node has a red child (${A.rr.length} conflict${A.rr.length > 1 ? 's' : ''})` : 'No red node has a red child');
+  inv('iv5', !A.bh.length, A.bh.length ? `Equal black-height (bad at ${A.bh.map(n => n.key).slice(0, 4).join(', ')})` : 'Equal black-height on every path');
+  inv('ivH', !A.spike, `H ≤ 2·log₂(N+1)  (${A.H} ≤ ${A.bound.toFixed(2)})`);
+  const st = $('invState'); st.textContent = A.valid ? 'VALID' : 'BROKEN'; st.style.color = A.valid ? '#4dff9a' : '#ff2d55';
+
+  // selection panel
+  const si = $('selInfo');
+  const live = n && A.list.includes(n);
+  if (!live) { G.sel = null; }
+  const key = live ? `${n.id}|${n.red}|${n.monster}|${n.parent && n.parent.key}|${n.left && n.left.key}|${n.right && n.right.key}|${n.depth}|${n.bh}` : '';
+  if (si.dataset.k !== key) {
+    si.dataset.k = key;
+    if (!live) { si.textContent = 'Click a node in the tree (or press ↑) to select it.'; setText('selDepth', ''); }
+    else {
+      const bh = n.bh - 1; // blacks strictly below n, counting NIL
+      si.innerHTML = `<span class="key"></span><span class="pill ${n.red ? 'r' : 'b'}">${n.red ? 'RED' : 'BLACK'}</span>${n.monster ? '<span class="pill m">PACKET</span>' : ''}<br>`
+        + `parent <b>${n.parent ? n.parent.key : '—'}</b> · left <b>${n.left ? n.left.key : 'NIL'}</b> · right <b>${n.right ? n.right.key : 'NIL'}</b><br>black-height bh = ${bh}`;
+      si.querySelector('.key').textContent = n.key;
+      setText('selDepth', 'depth ' + n.depth);
+    }
+  }
+  $('aL').disabled = !live || !n.right || !canAct();
+  $('aR').disabled = !live || !n.left || !canAct();
+  $('aC').disabled = !live || !canAct();
+}
+
+// ------------------------------------------------------------------ input
+function select(n) { if (G.sel !== n) { G.sel = n; if (n) sfx.select(); } }
+cv.addEventListener('pointerdown', e => {
+  ac();
+  if (!G || G.state === 'title' || G.state === 'over') return;
+  const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  let best = null, bd = Infinity;
+  A.list.forEach(n => { const d = Math.hypot(n.x - x, n.y - y); if (d < bd) { bd = d; best = n; } });
+  select(best && bd <= Math.max(R + 8, 18) ? best : null);
+});
+fmenu.addEventListener('click', e => { const b = e.target.closest('button'); if (b) act(b.dataset.act); });
+fmenu.addEventListener('pointerdown', e => e.stopPropagation());
+$('aL').onclick = () => act('L'); $('aR').onclick = () => act('R'); $('aC').onclick = () => act('C');
+$('btnDuck').onclick = duck;
+$('btnReindex').onclick = () => reindex(false);
+$('btnPause').onclick = () => setPaused(!G.paused);
+$('btnResume').onclick = () => setPaused(false);
+$('btnStart').onclick = startGame;
+$('btnRestart').onclick = startGame;
+const help = $('help');
+function openHelp() { if (['play', 'countdown', 'compact'].includes(G.state)) setPaused(true); help.hidden = false; $('btnHelpClose').focus(); }
+function closeHelp() { help.hidden = true; }
+$('btnHelp').onclick = openHelp; $('btnHelp2').onclick = openHelp; $('btnHelpClose').onclick = closeHelp;
+help.addEventListener('click', e => { if (e.target === help) closeHelp(); });
+function syncSound() { const b = $('btnSound'); b.textContent = muted ? '🔇 Muted' : '🔊 Sound'; b.setAttribute('aria-pressed', String(!muted)); }
+const leaderboard = GameLeaderboard({ game: 'rb_tree_defense', title: '🏆 Top 20 Operators', format: s => s.toLocaleString() + ' pts' });
+$('btnLbStart').onclick = () => leaderboard.open();
+$('btnLbOver').onclick = () => leaderboard.open();
+$('btnSound').onclick = () => { muted = !muted; sset('rbtd_muted', muted ? '1' : '0'); syncSound(); if (!muted) sfx.select(); };
+
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (!help.hidden) { if (k === 'Escape') closeHelp(); return; }
+  if (G.state === 'title') { if (k === 'Enter' && e.target.tagName !== 'BUTTON') startGame(); return; }
+  if (G.state === 'over') { if (k === 'Enter' && e.target.tagName !== 'BUTTON') startGame(); return; }
+  if (G.state === 'choose') { const i = '123'.indexOf(k); if (i >= 0 && G.choices[i]) { e.preventDefault(); choose(G.choices[i]); } return; }
+  if (k === 'p' || k === 'P' || k === 'Escape') { e.preventDefault(); setPaused(!G.paused); return; }
+  if (G.paused) return;
+  const lk = k.toLowerCase();
+  if (lk === 'q') act('L');
+  else if (lk === 'e') act('R');
+  else if (lk === 'w' || (k === ' ' && e.target.tagName !== 'BUTTON')) { e.preventDefault(); act('C'); }
+  else if (lk === 'f') duck();
+  else if (lk === 'x') reindex(false);
+  else if (k.startsWith('Arrow')) {
+    e.preventDefault();
+    const n = G.sel;
+    if (!n || !A.list.includes(n)) { select(root); return; }
+    if (k === 'ArrowUp' && n.parent) select(n.parent);
+    else if (k === 'ArrowLeft' && n.left) select(n.left);
+    else if (k === 'ArrowRight' && n.right) select(n.right);
+    else if (k === 'ArrowDown' && (n.left || n.right)) select(n.left || n.right);
+  }
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden && G && !G.paused) setPaused(true); });
+
+// ------------------------------------------------------------------ sizing + loop
+function resize() {
+  const w = stage.clientWidth;
+  W = w; HC = Math.round(Math.max(430, Math.min(620, w * 0.68)));
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(W * DPR); cv.height = Math.round(HC * DPR); cv.style.height = HC + 'px';
+}
+window.addEventListener('resize', resize);
+
+let last = performance.now();
+function frame(ts) {
+  const vdt = Math.min(0.05, Math.max(0, (ts - last) / 1000)); last = ts; vt += vdt;
+  step(G.paused ? 0 : vdt, vdt);
+  render();
+  hud(vdt);
+  requestAnimationFrame(frame);
+}
+
+newGame();
+resize();
+syncSound();
+const best = +sget('rbtd_best', '0') || 0;
+$('bestLine').textContent = best ? `best score: ${best}` : 'tip: the cheat sheet in the side panel lists the three insert fix-up cases.';
+log('op', '[Boot] Waiting for operator… press "Boot server".');
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

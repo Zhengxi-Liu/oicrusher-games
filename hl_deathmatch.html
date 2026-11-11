@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Half-Life Web Deathmatch - 3D Multiplayer FPS in the Browser</title>
+  <meta name="description" content="A browser 3D deathmatch inspired by the classic 1998 multiplayer: up to 10 players per room, crowbar, Glock, .357, MP5 with grenades, shotgun, crossbow and RPG, rocket jumps, destructible crates and explosive barrels. Free, no download.">
+  <meta name="keywords" content="deathmatch, fps, browser fps, 3d multiplayer, three.js game, online shooter, half-life inspired, free game">
+  <link rel="canonical" href="https://oicrusher.me/game/hl_deathmatch.html">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --hl: #ffa52b; --hl-dim: rgba(255,165,43,.55); --panel: rgba(14,15,17,.94); }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #08090b; color: #e6e2d8; min-height: 100vh;
+           display: flex; flex-direction: column; align-items: center; padding: 14px; }
+    header { text-align: center; margin-bottom: 10px; }
+    header h1 { font-size: 1.9em; letter-spacing: 4px; font-weight: 800; color: var(--hl); text-shadow: 0 0 14px rgba(255,165,43,.45); }
+    header h1 span { color: #e6e2d8; }
+    header p { opacity: .6; margin-top: 2px; font-size: .9em; }
+    .stage { position: relative; width: 100%; max-width: 1280px; aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden;
+             border: 1px solid #2a2c30; box-shadow: 0 0 0 1px rgba(255,165,43,.2), 0 20px 40px rgba(0,0,0,.6); background: #000; }
+    #view { display: block; width: 100%; height: 100%; }
+    .err { display: none; position: absolute; inset: 0; padding: 40px; text-align: center; color: #ff8a7a; }
+
+    /* ---------- menus */
+    .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(5,6,8,.55); padding: 12px; z-index: 5; }
+    .overlay.hidden { display: none; }
+    .panel { display: none; width: min(560px, 100%); max-height: 100%; overflow-y: auto; background: var(--panel); border: 1px solid #3a3d42;
+             border-top: 3px solid var(--hl); padding: 20px 22px; text-align: center; }
+    .panel.show { display: block; }
+    .panel h2 { font-size: 1.5em; color: var(--hl); letter-spacing: 2px; margin-bottom: 6px; }
+    .panel h3 { font-size: .8em; margin: 16px 0 8px; opacity: .65; text-transform: uppercase; letter-spacing: 2px; }
+    .panel p { opacity: .85; line-height: 1.45; }
+    .sub { font-size: .9em; opacity: .7; margin-top: 6px; }
+    .row { display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+    .btns { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+    button { font: inherit; font-weight: 700; letter-spacing: 1px; color: #111; background: var(--hl); border: none; padding: 10px 18px; cursor: pointer; }
+    button:hover { filter: brightness(1.12); }
+    button.ghost { background: transparent; color: #e6e2d8; border: 1px solid #555; }
+    button:disabled { opacity: .4; cursor: default; }
+    input[type=text], select { font: inherit; color: #e6e2d8; background: #16181b; border: 1px solid #444; padding: 8px 10px; outline: none; }
+    input[type=text] { text-align: center; width: 210px; }
+    input[type=text]:focus, select:focus { border-color: var(--hl); }
+    #codeInput { width: 110px; letter-spacing: 4px; font-weight: 700; }
+    .list { text-align: left; background: rgba(0,0,0,.35); border: 1px solid #2c2f33; max-height: 180px; overflow-y: auto; }
+    .list .item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 10px; border-bottom: 1px solid #1f2124; }
+    .list .item button { padding: 5px 12px; font-size: .85em; }
+    .list .empty { opacity: .55; text-align: center; padding: 12px; font-size: .92em; }
+    .code { color: var(--hl); letter-spacing: 2px; font-family: ui-monospace, Menlo, monospace; }
+    .muted { opacity: .55; font-size: .85em; }
+    .status { margin-top: 10px; min-height: 1.2em; color: #ff8a7a; font-size: .92em; }
+    .keys { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; text-align: left; margin: 14px auto 0; width: fit-content; font-size: .88em; }
+    kbd { display: inline-block; min-width: 20px; padding: 0 5px; border: 1px solid #555; background: #1c1e21; font-family: inherit; font-size: .85em; text-align: center; }
+    .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid #444; border-top-color: var(--hl); border-radius: 50%; animation: spin .9s linear infinite; vertical-align: -2px; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---------- HUD */
+    #hud { position: absolute; inset: 0; pointer-events: none; display: none; font-family: 'Trebuchet MS', 'Segoe UI', sans-serif; }
+    #hud.show { display: block; }
+    .hlnum { color: var(--hl); font-weight: 800; text-shadow: 0 0 10px rgba(255,165,43,.5); }
+    /* CS crosshair: four lines, the gap (--gap) follows the real cone of fire */
+    #crosshair { position: absolute; left: 50%; top: 50%; width: 0; height: 0; --gap: 4px; }
+    #crosshair i { position: absolute; background: rgba(120,255,140,.95); box-shadow: 0 0 2px #000; transition: transform .05s; }
+    #crosshair .t, #crosshair .b { width: 2px; height: 8px; left: -1px; }
+    #crosshair .l, #crosshair .r { height: 2px; width: 8px; top: -1px; }
+    #crosshair .t { bottom: var(--gap); } #crosshair .b { top: var(--gap); }
+    #crosshair .l { right: var(--gap); } #crosshair .r { left: var(--gap); }
+    #hitmark { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; transform: translate(-50%, -50%) rotate(45deg); opacity: 0; transition: opacity .08s; }
+    #hitmark::before, #hitmark::after { content: ''; position: absolute; background: #fff; }
+    #hitmark::before { left: 14px; top: 0; width: 2px; height: 30px; clip-path: polygon(0 0,100% 0,100% 30%,0 30%,0 70%,100% 70%,100% 100%,0 100%); }
+    #hitmark::after { top: 14px; left: 0; height: 2px; width: 30px; clip-path: polygon(0 0,30% 0,30% 100%,0 100%,0 0,70% 0,100% 0,100% 100%,70% 100%); }
+    #hitmark.head::before, #hitmark.head::after { background: #ff4040; }
+    #hurt { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(255,0,0,0) 45%, rgba(200,0,0,.85) 100%); opacity: 0; }
+    #dmgdirs .dd { position: absolute; left: 50%; top: 50%; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-top: 6px solid rgba(255,60,40,.85); border-radius: 50%; }
+    .bl { position: absolute; left: 20px; bottom: 16px; display: flex; gap: 26px; align-items: flex-end; }
+    .stat { font-size: 2.6em; line-height: 1; }
+    .stat small { font-size: .35em; letter-spacing: 2px; display: block; color: var(--hl-dim); }
+    #hpBox.low .hlnum { color: #ff4a3a; animation: blink .6s steps(2) infinite; }
+    @keyframes blink { 50% { opacity: .4; } }
+    .br { position: absolute; right: 20px; bottom: 16px; text-align: right; }
+    .br .ammo { font-size: 2.6em; line-height: 1; }
+    .br .ammo span.sep { color: var(--hl-dim); margin: 0 6px; }
+    #ammoAlt { font-size: .5em; margin-left: 10px; }
+    #wname { font-size: .8em; color: var(--hl-dim); letter-spacing: 1px; margin-top: 2px; }
+    #hotbar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 4px; }
+    .slot { width: 120px; height: 34px; border: 1px solid rgba(255,165,43,.25); background: rgba(0,0,0,.35); font-size: .62em; color: rgba(255,165,43,.35);
+            padding: 2px 4px; overflow: hidden; white-space: nowrap; }
+    .slot b { display: block; font-size: 1.25em; }
+    .slot.own { color: var(--hl); border-color: rgba(255,165,43,.6); }
+    .slot.cur { background: rgba(255,165,43,.25); border-color: var(--hl); box-shadow: 0 0 10px rgba(255,165,43,.4); }
+    .slot.empty { color: #b04030; }
+    #killfeed { position: absolute; right: 14px; top: 12px; text-align: right; font-size: .85em; }
+    .kf { background: rgba(0,0,0,.5); padding: 3px 8px; margin-bottom: 3px; display: inline-block; clear: both; float: right; }
+    .kf.mine { border: 1px solid var(--hl); }
+    .kw { color: #bbb; }
+    #matchInfo { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); font-size: .85em; color: var(--hl); background: rgba(0,0,0,.4); padding: 3px 10px; }
+    #netInfo { position: absolute; left: 12px; top: 10px; font-size: .72em; opacity: .55; }
+    #roomTag { position: absolute; left: 12px; top: 26px; font-size: .72em; opacity: .55; }
+    #center { position: absolute; left: 50%; top: 32%; transform: translateX(-50%); font-size: 1.3em; font-weight: 700; color: #fff;
+              text-shadow: 0 0 8px #000; opacity: 0; transition: opacity .2s; white-space: nowrap; }
+    #center.show { opacity: 1; }
+    #deathMsg { position: absolute; left: 50%; top: 60%; transform: translateX(-50%); font-size: 1.4em; text-align: center; display: none; text-shadow: 0 0 8px #000; }
+    #deathMsg.show { display: block; }
+    #scope { position: absolute; inset: 0; display: none; background: radial-gradient(circle at center, rgba(0,0,0,0) 32%, #000 33%); }
+    #scope.show { display: block; }
+    #scope.awp { background: radial-gradient(circle at center, rgba(0,0,0,0) 40%, rgba(0,0,0,.92) 40.4%); }
+    #scope.awp::before { top: 0; bottom: 0; background: rgba(0,0,0,.9); }
+    #scope.awp::after { left: 0; right: 0; background: rgba(0,0,0,.9); }
+    .skins { gap: 6px; }
+    #skinPicker { display: inline-flex; gap: 5px; }
+    .skin { width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 2px solid #333;
+            background: linear-gradient(135deg, var(--suit) 0 55%, var(--trim) 55% 100%); }
+    .skin.sel { border-color: var(--hl); box-shadow: 0 0 10px rgba(255,165,43,.7); }
+    #skinName { font-size: .85em; color: var(--hl); min-width: 110px; text-align: left; }
+    #scope::before { content: ''; position: absolute; left: 50%; top: 18%; bottom: 18%; width: 1px; background: rgba(255,60,40,.8); }
+    #scope::after { content: ''; position: absolute; top: 50%; left: 30%; right: 30%; height: 1px; background: rgba(255,60,40,.8); }
+    #scoreboard { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); min-width: 420px; background: var(--panel);
+                  border-top: 3px solid var(--hl); padding: 14px 18px; display: none; }
+    #scoreboard.show { display: block; }
+    #scoreboard h3 { color: var(--hl); margin-bottom: 10px; font-size: 1em; letter-spacing: 1px; }
+    #scoreboard table { width: 100%; border-collapse: collapse; font-size: .92em; }
+    #scoreboard th, #scoreboard td { padding: 4px 8px; text-align: left; }
+    #scoreboard th { color: var(--hl-dim); font-weight: 600; border-bottom: 1px solid #333; }
+    #scoreboard tr.me td { color: var(--hl); }
+    #scoreboard .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; }
+    #buyMenu { position: absolute; left: 24px; top: 50%; transform: translateY(-50%); background: var(--panel); border-left: 3px solid var(--hl); padding: 10px 14px;
+               display: none; pointer-events: auto; min-width: 210px; }
+    #buyMenu.show { display: block; }
+    #buyMenu h4 { color: var(--hl); font-size: .78em; letter-spacing: 2px; margin-bottom: 6px; }
+    #buyMenu .buy { padding: 4px 6px; cursor: pointer; font-size: .92em; }
+    #buyMenu .buy:hover { background: rgba(255,165,43,.15); }
+    #buyMenu .buy b { color: var(--hl); display: inline-block; width: 18px; }
+    #buyMenu small { display: block; opacity: .55; margin-top: 6px; font-size: .72em; }
+    .mode { font-size: .7em; padding: 1px 5px; border: 1px solid #666; border-radius: 3px; opacity: .8; }
+    .mode.team { border-color: #5ab0ff; color: #5ab0ff; }
+    #scoreboard tr.dead td { opacity: .45; }
+    #scoreboard tr.tteam td { font-weight: 700; letter-spacing: 1px; padding-top: 10px; }
+    .topbtns { position: absolute; right: 10px; bottom: 60px; z-index: 6; }
+    .topbtns button { padding: 4px 8px; font-size: .8em; background: rgba(0,0,0,.5); color: #ddd; }
+    .help { margin-top: 12px; max-width: 1280px; width: 100%; text-align: center; opacity: .6; font-size: .88em; line-height: 1.6; }
+    .back { margin-top: 12px; color: var(--hl); text-decoration: none; opacity: .85; }
+    @media (max-width: 760px) { .slot { width: 44px; font-size: .5em; } .stat, .br .ammo { font-size: 1.8em; } #scoreboard { min-width: 90%; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>HALF-LIFE <span>WEB DEATHMATCH</span></h1>
+    <p>5 maps · deathmatch or team elimination · 11 weapons · wall penetration · up to 10 players · fan-made tribute, no Valve assets</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="view"></canvas>
+    <div class="err" id="webglError">WebGL is not available in this browser, so the 3D view cannot start.</div>
+
+    <div id="hud">
+      <div id="crosshair"><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i></div>
+      <div id="hitmark"></div>
+      <div id="hurt"></div>
+      <div id="dmgdirs"></div>
+      <div id="scope"></div>
+      <div id="matchInfo"></div>
+      <div id="netInfo"></div>
+      <div id="roomTag">room <span id="roomCode"></span> · Esc for menu · Tab scores</div>
+      <div id="killfeed"></div>
+      <div id="center"></div>
+      <div id="deathMsg"></div>
+      <div class="bl">
+        <div class="stat" id="hpBox"><small>HEALTH</small><span class="hlnum" id="hp">100</span></div>
+        <div class="stat"><small>ARMOR</small><span class="hlnum" id="ar">0</span></div>
+      </div>
+      <div id="hotbar"></div>
+      <div class="br">
+        <div class="ammo hlnum"><span id="ammoMag"></span><span class="sep" id="ammoSep">|</span><span id="ammoRes"></span><span id="ammoAlt"></span></div>
+        <div id="wname"></div>
+      </div>
+      <div id="scoreboard"></div>
+      <div id="buyMenu"></div>
+    </div>
+
+    <div class="topbtns"><button id="soundBtn" title="Toggle sound">🔊</button></div>
+
+    <div class="overlay" id="overlay">
+      <div class="panel show" id="pMain">
+        <h2>HALF-LIFE WEB DEATHMATCH</h2>
+        <p>Deathmatch or <b>team elimination</b> (T vs CT, rounds, wipe the other team out). Five maps including Snow World, AK-47 / M4A1 / AWP that shoot through thin walls, HE grenades; one long gun, G drops it. First to <b>20 frags</b> or 10 minutes, then the next map.</p>
+        <div class="row"><input type="text" id="nameInput" maxlength="16" placeholder="Your name" autocomplete="off"></div>
+        <div class="row skins"><span class="muted">Suit:</span><span id="skinPicker"></span><b id="skinName"></b></div>
+        <div class="btns"><button id="btnPlay">▶ PLAY ONLINE</button></div>
+        <div class="row" style="font-size:.85em">Mouse sensitivity <input type="range" id="sens" min="0.6" max="6" step="0.1" style="width:160px"></div>
+        <div class="keys">
+          <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · <kbd>Space</kbd></span><span>Move · jump (air-strafe works)</span>
+          <span><kbd>Ctrl</kbd> / <kbd>C</kbd></span><span>Crouch: steadier aim, smaller target, crouch-jump</span>
+          <span>Mouse · <kbd>LMB</kbd> · <kbd>RMB</kbd></span><span>Look · fire · alt-fire / scope / lob grenade</span>
+          <span><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd> · wheel · <kbd>Q</kbd></span><span>Primary · pistol · crowbar · HE grenade · cycle · last</span>
+          <span><kbd>G</kbd></span><span>Drop the gun in your hands (one long gun at a time)</span>
+          <span><kbd>B</kbd></span><span>Team mode: free loadout menu (start of a round)</span>
+          <span><kbd>R</kbd> · <kbd>Tab</kbd> · <kbd>Esc</kbd></span><span>Reload · scoreboard · menu</span>
+        </div>
+      </div>
+
+      <div class="panel" id="pLobby">
+        <h2>SERVER BROWSER</h2>
+        <p class="sub">Signed in as <b id="lobbyName">?</b>. Rooms hold up to 10 players; bots fill empty slots and step aside for humans.</p>
+        <h3>Active rooms</h3>
+        <div class="list" id="roomList"><div class="empty">Loading…</div></div>
+        <div class="row"><input type="text" id="codeInput" maxlength="4" placeholder="CODE" autocomplete="off"><button id="btnJoinCode">JOIN</button></div>
+        <h3>New room</h3>
+        <div class="row">
+          <select id="botCount"><option value="0">no bots</option><option value="2">2 bots</option><option value="4" selected>4 bots</option><option value="6">6 bots</option><option value="8">8 bots</option></select>
+          <select id="botLevel"><option value="easy">easy</option><option value="normal" selected>normal</option><option value="hard">hard</option></select>
+          <select id="modeSelect"><option value="dm">Deathmatch (free-for-all)</option><option value="team">Team elimination (T vs CT)</option></select>
+          <select id="mapSelect"></select>
+          <button id="btnCreate">CREATE ROOM</button>
+        </div>
+        <div class="status" id="lobbyStatus"></div>
+        <div class="row"><button class="ghost" id="btnLobbyBack">← Back</button></div>
+      </div>
+
+      <div class="panel" id="pConn">
+        <h2>CONNECTING</h2>
+        <p><span class="spinner"></span>Reaching the game server…</p>
+        <div class="row"><button class="ghost" id="btnConnCancel">Cancel</button></div>
+      </div>
+
+      <div class="panel" id="pPause">
+        <h2>ROOM <span id="pauseCode" class="code"></span></h2>
+        <p class="sub" id="pauseBots"></p>
+        <div class="btns">
+          <button id="btnResume">▶ RESUME (click to capture the mouse)</button>
+          <div class="row" style="margin-top:0"><button class="ghost" id="btnAddBot">+ add bot</button><button class="ghost" id="btnKickBot">− remove bot</button></div>
+          <button class="ghost" id="btnLeave">Leave room</button>
+        </div>
+        <p class="sub">Share the room code so friends can join from the server browser.</p>
+      </div>
+
+      <div class="panel" id="pMsg">
+        <h2 id="msgTitle">NOTICE</h2>
+        <p id="msgText"></p>
+        <div class="row"><button id="btnMsgOk">OK</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="help">
+    Rockets and grenades push you around: rocket jump onto the walkways. Barrels explode. Crates splinter and come back later.
+    Needs a desktop browser with a mouse (Pointer Lock).
+  </div>
+  <a class="back" href="index.html">← Back to Game Portal</a>
+
+  <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+    } }
+  </script>
+  <script src="identity.js?v=2"></script>
+  <script src="hl_deathmatch/shared/Constants.js?v=5"></script>
+  <script src="hl_deathmatch/shared/MapData.js?v=5"></script>
+  <script src="hl_deathmatch/shared/Movement.js?v=5"></script>
+  <script type="module" src="hl_deathmatch/client/main.js?v=6"></script>
+</body>
+</html>

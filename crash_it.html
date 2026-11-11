@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Crash It - 2 Player Car Battle Game | Free Online</title>
+  <meta name="description" content="Crash It: a one-button 2 player car battle. Drive, flip and crash into your friend's car. Hit the driver's head or knock them into the water to score. Play free with a friend on one keyboard or phone, or against a bot.">
+  <meta name="keywords" content="crash it, 2 player games, two player car game, one button game, car battle, drive ahead, local multiplayer, browser game">
+  <meta name="author" content="OICrusher Games">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://oicrusher.me/game/crash_it.html">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://oicrusher.me/game/crash_it.html">
+  <meta property="og:title" content="Crash It - 2 Player Car Battle">
+  <meta property="og:description" content="One button each. Drive, flip, and land on your friend's head. First to 5 wins!">
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://oicrusher.me/game/crash_it.html">
+  <meta property="twitter:title" content="Crash It - 2 Player Car Battle">
+  <meta property="twitter:description" content="One button each. Drive, flip, and land on your friend's head. First to 5 wins!">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; background: #f3b9b3; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif; color: #fff; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; }
+    canvas { display: block; position: fixed; inset: 0; width: 100vw; height: 100vh; }
+
+    .pbtn {
+      position: fixed; bottom: 18px; width: 108px; height: 108px; border-radius: 50%; z-index: 5;
+      border: 9px solid #2a2a2e; display: flex; align-items: center; justify-content: center; flex-direction: column;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.25); cursor: pointer; touch-action: none;
+      transition: transform 0.06s;
+    }
+    .pbtn svg { width: 46px; height: 46px; }
+    .pbtn.down { transform: scale(0.92); filter: brightness(1.15); }
+    .pbtn .key { font-size: 13px; font-weight: 800; color: #fff; margin-top: -2px; opacity: 0.9; }
+    #btnRed { left: 18px; background: #e8413c; }
+    #btnBlue { right: 18px; background: #2f8fe0; }
+    .pbtn.bot { opacity: 0.35; pointer-events: none; }
+    body.touch .pbtn .key { display: none; }
+
+    .topbtn {
+      position: fixed; top: 12px; z-index: 6; background: #fff; color: #2a2a2e; border: none; border-radius: 20px;
+      font-weight: 800; font-size: 13px; padding: 7px 14px; cursor: pointer; font-family: inherit; box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+    }
+    #btnExit { right: 12px; }
+    #btnSound { right: 82px; }
+
+    .overlay { position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center; background: rgba(60,20,40,0.45); backdrop-filter: blur(3px); padding: 16px; }
+    .overlay.show { display: flex; }
+    .panel { background: #fff; color: #2a2a2e; border-radius: 22px; padding: 26px 28px 24px; max-width: 520px; width: 100%; text-align: center; box-shadow: 0 10px 0 rgba(0,0,0,0.15), 0 20px 50px rgba(0,0,0,0.25); max-height: calc(100vh - 32px); overflow-y: auto; }
+    .panel h1 { font-size: 2.6em; font-weight: 900; letter-spacing: 1px; line-height: 1; }
+    .panel h1 .r { color: #e8413c; } .panel h1 .b { color: #2f8fe0; }
+    .panel h2 { font-size: 1.8em; font-weight: 900; margin-bottom: 6px; }
+    .panel p { color: #6a5a62; line-height: 1.5; margin: 10px 0; font-size: 15px; }
+    .rules { text-align: left; margin: 14px auto; max-width: 400px; font-size: 14px; color: #4a3a42; line-height: 1.6; }
+    .rules b { color: #2a2a2e; }
+    .menu-btn {
+      display: block; width: 100%; max-width: 300px; margin: 10px auto 0; padding: 13px 20px; border-radius: 40px; border: none; cursor: pointer;
+      font-size: 18px; font-weight: 900; font-family: inherit; color: #fff; background: #2a2a2e; box-shadow: 0 5px 0 #000;
+    }
+    .menu-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #000; }
+    .menu-btn.red { background: #e8413c; box-shadow: 0 5px 0 #a52520; }
+    .menu-btn.blue { background: #2f8fe0; box-shadow: 0 5px 0 #1a5f9e; }
+    .menu-btn.gray { background: #b9adb3; box-shadow: 0 5px 0 #857a80; }
+    .keys { font-size: 13px; color: #8a7a82; margin-top: 14px; }
+    .keys kbd { background: #2a2a2e; color: #fff; border-radius: 5px; padding: 1px 7px; font-family: inherit; font-weight: 800; font-size: 12px; }
+    body.touch .keys { display: none; }
+    .final { font-size: 3em; font-weight: 900; margin: 6px 0; }
+    .final .r { color: #e8413c; } .final .b { color: #2f8fe0; }
+  </style>
+  <script src="identity.js?v=2"></script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<button class="topbtn" id="btnExit" type="button">EXIT</button>
+<button class="topbtn" id="btnSound" type="button">🔊</button>
+
+<div class="pbtn" id="btnRed"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke="#2a2a2e" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="key">A</span></div>
+<div class="pbtn" id="btnBlue"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" stroke="#2a2a2e" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="key">L</span></div>
+
+<div class="overlay show" id="ovMain">
+  <div class="panel">
+    <h1><span class="r">CRASH</span> <span class="b">IT</span></h1>
+    <p>One button each. Drive, flip, and crash!</p>
+    <div class="rules">
+      <b>Hold</b> your button to drive forward. <b>Let go</b> and your car backs up.<br>
+      In the air, holding the button <b>flips</b> your car backward.<br>
+      Score a point by hitting your opponent's <b>head</b>, making them land on it, or knocking them into the <b>water</b>.<br>
+      Rounds last 25 seconds. After that the <b>water starts rising</b>. First to <b>5</b> wins!
+    </div>
+    <button class="menu-btn red" id="btn2p" type="button">2 PLAYERS</button>
+    <button class="menu-btn blue" id="btnBot" type="button">VS BOT</button>
+    <div class="keys">Red: <kbd>A</kbd> / <kbd>W</kbd> / <kbd>Space</kbd> &nbsp;·&nbsp; Blue: <kbd>L</kbd> / <kbd>↑</kbd> / <kbd>Enter</kbd> &nbsp;·&nbsp; <kbd>P</kbd> pause</div>
+  </div>
+</div>
+
+<div class="overlay" id="ovDiff">
+  <div class="panel">
+    <h2>Bot difficulty</h2>
+    <p>You drive the <b style="color:#e8413c">red</b> car.</p>
+    <button class="menu-btn gray" data-diff="easy" type="button">EASY</button>
+    <button class="menu-btn blue" data-diff="normal" type="button">NORMAL</button>
+    <button class="menu-btn red" data-diff="hard" type="button">HARD</button>
+    <button class="menu-btn" id="btnDiffBack" type="button" style="background:#fff;color:#2a2a2e;box-shadow:none">← Back</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovOver">
+  <div class="panel">
+    <h2 id="overTitle">RED WINS!</h2>
+    <div class="final" id="overScore"><span class="r">5</span> · <span class="b">3</span></div>
+    <p id="overText"></p>
+    <button class="menu-btn red" id="btnRematch" type="button">REMATCH</button>
+    <button class="menu-btn gray" id="btnMenu" type="button">MENU</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovPause">
+  <div class="panel">
+    <h2>Paused</h2>
+    <button class="menu-btn red" id="btnResume" type="button">RESUME</button>
+    <button class="menu-btn gray" id="btnQuit" type="button">MENU</button>
+  </div>
+</div>
+
+<!-- ===================== SIMULATION (no DOM) ===================== -->
+<script id="sim">
+const CI = (function () {
+  'use strict';
+  const W = 1280, H = 720, G = 1500;
+  const DECK_Y = 300, DECK_L = 250, DECK_R = 1030;
+  const WATER0 = 640, WATER_TOP = 270;
+  const ROUND_TIME = 25, RISE_TIME = 18;
+  const WIN_SCORE = 5;
+  const VMAX = 400, VREV = 170;
+  const KC = 2600, CC = 30;           // ground contact stiffness / damping
+  const KCC = 3200, CCC = 22;         // car-car contact
+  const S0 = 4;                       // friction regularisation (px/s)
+
+  const smooth = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+
+  // ---------------------------------------------------------------- island
+  function islandDepth(x) {
+    const g = (d, w) => { const u = d / w; return u * u < 1 ? Math.sqrt(1 - u * u) : 0; };
+    const lobes = Math.max(g(x - 455, 235), g(x - 825, 235));
+    const end = Math.min(x - DECK_L, DECK_R - x);
+    const taper = Math.sqrt(smooth(end / 55));
+    return 235 * lobes * taper;
+  }
+  function buildIsland() {
+    const pts = [[DECK_L, DECK_Y], [DECK_R, DECK_Y]];
+    for (let x = DECK_R - 5; x > DECK_L; x -= 10) pts.push([x, DECK_Y + Math.max(2, islandDepth(x))]);
+    const segs = [];
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i], b = pts[(i + 1) % pts.length];
+      const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy);
+      segs.push({ ax: a[0], ay: a[1], bx: b[0], by: b[1], dx, dy, len, nx: dy / len, ny: -dx / len,
+        minx: Math.min(a[0], b[0]), maxx: Math.max(a[0], b[0]), miny: Math.min(a[1], b[1]), maxy: Math.max(a[1], b[1]) });
+    }
+    // convex vertices (outer corners) get their own contact
+    const verts = [];
+    for (let i = 0; i < pts.length; i++) {
+      const p = segs[(i - 1 + segs.length) % segs.length], n = segs[i];
+      if (p.dx * n.dy - p.dy * n.dx > 0) verts.push({ x: pts[i][0], y: pts[i][1], prev: p, next: n });
+    }
+    return { pts, segs, verts };
+  }
+  const ISLAND = buildIsland();
+
+  // ---------------------------------------------------------------- cars
+  // parts in the car frame, facing right, y down. type: wheel | body | head
+  const PARTS = [
+    [-27, 13, 12.5, 'wheel'], [27, 13, 12.5, 'wheel'],
+    [-31, -3, 10, 'body'], [-13, -5, 12, 'body'], [7, -5, 12, 'body'], [27, -2, 10, 'body'],
+    [-22, -19, 6, 'body'],
+    [-5, -27, 9, 'head'],
+  ];
+
+  function makeCar(side) {
+    const f = side === 0 ? 1 : -1;
+    return {
+      side, f, x: side === 0 ? DECK_L + 75 : DECK_R - 75, y: DECK_Y - 26, a: 0, vx: 0, vy: 0, w: 0,
+      m: 1, I: 420, drive: 0, wheelT: 0, grounded: false, spin: 0, dead: false, deathCause: '',
+      headHit: false, contacts: 0, lastImpact: 0, gasT: 0,
+    };
+  }
+  function partWorld(c, p, out) {
+    const ca = Math.cos(c.a), sa = Math.sin(c.a), lx = p[0] * c.f, ly = p[1];
+    out.x = c.x + ca * lx - sa * ly; out.y = c.y + sa * lx + ca * ly;
+    return out;
+  }
+  function impulse(c, jx, jy, px, py) {
+    c.vx += jx / c.m; c.vy += jy / c.m;
+    c.w += ((px - c.x) * jy - (py - c.y) * jx) / c.I;
+  }
+
+  // ---------------------------------------------------------------- game
+  class Game {
+    constructor(rng) {
+      this.rng = rng || Math.random;
+      this.score = [0, 0];
+      this.events = [];
+      this.newRound();
+    }
+    newRound() {
+      this.cars = [makeCar(0), makeCar(1)];
+      this.t = 0; this.water = WATER0;
+      this.state = 'countdown'; this.stateT = 0;
+      this.winner = -1; this.roundWinner = -1;
+      this.slow = 1;
+    }
+    get rising() { return this.t > ROUND_TIME; }
+    event(type, x, y, extra) { this.events.push(Object.assign({ type, x, y }, extra || {})); }
+
+    // inputs: [bool, bool] (button held)
+    tick(dt, inp) {
+      this.stateT += dt;
+      if (this.state === 'countdown') {
+        if (this.stateT >= 3) { this.state = 'play'; this.stateT = 0; this.event('go'); }
+      } else if (this.state === 'play') {
+        this.t += dt;
+        if (this.rising) this.water = Math.max(WATER_TOP, WATER0 - (WATER0 - WATER_TOP) * Math.min(1, (this.t - ROUND_TIME) / RISE_TIME));
+      } else if (this.state === 'roundover') {
+        this.slow = Math.max(0.3, this.slow - dt * 2);
+        if (this.stateT > 2.2) {
+          if (this.score[0] >= WIN_SCORE || this.score[1] >= WIN_SCORE) { this.state = 'gameover'; this.winner = this.score[0] > this.score[1] ? 0 : 1; this.event('gameover'); }
+          else this.newRound();
+          return;
+        }
+      }
+      if (this.state === 'gameover') return;
+      const live = this.state === 'play';
+      for (let i = 0; i < 2; i++) {
+        const c = this.cars[i];
+        c.drive = !live || c.dead ? 0 : inp[i] ? 1 : -1;
+        if (c.drive === 1) c.gasT += dt; else c.gasT = 0;
+      }
+      const h = dt * this.slow / 8;
+      for (let s = 0; s < 8; s++) this.step(h);
+      if (live) this.judge();
+    }
+
+    step(dt) {
+      const [A, B] = this.cars;
+      for (const c of this.cars) { c.vy += G * dt; c.wheelHit = false; }
+      for (const c of this.cars) this.groundContacts(c, dt);
+      this.carContacts(A, B, dt);
+      for (const c of this.cars) {
+        if (c.wheelHit) c.wheelT = 0; else c.wheelT += dt;
+        c.grounded = c.wheelT < 0.08;
+        // air control: the button tips the car backwards
+        if (!c.grounded && c.drive === 1) {
+          const target = -c.f * 7.5;
+          c.w += (target - c.w) * Math.min(1, dt * 4);
+        }
+        c.w *= 1 - dt * 0.15;
+        c.x += c.vx * dt; c.y += c.vy * dt; c.a += c.w * dt;
+        // visual wheel spin
+        const sp = c.grounded ? (c.vx * Math.cos(c.a) + c.vy * Math.sin(c.a)) / 12.5 : (c.drive === 1 ? 25 * c.f : c.spin * 0.98);
+        c.spin = sp; c.wheelAngle = (c.wheelAngle || 0) + sp * dt;
+      }
+    }
+
+    contactForce(c, part, px, py, nx, ny, pen, dt) {
+      const rx = px - c.x, ry = py - c.y;
+      let pvx = c.vx - c.w * ry, pvy = c.vy + c.w * rx;
+      const vn = pvx * nx + pvy * ny;
+      const N = KC * pen - CC * vn;
+      if (N <= 0) return 0;
+      impulse(c, nx * N * dt, ny * N * dt, px, py);
+      pvx = c.vx - c.w * ry; pvy = c.vy + c.w * rx;
+      const tx = -ny, ty = nx, vt = pvx * tx + pvy * ty;
+      const rt = rx * ty - ry * tx, K = 1 / c.m + rt * rt / c.I;
+      let F;
+      if (part[3] === 'wheel') {
+        // the wheel is a motor: it pushes the contact point toward the drive speed, limited by grip
+        const ca = Math.cos(c.a), sa = Math.sin(c.a);
+        const spd = c.drive === 1 ? VMAX : c.drive === -1 ? -VREV : 0;
+        const vdes = (ca * c.f * tx + sa * c.f * ty) * spd;
+        const gain = c.drive === 0 ? 0.05 : 0.22;
+        F = gain * (vdes - vt) / (dt * K);
+        const lim = 0.92 * N; if (F > lim) F = lim; else if (F < -lim) F = -lim;
+        c.wheelHit = true;
+      } else {
+        const lim = 0.55 * N;
+        F = -vt / (S0 / lim + dt * K);
+        if (F > lim) F = lim; else if (F < -lim) F = -lim;
+      }
+      impulse(c, F * tx * dt, F * ty * dt, px, py);
+      return N;
+    }
+
+    groundContacts(c, dt) {
+      const P = { x: 0, y: 0 };
+      for (const part of PARTS) {
+        partWorld(c, part, P);
+        const r = part[2];
+        if (P.y + r >= this.water && part[3] === 'head') this.kill(c, 'water');
+        if (P.x + r < DECK_L - 5 || P.x - r > DECK_R + 5 || P.y + r < DECK_Y - 2) continue;
+        for (const s of ISLAND.segs) {
+          if (P.x + r < s.minx || P.x - r > s.maxx || P.y + r < s.miny || P.y - r > s.maxy) continue;
+          const t = ((P.x - s.ax) * s.dx + (P.y - s.ay) * s.dy) / (s.len * s.len);
+          if (t <= 0 || t >= 1) continue;
+          const side = (P.x - s.ax) * s.nx + (P.y - s.ay) * s.ny;
+          if (side >= r || side < -r) continue;
+          const N = this.contactForce(c, part, s.ax + s.dx * t, s.ay + s.dy * t, s.nx, s.ny, r - side, dt);
+          if (N > 0 && part[3] === 'head') this.kill(c, 'head');
+        }
+        for (const v of ISLAND.verts) {
+          const dx = P.x - v.x, dy = P.y - v.y, d2 = dx * dx + dy * dy;
+          if (d2 >= r * r || d2 < 1e-6) continue;
+          if (dx * v.prev.dx + dy * v.prev.dy < 0) continue;
+          if (dx * v.next.dx + dy * v.next.dy > 0) continue;
+          const d = Math.sqrt(d2);
+          const N = this.contactForce(c, part, v.x, v.y, dx / d, dy / d, r - d, dt);
+          if (N > 0 && part[3] === 'head') this.kill(c, 'head');
+        }
+      }
+      if (c.y > this.water + 10) this.kill(c, 'water');
+    }
+
+    carContacts(A, B, dt) {
+      if (Math.abs(A.x - B.x) > 140 || Math.abs(A.y - B.y) > 140) return;
+      const PA = { x: 0, y: 0 }, PB = { x: 0, y: 0 };
+      for (const pa of PARTS) {
+        partWorld(A, pa, PA);
+        for (const pb of PARTS) {
+          partWorld(B, pb, PB);
+          const dx = PA.x - PB.x, dy = PA.y - PB.y, R = pa[2] + pb[2], d2 = dx * dx + dy * dy;
+          if (d2 >= R * R || d2 < 1e-6) continue;
+          const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, pen = R - d;
+          const cx = PB.x + nx * pb[2], cy = PB.y + ny * pb[2];
+          const rax = cx - A.x, ray = cy - A.y, rbx = cx - B.x, rby = cy - B.y;
+          const vax = A.vx - A.w * ray, vay = A.vy + A.w * rax, vbx = B.vx - B.w * rby, vby = B.vy + B.w * rbx;
+          const rvx = vax - vbx, rvy = vay - vby, vn = rvx * nx + rvy * ny;
+          const N = KCC * pen - CCC * vn;
+          if (N <= 0) continue;
+          impulse(A, nx * N * dt, ny * N * dt, cx, cy);
+          impulse(B, -nx * N * dt, -ny * N * dt, cx, cy);
+          const tx = -ny, ty = nx, vt = rvx * tx + rvy * ty;
+          const ra = rax * ty - ray * tx, rb = rbx * ty - rby * tx;
+          const K = 1 / A.m + ra * ra / A.I + 1 / B.m + rb * rb / B.I, lim = 0.4 * N;
+          let F = -vt / (S0 / lim + dt * K); if (F > lim) F = lim; else if (F < -lim) F = -lim;
+          impulse(A, F * tx * dt, F * ty * dt, cx, cy);
+          impulse(B, -F * tx * dt, -F * ty * dt, cx, cy);
+          const imp = Math.abs(vn);
+          if (imp > 250 && this.t - (A.lastImpact || 0) > 0.25) { A.lastImpact = this.t; this.event('crash', cx, cy, { power: imp }); }
+          if (pa[3] === 'head') this.kill(A, 'hit', cx, cy);
+          if (pb[3] === 'head') this.kill(B, 'hit', cx, cy);
+        }
+      }
+    }
+
+    kill(c, cause, x, y) {
+      if (this.state !== 'play' || c.dead) return;
+      c.dead = true; c.deathCause = cause;
+      if (cause === 'water') this.event('splash', c.x, this.water);
+      else this.event('bonk', x !== undefined ? x : c.x, y !== undefined ? y : c.y, { side: c.side });
+    }
+    judge() {
+      const [A, B] = this.cars;
+      if (!A.dead && !B.dead) return;
+      this.state = 'roundover'; this.stateT = 0;
+      if (A.dead && B.dead) { this.roundWinner = -1; this.event('draw'); return; }
+      this.roundWinner = A.dead ? 1 : 0;
+      this.score[this.roundWinner]++;
+      this.event('point', 0, 0, { side: this.roundWinner });
+    }
+  }
+
+  // ---------------------------------------------------------------- bot
+  // drives one button like a human would: hold to charge, let go to back off / level out
+  const BOTS = {
+    easy: { react: 0.32, mistake: 0.25, backoff: 0.15 },
+    normal: { react: 0.16, mistake: 0.1, backoff: 0.35 },
+    hard: { react: 0.05, mistake: 0.02, backoff: 0.55 },
+  };
+  class Bot {
+    constructor(side, level, rng) { this.side = side; this.cfg = BOTS[level]; this.rng = rng || Math.random; this.hold = false; this.t = 0; this.plan = 0; this.planHold = true; }
+    decide(game) {
+      const me = game.cars[this.side], op = game.cars[1 - this.side], s = -me.f;
+      let a = me.a % (Math.PI * 2); if (a > Math.PI) a -= Math.PI * 2; if (a < -Math.PI) a += Math.PI * 2;
+      const tilt = a * s;         // > 0: nose up (holding the button rotates toward more nose-up)
+      if (!me.grounded) return tilt < -0.12 || tilt > 2.6;   // level out in the air
+      if (tilt > 0.75) return false;                          // about to backflip: drop the nose
+      const dx = (op.x - me.x) * me.f;                        // > 0 when the opponent is ahead
+      const edgeBehind = me.f > 0 ? me.x - DECK_L : DECK_R - me.x;
+      if (edgeBehind < 60) return true;                       // don't reverse into the sea
+      if (dx > 0 && dx < 150 && this.plan <= 0 && this.rng() < this.cfg.backoff * 0.04) { this.plan = 0.25 + this.rng() * 0.3; this.planHold = false; }
+      if (this.plan > 0) return this.planHold;
+      return true;
+    }
+    update(game, dt) {
+      this.t -= dt; this.plan -= dt;
+      if (this.t > 0) return this.hold;
+      this.t = this.cfg.react * (0.6 + this.rng() * 0.8);
+      let want = this.decide(game);
+      if (this.rng() < this.cfg.mistake) want = !want;
+      this.hold = want;
+      return this.hold;
+    }
+  }
+
+  return { Game, Bot, ISLAND, PARTS, partWorld, W, H, DECK_Y, DECK_L, DECK_R, WATER0, ROUND_TIME, WIN_SCORE };
+})();
+</script>
+
+<!-- ===================== RENDERING / INPUT ===================== -->
+<script>
+(function () {
+  'use strict';
+  const { Game, Bot, ISLAND, PARTS, partWorld, W, H, DECK_L, DECK_R, ROUND_TIME, WIN_SCORE } = CI;
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  if (isTouch) document.body.classList.add('touch');
+
+  let DPR = 1, scale = 1, ox = 0, oy = 0, VW = 0, VH = 0;
+  function resize() {
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    VW = window.innerWidth; VH = window.innerHeight;
+    cv.width = Math.round(VW * DPR); cv.height = Math.round(VH * DPR);
+    scale = Math.min(VW / W, VH / H);
+    ox = (VW - W * scale) / 2; oy = (VH - H * scale) / 2;
+  }
+  window.addEventListener('resize', resize); resize();
+
+  // ------------------------------------------------------------ state
+  let game = null, mode = '2p', botLevel = 'normal', bot = null, paused = false;
+  const held = [false, false];
+  const particles = [];
+  let banner = null;
+
+  function show(id) { for (const o of document.querySelectorAll('.overlay')) o.classList.toggle('show', o.id === id); }
+  function startMatch() {
+    game = new Game();
+    bot = mode === 'bot' ? new Bot(1, botLevel) : null;
+    document.getElementById('btnBlue').classList.toggle('bot', !!bot);
+    particles.length = 0; banner = null; paused = false;
+    show(null);
+    sound.init();
+  }
+  document.getElementById('btn2p').onclick = () => { mode = '2p'; startMatch(); };
+  document.getElementById('btnBot').onclick = () => show('ovDiff');
+  document.getElementById('btnDiffBack').onclick = () => show('ovMain');
+  for (const b of document.querySelectorAll('[data-diff]')) b.onclick = () => { mode = 'bot'; botLevel = b.dataset.diff; startMatch(); };
+  document.getElementById('btnRematch').onclick = startMatch;
+  document.getElementById('btnMenu').onclick = () => { game = null; show('ovMain'); };
+  document.getElementById('btnResume').onclick = () => setPause(false);
+  document.getElementById('btnQuit').onclick = () => { game = null; paused = false; show('ovMain'); };
+  document.getElementById('btnExit').onclick = () => { location.href = 'index.html'; };
+  function setPause(p) {
+    if (!game || game.state === 'gameover') return;
+    paused = p; show(p ? 'ovPause' : null);
+    held[0] = held[1] = false;
+  }
+
+  // ------------------------------------------------------------ input
+  const KEYS0 = ['KeyA', 'KeyW', 'Space', 'ShiftLeft'], KEYS1 = ['KeyL', 'ArrowUp', 'Enter', 'ShiftRight', 'ArrowRight'];
+  const keyDown = {};
+  window.addEventListener('keydown', e => {
+    if (KEYS0.includes(e.code) || KEYS1.includes(e.code)) e.preventDefault();
+    if (e.code === 'KeyP' || e.code === 'Escape') { setPause(!paused); return; }
+    keyDown[e.code] = true;
+    sound.init();
+  });
+  window.addEventListener('keyup', e => { keyDown[e.code] = false; });
+  window.addEventListener('blur', () => { for (const k in keyDown) keyDown[k] = false; if (game && game.state !== 'gameover' && !paused) setPause(true); });
+  const touchHeld = [false, false];
+  function bindBtn(id, i) {
+    const el = document.getElementById(id);
+    const on = e => { e.preventDefault(); touchHeld[i] = true; el.classList.add('down'); sound.init(); };
+    const off = e => { touchHeld[i] = false; el.classList.remove('down'); };
+    el.addEventListener('pointerdown', e => { el.setPointerCapture(e.pointerId); on(e); });
+    el.addEventListener('pointerup', off); el.addEventListener('pointercancel', off);
+  }
+  bindBtn('btnRed', 0); bindBtn('btnBlue', 1);
+  // on touch screens either half of the screen also works as that player's button
+  const halfTouches = new Map();
+  cv.addEventListener('pointerdown', e => { if (!game) return; halfTouches.set(e.pointerId, e.clientX < VW / 2 ? 0 : 1); sound.init(); });
+  const endHalf = e => halfTouches.delete(e.pointerId);
+  cv.addEventListener('pointerup', endHalf); cv.addEventListener('pointercancel', endHalf);
+
+  function readInput() {
+    held[0] = KEYS0.some(k => keyDown[k]) || touchHeld[0];
+    held[1] = KEYS1.some(k => keyDown[k]) || touchHeld[1];
+    for (const s of halfTouches.values()) held[bot ? 0 : s] = true;
+    if (bot) held[0] = held[0] || held[1];
+    document.getElementById('btnRed').classList.toggle('down', held[0]);
+    if (!bot) document.getElementById('btnBlue').classList.toggle('down', held[1]);
+  }
+
+  // ------------------------------------------------------------ sound
+  const sound = {
+    ctx: null, on: true,
+    init() {
+      if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+      try {
+        this.on = localStorage.getItem('crashItSound') !== 'off';
+      } catch (e) { /* ignore */ }
+      updateSoundBtn();
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+        this.ctx = new AC();
+        this.eng = [0, 1].map(() => {
+          const o = this.ctx.createOscillator(), g = this.ctx.createGain(), f = this.ctx.createBiquadFilter();
+          o.type = 'sawtooth'; f.type = 'lowpass'; f.frequency.value = 500; g.gain.value = 0;
+          o.connect(f); f.connect(g); g.connect(this.ctx.destination); o.start();
+          return { o, g };
+        });
+      } catch (e) { this.ctx = null; }
+    },
+    engines(cars, live) {
+      if (!this.ctx) return;
+      const t = this.ctx.currentTime;
+      cars.forEach((c, i) => {
+        const e = this.eng[i], gas = live && c.drive === 1;
+        e.o.frequency.setTargetAtTime((gas ? 70 : 45) + Math.min(60, Math.abs(c.spin) * 3) + i * 6, t, 0.06);
+        e.g.gain.setTargetAtTime(this.on && live ? (gas ? 0.035 : 0.015) : 0, t, 0.08);
+      });
+    },
+    noise(freq, dur, vol) {
+      if (!this.ctx || !this.on) return;
+      const c = this.ctx, len = Math.floor(c.sampleRate * dur), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+      const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+      s.buffer = buf; f.type = 'lowpass'; f.frequency.value = freq; g.gain.value = vol;
+      s.connect(f); f.connect(g); g.connect(c.destination); s.start();
+    },
+    tone(freq, dur, vol, type) {
+      if (!this.ctx || !this.on) return;
+      const c = this.ctx, o = c.createOscillator(), g = c.createGain(), t = c.currentTime;
+      o.type = type || 'square'; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur);
+    },
+  };
+  function updateSoundBtn() { document.getElementById('btnSound').textContent = sound.on ? '🔊' : '🔇'; }
+  document.getElementById('btnSound').onclick = e => {
+    sound.init(); sound.on = !sound.on; updateSoundBtn();
+    try { localStorage.setItem('crashItSound', sound.on ? 'on' : 'off'); } catch (err) { /* ignore */ }
+    e.target.blur();
+  };
+
+  // ------------------------------------------------------------ drawing
+  const COL = [{ body: '#e8413c', dark: '#a52520', helmet: '#e8413c' }, { body: '#3fb6e8', dark: '#1f7fae', helmet: '#3fb6e8' }];
+  function hash(n) { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+
+  const skyline = [];
+  for (let i = 0; i < 26; i++) skyline.push({ x: i * 52 + hash(i) * 20 - 20, w: 34 + hash(i + 9) * 40, h: 120 + hash(i + 3) * 230, layer: i % 2 });
+  const stones = [];
+  for (let i = 0; i < 70 && stones.length < 22; i++) {
+    const x = DECK_L + 40 + hash(i * 3.1) * (DECK_R - DECK_L - 80), y = CI.DECK_Y + 30 + hash(i * 7.7) * 200;
+    const d = CI.DECK_Y + (function () { let best = 0; for (const p of ISLAND.pts) if (Math.abs(p[0] - x) < 6) best = Math.max(best, p[1] - CI.DECK_Y); return best; })();
+    if (y + 40 < d) stones.push({ x, y, w: 12 + hash(i) * 8, h: 22 + hash(i + 1) * 30 });
+  }
+
+  function drawBackground(g) {
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#f6c6c0'); sky.addColorStop(1, '#f2aea8');
+    ctx.fillStyle = sky; ctx.fillRect(-W, -H, W * 3, H * 3);
+    ctx.fillStyle = 'rgba(255,240,200,0.6)'; ctx.beginPath(); ctx.arc(640, 360, 90, 0, Math.PI * 2); ctx.fill();
+    for (const b of skyline) {
+      ctx.fillStyle = b.layer ? '#d48fa8' : '#c37a98';
+      const top = g.water - b.h - (b.layer ? 30 : 0);
+      ctx.fillRect(b.x, top, b.w, H - top);
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      for (let wy = top + 12; wy < g.water - 20; wy += 22) for (let wx = b.x + 6; wx < b.x + b.w - 8; wx += 12) ctx.fillRect(wx, wy, 5, 9);
+    }
+  }
+  function drawWater(g) {
+    const y = g.water, t = performance.now() / 1000;
+    ctx.fillStyle = '#2f6fd6';
+    ctx.beginPath(); ctx.moveTo(-W, H * 2);
+    for (let x = -40; x <= W + 40; x += 20) ctx.lineTo(x, y + Math.sin(x * 0.03 + t * 2) * 3);
+    ctx.lineTo(W * 2, H * 2); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#6fb3ff'; ctx.lineWidth = 5;
+    ctx.beginPath();
+    for (let x = -40; x <= W + 40; x += 20) { const yy = y + Math.sin(x * 0.03 + t * 2) * 3; x === -40 ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy); }
+    ctx.stroke();
+  }
+  function drawIsland() {
+    ctx.fillStyle = '#4b4b50'; ctx.strokeStyle = '#2a2a2e'; ctx.lineWidth = 4; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ISLAND.pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#3c3c41';
+    for (const s of stones) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(s.x, s.y, s.w, s.h, 6) : ctx.rect(s.x, s.y, s.w, s.h); ctx.fill(); }
+  }
+  function drawCar(c) {
+    const col = COL[c.side];
+    ctx.save();
+    ctx.translate(c.x, c.y); ctx.rotate(c.a); ctx.scale(c.f, 1);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    // roll bar + driver
+    ctx.strokeStyle = '#2a2a2e'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(-26, -6); ctx.lineTo(-22, -21); ctx.lineTo(-12, -21); ctx.stroke();
+    ctx.fillStyle = '#f2c9a0'; ctx.beginPath(); ctx.arc(-5, -27, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = col.helmet; ctx.beginPath(); ctx.arc(-5, -28, 9.5, Math.PI * 1.05, Math.PI * 2.05); ctx.fill();
+    ctx.fillStyle = '#2a2a2e'; ctx.beginPath(); ctx.arc(-1, -26, 1.6, 0, Math.PI * 2); ctx.fill();
+    if (c.dead) { ctx.strokeStyle = '#2a2a2e'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-3, -28); ctx.lineTo(1, -24); ctx.moveTo(1, -28); ctx.lineTo(-3, -24); ctx.stroke(); }
+    // body
+    ctx.fillStyle = col.body; ctx.strokeStyle = '#2a2a2e'; ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-40, 6); ctx.lineTo(-40, -10); ctx.quadraticCurveTo(-38, -14, -30, -14);
+    ctx.lineTo(-14, -14); ctx.lineTo(-10, -8); ctx.lineTo(12, -10); ctx.lineTo(22, -18); ctx.lineTo(26, -18);
+    ctx.lineTo(28, -10); ctx.quadraticCurveTo(38, -9, 38, -2); ctx.lineTo(38, 6); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(-34, -4, 64, 3);
+    ctx.fillStyle = col.dark; ctx.fillRect(-40, 3, 78, 3);
+    ctx.restore();
+    // wheels
+    const P = { x: 0, y: 0 };
+    for (let k = 0; k < 2; k++) {
+      partWorld(c, PARTS[k], P);
+      ctx.fillStyle = '#2a2a2e'; ctx.beginPath(); ctx.arc(P.x, P.y, 12.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(P.x, P.y, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#2a2a2e'; ctx.lineWidth = 2;
+      const wa = c.wheelAngle || 0;
+      ctx.beginPath(); ctx.moveTo(P.x + Math.cos(wa) * 6, P.y + Math.sin(wa) * 6); ctx.lineTo(P.x - Math.cos(wa) * 6, P.y - Math.sin(wa) * 6); ctx.stroke();
+    }
+  }
+  function spawn(p) { if (particles.length < 400) particles.push(p); }
+  function drawParticles(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.life -= dt;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += (p.g || 0) * dt;
+      const a = Math.min(1, p.life / (p.max || 1) * 1.5);
+      if (p.kind === 'puff') { ctx.fillStyle = `rgba(255,255,255,${0.7 * a})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (1.6 - a * 0.6), 0, Math.PI * 2); ctx.fill(); }
+      else if (p.kind === 'drop') { ctx.fillStyle = `rgba(150,200,255,${a})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); }
+      else if (p.kind === 'star') {
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.life * 3);
+        ctx.fillStyle = `rgba(255,214,60,${a})`; ctx.beginPath();
+        for (let k = 0; k < 10; k++) { const rr = k % 2 ? p.r * 0.45 : p.r, an = k * Math.PI / 5; ctx.lineTo(Math.cos(an) * rr, Math.sin(an) * rr); }
+        ctx.closePath(); ctx.fill(); ctx.restore();
+      } else if (p.kind === 'text') {
+        ctx.font = '900 34px system-ui, sans-serif'; ctx.textAlign = 'center';
+        ctx.lineWidth = 6; ctx.strokeStyle = `rgba(42,42,46,${a})`; ctx.strokeText(p.text, p.x, p.y);
+        ctx.fillStyle = `rgba(255,255,255,${a})`; ctx.fillText(p.text, p.x, p.y);
+      }
+    }
+  }
+
+  function pill(x, y, w, h) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, h / 2) : ctx.rect(x, y, w, h); }
+  function drawHud(g) {
+    // score pill
+    ctx.fillStyle = '#fff'; pill(W / 2 - 62, 14, 124, 46); ctx.fill();
+    ctx.font = '900 30px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#e8413c'; ctx.fillText(g.score[0], W / 2 - 28, 38);
+    ctx.fillStyle = '#2a2a2e'; ctx.fillText('·', W / 2, 36);
+    ctx.fillStyle = '#2f8fe0'; ctx.fillText(g.score[1], W / 2 + 28, 38);
+    ctx.font = '800 13px system-ui, sans-serif'; ctx.fillStyle = 'rgba(42,42,46,0.7)';
+    ctx.fillText(`FIRST TO ${WIN_SCORE}`, W / 2, 74);
+    // round timer
+    if (g.state === 'play' || g.state === 'roundover') {
+      const left = ROUND_TIME - g.t;
+      ctx.font = '900 18px system-ui, sans-serif';
+      if (left > 0) { ctx.fillStyle = left < 5 ? '#e8413c' : 'rgba(42,42,46,0.75)'; ctx.fillText(Math.ceil(left) + 's', W / 2, 96); }
+      else { ctx.fillStyle = '#2f6fd6'; ctx.fillText('🌊 WATER RISING!', W / 2, 96); }
+    }
+    if (g.state === 'countdown') {
+      const n = 3 - Math.floor(g.stateT);
+      const k = g.stateT % 1;
+      ctx.font = `900 ${110 + 40 * (1 - k)}px system-ui, sans-serif`;
+      ctx.lineWidth = 10; ctx.strokeStyle = '#2a2a2e'; ctx.strokeText(n, W / 2, 200);
+      ctx.fillStyle = '#fff'; ctx.fillText(n, W / 2, 200);
+    }
+    if (banner && banner.t > 0) {
+      const a = Math.min(1, banner.t * 3);
+      ctx.globalAlpha = a;
+      ctx.font = '900 64px system-ui, sans-serif';
+      ctx.lineWidth = 10; ctx.strokeStyle = '#2a2a2e'; ctx.strokeText(banner.text, W / 2, 200);
+      ctx.fillStyle = banner.color; ctx.fillText(banner.text, W / 2, 200);
+      if (banner.sub) { ctx.font = '800 22px system-ui, sans-serif'; ctx.lineWidth = 6; ctx.strokeText(banner.sub, W / 2, 252); ctx.fillStyle = '#fff'; ctx.fillText(banner.sub, W / 2, 252); }
+      ctx.globalAlpha = 1;
+    }
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  function handleEvents(g) {
+    for (const e of g.events.splice(0)) {
+      if (e.type === 'go') { banner = { text: 'GO!', color: '#ffd23c', t: 0.8 }; sound.tone(880, 0.25, 0.08); }
+      if (e.type === 'crash') { sound.noise(900, 0.15, Math.min(0.5, e.power / 1500)); for (let k = 0; k < 6; k++) spawn({ kind: 'star', x: e.x, y: e.y, vx: (Math.random() - 0.5) * 300, vy: -Math.random() * 250, g: 900, r: 5, life: 0.5, max: 0.5 }); }
+      if (e.type === 'bonk') {
+        sound.noise(400, 0.3, 0.6); sound.tone(220, 0.3, 0.08, 'triangle');
+        spawn({ kind: 'text', text: 'BONK!', x: e.x, y: e.y - 30, vx: 0, vy: -60, life: 1.2, max: 1.2 });
+        for (let k = 0; k < 10; k++) spawn({ kind: 'star', x: e.x, y: e.y, vx: (Math.random() - 0.5) * 500, vy: -Math.random() * 400, g: 900, r: 7, life: 0.8, max: 0.8 });
+      }
+      if (e.type === 'splash') {
+        sound.noise(1500, 0.5, 0.5);
+        for (let k = 0; k < 30; k++) spawn({ kind: 'drop', x: e.x + (Math.random() - 0.5) * 40, y: e.y, vx: (Math.random() - 0.5) * 300, vy: -200 - Math.random() * 350, g: 1200, r: 3 + Math.random() * 4, life: 1, max: 1 });
+      }
+      if (e.type === 'point') {
+        const red = e.side === 0;
+        banner = { text: (red ? 'RED' : 'BLUE') + ' SCORES!', color: red ? '#e8413c' : '#3fb6e8', t: 2, sub: g.score[0] + ' · ' + g.score[1] };
+        sound.tone(red ? 660 : 784, 0.15, 0.08); setTimeout(() => sound.tone(red ? 990 : 1175, 0.25, 0.08), 140);
+      }
+      if (e.type === 'draw') { banner = { text: 'DRAW!', color: '#fff', t: 2, sub: 'Nobody scores' }; sound.tone(330, 0.3, 0.08); }
+      if (e.type === 'gameover') {
+        const red = g.winner === 0;
+        document.getElementById('overTitle').textContent = mode === 'bot' ? (red ? 'YOU WIN! 🏆' : 'BOT WINS! 🤖') : (red ? 'RED WINS! 🏆' : 'BLUE WINS! 🏆');
+        document.getElementById('overTitle').style.color = red ? '#e8413c' : '#2f8fe0';
+        document.getElementById('overScore').innerHTML = `<span class="r">${g.score[0]}</span> · <span class="b">${g.score[1]}</span>`;
+        document.getElementById('overText').textContent = mode === 'bot' ? `vs ${botLevel.toUpperCase()} bot` : 'Rematch?';
+        setTimeout(() => { if (game === g) show('ovOver'); }, 600);
+      }
+    }
+  }
+
+  // ------------------------------------------------------------ loop
+  let last = performance.now(), acc = 0;
+  const STEP = 1 / 120;
+  const demo = new Game(); // menu background
+  function frame(now) {
+    let dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const g = game || demo;
+    readInput();
+    if (!paused) {
+      acc += dt;
+      while (acc >= STEP) {
+        let inp = [held[0], held[1]];
+        if (bot) inp[1] = bot.update(g, STEP);
+        if (!game) inp = [Math.sin(now / 700) > -0.3, Math.sin(now / 650 + 2) > -0.3];
+        g.tick(STEP, inp);
+        acc -= STEP;
+      }
+      if (!game && g.state === 'gameover') { g.score = [0, 0]; g.newRound(); }
+      if (banner) banner.t -= dt;
+      // exhaust
+      if (g.state === 'play') for (const c of g.cars) if (c.drive === 1 && !c.dead && Math.random() < 0.5) {
+        const P = { x: 0, y: 0 }; partWorld(c, [-42, 2, 0], P);
+        spawn({ kind: 'puff', x: P.x, y: P.y, vx: -c.f * 40 + (Math.random() - 0.5) * 20, vy: -20, r: 4, life: 0.5, max: 0.5 });
+      }
+    } else dt = 0;
+    if (game) handleEvents(g); else g.events.length = 0;
+    sound.engines(g.cars, !!game && !paused && g.state === 'play');
+
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.fillStyle = '#f2aea8'; ctx.fillRect(0, 0, VW, VH);
+    ctx.setTransform(DPR * scale, 0, 0, DPR * scale, DPR * ox, DPR * oy);
+    drawBackground(g);
+    drawIsland();
+    for (const c of g.cars) drawCar(c);
+    drawWater(g);
+    drawParticles(dt);
+    if (game) drawHud(g);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# --- not part of the games
+# a Python virtual environment
+path/
+# reference photos / floor plans / documents for TJ Hide and Seek (private)
+tj_hide_side/
+node_modules/
+.DS_Store
+
+# --- backups and old copies
+*.bak
+*.bak-*
+*_backup.*
+*_backup_*
+
+# --- player data (names and scores), not code
+snake_scores*.json
+
+# --- local secrets, if any are ever moved into files
+.env
+.env.*
+*.secret
+secrets.php

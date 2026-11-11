@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-L8GMZRR0GY');
+    </script>
+    <title>Key Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #222;
+            color: #fff;
+        }
+        #output {
+            background: #333;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            min-height: 200px;
+        }
+        .key-info {
+            margin: 10px 0;
+            padding: 10px;
+            background: #444;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Keyboard Test - Press Option + Shift + =</h1>
+    <p>Press any key combination to see the details:</p>
+    <div id="output"></div>
+
+    <script>
+        const output = document.getElementById('output');
+        
+        window.addEventListener('keydown', (e) => {
+            const info = document.createElement('div');
+            info.className = 'key-info';
+            info.innerHTML = `
+                <strong>Key Pressed:</strong><br>
+                e.key: "${e.key}"<br>
+                e.code: "${e.code}"<br>
+                e.shiftKey: ${e.shiftKey}<br>
+                e.altKey: ${e.altKey}<br>
+                e.ctrlKey: ${e.ctrlKey}<br>
+                e.metaKey: ${e.metaKey}<br>
+                <br>
+                <strong>Cheat Check:</strong> ${(e.key === '+' || e.key === '=') && e.shiftKey && e.altKey ? '✅ MATCH!' : '❌ No match'}
+            `;
+            output.insertBefore(info, output.firstChild);
+            
+            // Keep only last 5 entries
+            while (output.children.length > 5) {
+                output.removeChild(output.lastChild);
+            }
+        });
+    </script>
+</body>
+</html>

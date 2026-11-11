@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mud Runner 2D - Crawler Physics Off-Road Game | OICrusher</title>
+  <meta name="description" content="Mud Runner 2D: a physics-driven off-road crawler game. Real suspension, open and locked diffs, deformable mud, a winch that can snap, and plenty of hilarious physics fails. Play free in your browser.">
+  <meta name="keywords" content="mud runner 2d, crawler physics, off-road game, hill climb, 4x4 game, physics driving game, winch, rock crawler, browser game">
+  <meta name="author" content="OICrusher Games">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://oicrusher.me/game/mud_runner.html">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://oicrusher.me/game/mud_runner.html">
+  <meta property="og:title" content="Mud Runner 2D - Crawler Physics">
+  <meta property="og:description" content="Feather the throttle, shift your weight, lock the diff and winch your way through deformable mud, rock gardens and sand dunes.">
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://oicrusher.me/game/mud_runner.html">
+  <meta property="twitter:title" content="Mud Runner 2D - Crawler Physics">
+  <meta property="twitter:description" content="Physics off-road crawler: real suspension, deformable mud, a winch that snaps.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; background: #1b1410; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif; color: #fff; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+    canvas { display: block; position: fixed; inset: 0; width: 100vw; height: 100vh; touch-action: none; }
+
+    .topbar { position: fixed; right: 12px; bottom: 10px; z-index: 5; display: flex; gap: 8px; }
+    .topbar a, .topbar button {
+      color: #fff; text-decoration: none; font-size: 13px; background: rgba(0,0,0,0.38);
+      border: 1px solid rgba(255,255,255,0.18); border-radius: 18px; padding: 5px 12px; cursor: pointer; font-family: inherit;
+    }
+    .topbar a:hover, .topbar button:hover { background: rgba(0,0,0,0.6); }
+
+    .overlay {
+      position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center;
+      background: rgba(20,12,6,0.62); backdrop-filter: blur(3px); padding: 16px;
+    }
+    .overlay.show { display: flex; }
+    .panel {
+      background: linear-gradient(160deg, #3b2a1c, #22170f); border: 2px solid #8a6238; border-radius: 18px;
+      max-width: 620px; width: 100%; padding: 26px 26px 22px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      max-height: calc(100vh - 32px); overflow-y: auto;
+    }
+    .panel h1 { font-size: 2.3em; letter-spacing: 1px; color: #ffcf5a; text-shadow: 0 3px 0 #7a3d00, 0 0 24px rgba(255,180,60,0.35); line-height: 1.1; }
+    .panel h1 small { display: block; font-size: 0.42em; color: #e8c79a; letter-spacing: 4px; text-shadow: none; margin-top: 6px; }
+    .panel h2 { font-size: 1.9em; color: #ff8a4a; margin-bottom: 4px; }
+    .panel p { color: #ecdcc6; line-height: 1.5; margin: 10px 0; }
+    .controls { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; text-align: left; margin: 16px auto; max-width: 470px; font-size: 14px; color: #f3e6d4; }
+    .controls kbd { background: #f3e6d4; color: #2a1a0c; border-radius: 5px; padding: 1px 7px; font-family: inherit; font-weight: 700; font-size: 12px; box-shadow: 0 2px 0 #8a6238; white-space: nowrap; }
+    .tips { font-size: 13px; color: #cdb596; }
+    .big { font-size: 3.2em; font-weight: 800; color: #ffcf5a; text-shadow: 0 3px 0 #7a3d00; }
+    .btn {
+      display: inline-block; margin: 8px 6px 0; padding: 12px 30px; border-radius: 40px; border: none; cursor: pointer;
+      font-size: 17px; font-weight: 800; font-family: inherit; color: #2a1606;
+      background: linear-gradient(180deg, #ffd66b, #f39a1d); box-shadow: 0 4px 0 #8a4a00, 0 8px 20px rgba(0,0,0,0.4);
+    }
+    .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #8a4a00; }
+    .btn.alt { background: linear-gradient(180deg, #d9c8b2, #a38b6d); box-shadow: 0 4px 0 #5a4630; text-decoration: none; }
+    .lb { margin: 14px auto 0; max-width: 420px; max-height: 300px; overflow-y: auto; text-align: left; }
+    .lb h3 { color: #ffcf5a; font-size: 16px; margin-bottom: 8px; text-align: center; letter-spacing: 1px; }
+    .lb-row { display: flex; align-items: center; gap: 10px; padding: 6px 10px; margin: 4px 0; border-radius: 8px;
+      background: rgba(255,255,255,0.06); border-left: 3px solid #8a6238; font-size: 14px; color: #f3e6d4; }
+    .lb-row.top3 { background: rgba(255,207,90,0.14); border-left-color: #ffcf5a; }
+    .lb-row.me { background: rgba(95,209,111,0.25); border-left-color: #5fd16f; }
+    .lb-rank { min-width: 34px; font-weight: 800; color: #cdb596; }
+    .lb-row.top3 .lb-rank { color: #ffcf5a; }
+    .lb-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb-score { font-weight: 800; color: #ffd66b; }
+    .lb-empty { text-align: center; color: #cdb596; font-size: 14px; padding: 8px; }
+    .name-entry { margin: 12px auto 0; max-width: 420px; padding: 12px; border-radius: 12px; background: rgba(95,209,111,0.12); border: 1px solid rgba(95,209,111,0.5); }
+    .name-entry p { margin: 0 0 8px; font-weight: 700; color: #b9f5c2; }
+    .name-entry input { width: 60%; max-width: 230px; padding: 9px 12px; border-radius: 20px; border: 2px solid #8a6238; background: #f3e6d4;
+      color: #2a1a0c; font-size: 16px; font-family: inherit; font-weight: 700; outline: none; user-select: text; -webkit-user-select: text; }
+    .name-entry .btn { padding: 9px 20px; font-size: 15px; margin: 6px 0 0 6px; }
+    .name-entry .status { font-size: 13px; color: #ffd0b0; margin-top: 6px; min-height: 1em; }
+    .touch-only { display: none; }
+    body.touch .touch-only { display: block; }
+    body.touch .controls.touch-only { display: grid; }
+    body.touch .desk-only { display: none; }
+
+    /* touch controls */
+    #touch { display: none; position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+    body.touch #touch { display: block; }
+    .tbtn {
+      position: absolute; pointer-events: auto; border-radius: 16px; background: rgba(0,0,0,0.32); border: 2px solid rgba(255,255,255,0.35);
+      color: #fff; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; text-align: center;
+      touch-action: none;
+    }
+    .tbtn.on { background: rgba(255,190,60,0.55); border-color: #ffd66b; }
+    #pedalGas { right: 14px; bottom: 16px; width: 74px; height: 170px; flex-direction: column; overflow: hidden; }
+    #pedalGas .fill { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(0deg, #3bd16f, #f2d43a 70%, #ff5a3a); opacity: 0.75; height: 0%; }
+    #pedalGas span { position: relative; }
+    #pedalBrake { left: 14px; bottom: 16px; width: 74px; height: 110px; }
+    #leanBack { left: 100px; bottom: 16px; width: 58px; height: 58px; border-radius: 50%; font-size: 20px; }
+    #leanFwd { right: 100px; bottom: 16px; width: 58px; height: 58px; border-radius: 50%; font-size: 20px; }
+    #bWinch { right: 100px; bottom: 86px; width: 70px; height: 40px; }
+    #bReel { right: 100px; bottom: 134px; width: 70px; height: 40px; }
+    #bDiff { left: 100px; bottom: 86px; width: 58px; height: 40px; }
+    #bRange { left: 100px; bottom: 134px; width: 58px; height: 40px; }
+    #bTilt { left: 14px; bottom: 134px; width: 74px; height: 40px; font-size: 11px; }
+    body.touch .topbar { bottom: auto; top: 70px; left: 8px; right: auto; }
+  </style>
+  <script src="identity.js?v=2"></script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="topbar">
+  <a href="index.html">← Games</a>
+  <button id="btnLb" type="button">🏆 Top 20</button>
+  <button id="btnMute" type="button">🔊 Sound</button>
+  <button id="btnPause" type="button">⏸ Pause</button>
+</div>
+
+<div id="touch">
+  <div class="tbtn" id="pedalGas"><div class="fill" id="gasFill"></div><span>GAS</span><span style="font-size:10px;opacity:.8">slide ↕</span></div>
+  <div class="tbtn" id="pedalBrake">BRAKE<br>/ REV</div>
+  <div class="tbtn" id="leanBack">⟲</div>
+  <div class="tbtn" id="leanFwd">⟳</div>
+  <div class="tbtn" id="bWinch">WINCH</div>
+  <div class="tbtn" id="bReel">REEL ⟵</div>
+  <div class="tbtn" id="bDiff">DIFF</div>
+  <div class="tbtn" id="bRange">LOW</div>
+  <div class="tbtn" id="bTilt">TILT: OFF</div>
+</div>
+
+<div class="overlay show" id="startOv">
+  <div class="panel">
+    <h1>MUD RUNNER 2D<small>CRAWLER PHYSICS</small></h1>
+    <p>Get your crawler as far as you can. Every bump flexes the suspension, mud gives way under the tires, and a spinning wheel digs itself in. Keep the throttle light, shift your weight, lock the diff, and winch out when you're buried.</p>
+    <div class="controls desk-only">
+      <kbd>→ / D</kbd><span>Throttle (hold to build up, tap to feather)</span>
+      <kbd>← / A</kbd><span>Brake, then reverse</span>
+      <kbd>↑ / W &nbsp; ↓ / S</kbd><span>Lean forward / back (shifts CoM)</span>
+      <kbd>E</kbd><span>Winch: hook to nearest tree/boulder, or unhook</span>
+      <kbd>Space</kbd><span>Reel winch in (hold) · <kbd>X</kbd> pay out</span>
+      <kbd>L</kbd><span>Lock / unlock differentials</span>
+      <kbd>G</kbd><span>Transfer case: LOW / HIGH range</span>
+      <kbd>R</kbd><span>Restart · <kbd>P</kbd> pause · <kbd>M</kbd> mute</span>
+    </div>
+    <div class="controls touch-only">
+      <span><b>GAS</b></span><span>Slide your finger up the pedal. Higher means more throttle.</span>
+      <span><b>⟲ ⟳</b></span><span>Lean back / forward (or turn on TILT)</span>
+      <span><b>WINCH</b></span><span>Hook / unhook · hold <b>REEL</b> to pull</span>
+      <span><b>DIFF / LOW</b></span><span>Lock diffs · switch range</span>
+    </div>
+    <p class="tips">The run ends if you flip, stay stuck for too long, or snap an axle on a hard landing.</p>
+    <button class="btn" id="btnStart" type="button">START ENGINE</button>
+    <button class="btn alt" id="btnStartLb" type="button">🏆 Leaderboard</button>
+  </div>
+</div>
+
+<div class="overlay" id="overOv">
+  <div class="panel">
+    <h2 id="overTitle">FLIPPED</h2>
+    <p id="overText"></p>
+    <div class="big" id="overDist">0 m</div>
+    <p id="overBest"></p>
+    <div class="name-entry" id="nameEntry" style="display:none">
+      <p>🎉 You made the Top 20! Enter your name:</p>
+      <input type="text" id="nameInput" maxlength="20" placeholder="Your name" autocomplete="nickname">
+      <button class="btn" id="btnSubmit" type="button">Submit</button>
+      <div class="status" id="nameStatus"></div>
+    </div>
+    <button class="btn" id="btnRetry" type="button">TRY AGAIN (R)</button>
+    <a class="btn alt" href="index.html">More games</a>
+    <div class="lb" id="overLb"></div>
+  </div>
+</div>
+
+<div class="overlay" id="lbOv">
+  <div class="panel">
+    <h2>🏆 TOP 20 MUD RUNNERS</h2>
+    <div class="lb" id="mainLb"></div>
+    <button class="btn" id="btnLbClose" type="button">CLOSE</button>
+  </div>
+</div>
+
+<!-- ===================== SIMULATION (no DOM) ===================== -->
+<script id="sim">
+const CP = (function () {
+  'use strict';
+  const DX = 0.1, G = 9.81;
+  const ROCK = 0, DIRT = 1, SAND = 2, MUD = 3, WOOD = 4;
+  // B0/B1: bearing capacity (N) before the ground yields, growing with compaction (N per m compressed)
+  const MATS = [
+    { name: 'Rock', mu: 0.95, B0: 1e12, B1: 0, dig: 0, crr: 0.012, drag: 0, soft: false },
+    { name: 'Dirt', mu: 0.85, B0: 9500, B1: 160000, dig: 0.6e-6, crr: 0.02, drag: 0, soft: true },
+    { name: 'Sand', mu: 0.62, B0: 5200, B1: 50000, dig: 1.7e-6, crr: 0.075, drag: 250, visc: 120, soft: true },
+    { name: 'Mud', mu: 0.42, B0: 3200, B1: 32000, dig: 4.5e-6, crr: 0.05, drag: 900, visc: 650, soft: true },
+    { name: 'Log', mu: 0.55, B0: 1e12, B1: 0, dig: 0, crr: 0.015, drag: 0, soft: false },
+  ];
+  const COMPRESS_RATE = 1.5e-4;      // m of sinkage per N of excess load per second
+  const KT = 220000, CT = 3200;      // tire radial stiffness / damping
+  const KH = 600000, CH = 15000;     // chassis body contact
+  const S0 = 0.03;                   // friction regularisation (m/s)
+  const KC = 120000, CC = 6000;      // winch cable stiffness / damping
+  const WINCH_RANGE = 30, WINCH_STALL = 32000, WINCH_SPEED = 1.1;
+  const DMG_T = 25000, DMG_K = 1 / 1600; // bump-stop force above DMG_T damages the axle
+  const STUCK_LIMIT = 8, FLIP_LIMIT = 1.8;   // seconds before the run ends
+  const RANGES = {
+    LOW: { T: 7200, vTop: 6.5, eb: 750, name: 'LOW' },
+    HIGH: { T: 2700, vTop: 19, eb: 140, name: 'HIGH' },
+  };
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  const smooth = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+  const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+  function makeNoise(rng) {
+    const p = new Float32Array(1024);
+    for (let i = 0; i < 1024; i++) p[i] = rng() * 2 - 1;
+    return x => {
+      const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f);
+      const a = p[i & 1023], b = p[(i + 1) & 1023];
+      return a + (b - a) * u;
+    };
+  }
+
+  // ---------------------------------------------------------------- Terrain
+  class Terrain {
+    constructor(seed) {
+      this.rng = mulberry32(seed);
+      this.noise = makeNoise(this.rng);
+      this.cap = 8192;
+      this.surf = new Float32Array(this.cap);   // current (deformed) surface
+      this.hard = new Float32Array(this.cap);   // bedrock under the soft layer
+      this.orig = new Float32Array(this.cap);   // undisturbed surface (for compaction / sinkage)
+      this.mat = new Uint8Array(this.cap);
+      this.n = 0;
+      this.cy = 0;
+      this.obstacles = [];
+      this.trees = [];
+      this.anchors = [];
+      this.sections = [];
+      this.nextTree = 30;
+      this.last = '';
+    }
+    grow() {
+      const c = this.cap * 2;
+      for (const k of ['surf', 'hard', 'orig']) { const a = new Float32Array(c); a.set(this[k]); this[k] = a; }
+      const m = new Uint8Array(c); m.set(this.mat); this.mat = m;
+      this.cap = c;
+    }
+    gn(x) {
+      const amp = 0.3 + 0.45 * Math.min(1, x / 1500);
+      return amp * (this.noise(x / 9) * 0.75 + this.noise(x / 3.3 + 70) * 0.25);
+    }
+    difficulty() { const x = this.n * DX; return Math.min(2.2, 0.35 * Math.min(1, x / 150) + x / 600); }
+    push(hard, soft, mat) {
+      if (this.n >= this.cap) this.grow();
+      const i = this.n++;
+      this.hard[i] = hard; this.surf[i] = hard + soft; this.orig[i] = hard + soft; this.mat[i] = mat;
+    }
+    // fn(t, x) -> [h, soft, mat]; h relative to the running cursor height
+    section(len, kind, fn) {
+      const cnt = Math.max(2, Math.round(len / DX));
+      const x0 = this.n * DX;
+      for (let k = 0; k < cnt; k++) {
+        const x = this.n * DX;
+        const r = fn(k / cnt, x, k * DX);
+        this.push(this.cy + r[0] + this.gn(x), r[1], r[2]);
+      }
+      this.cy += fn(1, this.n * DX, cnt * DX)[0];
+      if (kind) this.sections.push({ x0, x1: this.n * DX, kind });
+    }
+    ensure(x) {
+      while (this.n * DX < x) this.genNext();
+    }
+    genNext() {
+      const r = this.rng, D = this.difficulty();
+      const x0 = this.n * DX;
+      if (x0 < 1) { this.flat(40); return; }
+      const opts = [
+        ['hills', 1.5], ['climb', 1.2 + 2 * D], ['mud', 2.2 + 2.4 * D], ['rocks', 1.2 + 2 * D], ['sand', 1.2],
+        ['logs', 1 + D], ['boulder', 0.8 + D], ['ditch', 0.8 + 1.5 * D], ['ledge', 0.6 + 1.6 * D], ['flat', Math.max(0.1, 0.8 - D)],
+      ].filter(o => o[0] !== this.last);
+      let tot = 0; for (const o of opts) tot += o[1];
+      let p = r() * tot, kind = opts[0][0];
+      for (const o of opts) { p -= o[1]; if (p <= 0) { kind = o[0]; break; } }
+      this.last = kind;
+      this[kind](D);
+      this.flat(Math.max(1.5, 5 - 3 * D) + r() * 3);
+      this.placeTrees();
+    }
+    flat(len) {
+      this.section(len, null, () => [0, 0.05, DIRT]);
+    }
+    hills(D) {
+      const r = this.rng, n = 2 + Math.floor(r() * 3);
+      for (let i = 0; i < n; i++) {
+        const w = 12 + r() * 18, a = (0.8 + r() * 2.2) * (1 + 0.8 * D) * (r() < 0.6 ? 1 : -0.7);
+        if (r() < 0.35) this.section(w, 'hills', t => [a * smooth(t), 0.05, DIRT]);
+        else this.section(w, 'hills', t => [a * (1 - Math.cos(2 * Math.PI * t)) / 2, 0.05, DIRT]);
+      }
+    }
+    climb(D) {
+      const r = this.rng;
+      const H = (3 + 6 * D) * (0.7 + 0.6 * r());
+      const ang = Math.min(42, 24 + 14 * D + r() * 8) * Math.PI / 180;
+      const L = 1.5 * H / Math.tan(ang);
+      const m = r() < 0.5 ? ROCK : DIRT;
+      const rough = m === ROCK ? 0.07 + 0.1 * D : 0;
+      const nz = this.noise;
+      this.section(L, 'climb', (t, x) => [H * smooth(t) + (t > 0 && t < 1 ? rough * nz(x * 1.9 + 300) : 0), m === ROCK ? 0 : 0.05, m]);
+      const top = 5 + r() * 6;
+      const tx = this.n * DX + top * (0.4 + 0.4 * r());
+      this.section(top, null, () => [0, 0.05, DIRT]);
+      if (r() < 0.6 - 0.2 * D) this.addTree(tx, true);
+      const H2 = -H * (0.35 + 0.65 * r());
+      const L2 = 1.5 * Math.abs(H2) / Math.tan(ang * (0.8 + 0.4 * r()));
+      this.section(L2, 'descent', (t, x) => [H2 * smooth(t) + (t > 0 && t < 1 ? rough * nz(x * 1.9 + 300) : 0), m === ROCK ? 0 : 0.05, m]);
+    }
+    mud(D) {
+      const r = this.rng;
+      const L = 12 + r() * 10 + D * 18;
+      const depth = 0.65 + 0.55 * D + r() * 0.35;
+      const sd = 0.08 + 0.12 * r();
+      const e = 0.18;
+      this.section(L, 'mud', t => {
+        const b = smooth(t / e) * smooth((1 - t) / e);
+        const hard = -depth * b, surf = -sd * b;
+        return [hard, surf - hard, b > 0.03 ? MUD : DIRT];
+      });
+      if (r() < 0.8 - 0.3 * D) this.addTree(this.n * DX + 2 + r() * 5, true);
+    }
+    rocks(D) {
+      const r = this.rng;
+      const L = 12 + r() * 14 + D * 10;
+      const list = [];
+      for (let u = 1 + r(); u < L - 1; u += 0.5 + r() * 1.2) {
+        list.push([u, 0.5 + r() * 1.3, Math.min(1.0, (0.15 + r() * 0.33) * (1 + 1.4 * D))]);
+      }
+      this.section(L, 'rocks', (t, x, u) => {
+        let h = 0;
+        for (const k of list) {
+          const d = Math.abs(u - k[0]) / (k[1] / 2);
+          if (d < 1) h = Math.max(h, k[2] * Math.pow(Math.cos(d * Math.PI / 2), 0.6));
+        }
+        return [h, 0, ROCK];
+      });
+    }
+    sand(D) {
+      const r = this.rng, n = 2 + Math.floor(r() * 3);
+      this.section(2, 'sand', t => [0, 0.05 + 0.55 * t, SAND]);
+      for (let i = 0; i < n; i++) {
+        const w = 8 + r() * 9, a = (0.8 + r() * 1.8) * (1 + 0.5 * D);
+        this.section(w, 'sand', t => [a * (1 - Math.cos(2 * Math.PI * t)) / 2, 0.6, SAND]);
+      }
+      this.section(2, 'sand', t => [0, 0.6 - 0.55 * t, SAND]);
+    }
+    logs(D) {
+      const r = this.rng, L = 14 + r() * 6, x0 = this.n * DX;
+      this.section(L, 'logs', () => [0, 0.05, DIRT]);
+      const k = 1 + Math.floor(r() * (2 + D));
+      for (let i = 0; i < k; i++) {
+        const x = x0 + 3 + (L - 6) * (k === 1 ? 0.5 : i / (k - 1));
+        const rad = 0.22 + r() * 0.2 + 0.16 * D;
+        this.obstacles.push({ x, y: this.heightAt(x) + rad * 0.85, r: rad, mat: WOOD, kind: 'log', seed: r() });
+      }
+    }
+    boulder(D) {
+      const r = this.rng, L = 10 + r() * 4, x0 = this.n * DX;
+      this.section(L, 'boulder', () => [0, 0.05, DIRT]);
+      const x = x0 + L / 2, rad = 0.65 + r() * 0.35 + 0.45 * D;
+      const o = { x, y: this.heightAt(x) - rad * 0.2, r: rad, mat: ROCK, kind: 'boulder', seed: r() };
+      this.obstacles.push(o);
+      this.anchors.push({ kind: 'boulder', ref: o, x: o.x, y: o.y, strength: Infinity, dead: false });
+    }
+    ditch(D) {
+      const r = this.rng, L = 4 + r() * 4 + D * 2, depth = 0.8 + r() * 0.6 + 1.2 * D;
+      const muddy = r() < 0.4;
+      this.section(L, 'ditch', t => {
+        const b = Math.pow(Math.sin(Math.PI * t), 1.4);
+        const soft = muddy ? 0.35 * b : 0.05;
+        return [-depth * b + soft - 0.05, soft, muddy && b > 0.3 ? MUD : DIRT];
+      });
+    }
+    ledge(D) {
+      const r = this.rng, H = 0.35 + r() * 0.4 + 0.55 * D;
+      this.section(0.3 + r() * 0.35, 'ledge', t => [H * smooth(t), 0, ROCK]);
+      const nz = this.noise;
+      this.section(4 + r() * 5, 'ledge', (t, x) => [0.05 * nz(x * 3 + 11), 0, ROCK]);
+      if (r() < 0.5) {
+        const H2 = -(0.3 + r() * 0.5 + 0.4 * D);
+        this.section(0.4 + r() * 0.4, 'ledge', t => [H2 * smooth(t), 0, ROCK]);
+      }
+    }
+    addTree(x, anchor) {
+      // trunks stand beside the trail (no collision); thicker trunks hold more
+      const r = this.rng;
+      const tr = 0.13 + r() * 0.22;
+      const t = {
+        x, y: 0, h: 5 + r() * 4.5, tr, seed: r(), alive: true, fall: 0, fallDir: 1,
+        strength: 6000 + tr * tr * 280000,
+      };
+      t.y = x < this.n * DX ? this.heightAt(x) : null;
+      this.trees.push(t);
+      const a = { kind: 'tree', ref: t, x, y: 0, strength: t.strength, dead: false };
+      this.anchors.push(a);
+      return t;
+    }
+    placeTrees() {
+      const D = this.difficulty();
+      while (this.nextTree < this.n * DX - 1) {
+        const x = this.nextTree;
+        if (this.mat[Math.floor(x / DX)] !== MUD) this.addTree(x, true);
+        this.nextTree += 28 + this.rng() * 35 + D * 35;
+      }
+      for (const t of this.trees) if (t.y === null && t.x < this.n * DX) t.y = this.heightAt(t.x);
+      for (const a of this.anchors) if (a.kind === 'tree' && a.ref.y !== null) a.y = a.ref.y + 1.0;
+    }
+    idx(x) { return clamp(Math.floor(x / DX), 0, this.n - 2); }
+    heightAt(x) {
+      const i = this.idx(x), t = clamp(x / DX - i, 0, 1);
+      return this.surf[i] + (this.surf[i + 1] - this.surf[i]) * t;
+    }
+    origAt(x) {
+      const i = this.idx(x), t = clamp(x / DX - i, 0, 1);
+      return this.orig[i] + (this.orig[i + 1] - this.orig[i]) * t;
+    }
+    matAt(x) { return this.mat[clamp(Math.round(x / DX), 0, this.n - 1)]; }
+    normalAt(x, out) {
+      const i = this.idx(x), dy = this.surf[i + 1] - this.surf[i], L = Math.hypot(DX, dy);
+      out.x = -dy / L; out.y = DX / L;
+      return out;
+    }
+    // circle vs surface polyline. Interior-segment and convex-vertex contacts.
+    circleContacts(cx, cy, r, out, k) {
+      const s = this.surf;
+      const i0 = Math.max(0, Math.floor((cx - r) / DX)), i1 = Math.min(this.n - 1, Math.ceil((cx + r) / DX));
+      const r2 = r * r;
+      for (let i = i0; i < i1; i++) {
+        const ax = i * DX, ay = s[i], ex = DX, ey = s[i + 1] - ay, L2 = ex * ex + ey * ey;
+        const t = ((cx - ax) * ex + (cy - ay) * ey) / L2;
+        if (t <= 0 || t >= 1) continue;
+        const L = Math.sqrt(L2), nx = -ey / L, ny = ex / L;
+        const side = (cx - ax) * nx + (cy - ay) * ny;
+        if (side >= r) continue;
+        const px = ax + t * ex, py = ay + t * ey;
+        if (side > 0 && (cx - px) * (cx - px) + (cy - py) * (cy - py) >= r2) continue;
+        const c = out[k++]; c.nx = nx; c.ny = ny; c.pen = r - side; c.px = px; c.py = py; c.mat = this.mat[i + (t > 0.5 ? 1 : 0)]; c.ter = true;
+      }
+      for (let i = Math.max(1, i0); i <= Math.min(i1, this.n - 2); i++) {
+        const vx = i * DX, vy = s[i];
+        const dx = cx - vx, dy = cy - vy, d2 = dx * dx + dy * dy;
+        if (d2 >= r2 || d2 < 1e-10) continue;
+        // convex corner test: projection falls outside both neighbouring segments
+        const ey0 = vy - s[i - 1], ey1 = s[i + 1] - vy;
+        if (dx * DX + dy * ey0 < 0) continue;      // inside previous segment's range
+        if (dx * DX + dy * ey1 > 0) continue;      // inside next segment's range
+        const d = Math.sqrt(d2);
+        const c = out[k++]; c.nx = dx / d; c.ny = dy / d; c.pen = r - d; c.px = vx; c.py = vy; c.mat = this.mat[i]; c.ter = true;
+      }
+      return k;
+    }
+    obsFirst(x) {
+      const o = this.obstacles; let lo = 0, hi = o.length;
+      while (lo < hi) { const m = (lo + hi) >> 1; if (o[m].x < x - 3.5) lo = m + 1; else hi = m; }
+      return lo;
+    }
+    obstacleContacts(cx, cy, r, out, k) {
+      const o = this.obstacles;
+      for (let i = this.obsFirst(cx); i < o.length && o[i].x < cx + 3.5; i++) {
+        const b = o[i], dx = cx - b.x, dy = cy - b.y, R = r + b.r, d2 = dx * dx + dy * dy;
+        if (d2 >= R * R || d2 < 1e-10) continue;
+        const d = Math.sqrt(d2), c = out[k++];
+        c.nx = dx / d; c.ny = dy / d; c.pen = R - d; c.px = b.x + c.nx * b.r; c.py = b.y + c.ny * b.r; c.mat = b.mat; c.ter = false;
+      }
+      return k;
+    }
+    lower(x, dz) {
+      const c = x / DX, i0 = Math.max(1, Math.floor(c) - 3), i1 = Math.min(this.n - 2, Math.ceil(c) + 3);
+      for (let i = i0; i <= i1; i++) {
+        if (!MATS[this.mat[i]].soft) continue;
+        const u = (i - c) * DX / 0.13, w = Math.exp(-u * u);
+        if (w < 0.03) continue;
+        const v = this.surf[i] - dz * w;
+        this.surf[i] = v < this.hard[i] ? this.hard[i] : v;
+      }
+    }
+    raise(x, dz) {
+      const c = x / DX, i0 = Math.max(1, Math.floor(c) - 3), i1 = Math.min(this.n - 2, Math.ceil(c) + 3);
+      for (let i = i0; i <= i1; i++) {
+        if (!MATS[this.mat[i]].soft) continue;
+        const u = (i - c) * DX / 0.16, w = Math.exp(-u * u);
+        if (w < 0.03 || this.surf[i] - this.hard[i] > 2) continue;
+        this.surf[i] += dz * w; this.orig[i] += dz * w;
+      }
+    }
+    // soft ground yields under load beyond its bearing capacity; slipping tires dig and throw it
+    deform(px, N, slipT, dt, bearMul) {
+      const i = clamp(Math.round(px / DX), 1, this.n - 2);
+      const M = MATS[this.mat[i]];
+      if (!M.soft || this.surf[i] - this.hard[i] < 0.002) return 0;
+      const comp = this.orig[i] - this.surf[i];
+      const ex = N - (M.B0 + M.B1 * comp) * bearMul;
+      let dz = ex > 0 ? COMPRESS_RATE * ex * dt : 0;
+      const as = Math.abs(slipT), dg = M.dig * as * (1 + as * 0.6) * N * dt;
+      if (dz + dg <= 0) return 0;
+      this.lower(px, dz + dg);
+      if (dg > 0) this.raise(px + Math.sign(slipT) * 0.85, dg * 0.55);
+      return dg;
+    }
+  }
+
+  // ---------------------------------------------------------------- Vehicle
+  const CONTACTS = []; for (let i = 0; i < 64; i++) CONTACTS.push({ nx: 0, ny: 0, pen: 0, px: 0, py: 0, mat: 0, ter: true });
+  const TMPN = { x: 0, y: 1 };
+
+  class Vehicle {
+    constructor(world, x0) {
+      this.world = world;
+      const T = world.terrain;
+      this.M = 1450; this.I = 2500;
+      this.baseComX = 0.12; this.comX = 0.12; this.comY = 0.3;
+      this.a = 0; this.vx = 0; this.vy = 0; this.w = 0;
+      const gh = Math.max(T.heightAt(x0 - 1.5), T.heightAt(x0 + 1.5), T.heightAt(x0));
+      const oy = gh + 0.97;
+      this.x = x0 + this.comX; this.y = oy + this.comY;
+      this.wheels = [this.mkWheel(1.5, 'front'), this.mkWheel(-1.5, 'rear')];
+      for (const wh of this.wheels) { wh.x = x0 + wh.mx; wh.y = oy + wh.my - 0.45; }
+      // [x, y, isRoof] in body frame (origin = frame centre between the axles)
+      this.hull = [
+        [2.32, -0.18, 0], [2.32, 0.25, 0], [2.02, 0.62, 0], [0.75, 0.68, 0], [0.32, 1.32, 1], [-0.95, 1.32, 1],
+        [-2.05, 0.76, 0], [-2.2, 0.25, 0], [-2.2, -0.18, 0], [-1.0, -0.3, 0], [0, -0.32, 0], [1.0, -0.3, 0],
+      ];
+      this.stubs = [[1.5, -0.25, 0], [-1.5, -0.25, 0]];
+      this.winchLocal = [2.4, 0.05];
+      this.lean = 0;
+      this.range = 'LOW';
+      this.diffLocked = false;
+      this.shiftT = 0;
+      this.rpm = 900; this.wheelV = 0; this.drive = 0;
+      this.roof = false; this.bodyHit = 0;
+      this.winch = { on: false, anchor: null, L: 0, T: 0, Ts: 0, limit: 0, peak: 0 };
+      this.mud = 0;
+    }
+    mkWheel(mx, name) {
+      return {
+        name, mx, my: 0.05, r: 0.52, m: 90, I: 11, x: 0, y: 0, vx: 0, vy: 0, th: 0, w: 0,
+        k: 30000, c: 4300, sFree: 0.69, sMin: 0.17, sMax: 0.77, kb: 2.5e6, cb: 20000, kl: 2.5e6, cl: 15000,
+        s: 0.45, N: 0, slip: 0, mat: -1, sink: 0, broken: false, damage: 0, bump: 0, cx: 0, cy: 0, nx: 0, ny: 1, dug: 0,
+      };
+    }
+    toWorld(lx, ly, out) {
+      const c = Math.cos(this.a), s = Math.sin(this.a), x = lx - this.comX, y = ly - this.comY;
+      out.x = this.x + c * x - s * y; out.y = this.y + s * x + c * y;
+      return out;
+    }
+    impulse(jx, jy, px, py) {
+      this.vx += jx / this.M; this.vy += jy / this.M;
+      this.w += ((px - this.x) * jy - (py - this.y) * jx) / this.I;
+    }
+    get speed() { return Math.hypot(this.vx, this.vy); }
+    get liveWheels() { let n = 0; for (const w of this.wheels) if (!w.broken) n++; return n; }
+
+    toggleDiff() {
+      this.diffLocked = !this.diffLocked;
+      this.world.msg(this.diffLocked ? 'Diffs LOCKED: both axles turn together' : 'Diffs OPEN: torque goes to the easiest wheel', '#ffd66b');
+    }
+    toggleRange() {
+      this.range = this.range === 'LOW' ? 'HIGH' : 'LOW';
+      this.shiftT = 0.45;
+      this.world.msg(this.range === 'LOW' ? 'LOW range: slow, torquey crawl' : 'HIGH range: faster, less torque', '#ffd66b');
+    }
+    findAnchor() {
+      const p = this.toWorld(this.winchLocal[0], this.winchLocal[1], {});
+      let best = null, bd = WINCH_RANGE;
+      for (const a of this.world.terrain.anchors) {
+        if (a.dead || a.y === null) continue;
+        if (Math.abs(a.x - p.x) > WINCH_RANGE) continue;
+        const ay = a.kind === 'tree' ? a.ref.y + 1.0 : a.y;
+        const d = Math.hypot(a.x - p.x, ay - p.y);
+        if (a.x < p.x - 4) continue;
+        if (d < bd) { bd = d; best = a; }
+      }
+      return best;
+    }
+    anchorPt(a) {
+      if (a.kind === 'tree') return { x: a.ref.x, y: a.ref.y + 1.0 };
+      return { x: a.ref.x, y: a.ref.y + a.ref.r * 0.2 };
+    }
+    toggleWinch() {
+      const wc = this.winch;
+      if (wc.on) { wc.on = false; wc.anchor = null; this.world.msg('Winch unhooked', '#cfe3ff'); return; }
+      const a = this.findAnchor();
+      if (!a) { this.world.msg(`No tree or boulder within ${WINCH_RANGE} m ahead`, '#ff9a7a'); return; }
+      const p = this.toWorld(this.winchLocal[0], this.winchLocal[1], {}), q = this.anchorPt(a);
+      wc.on = true; wc.anchor = a; wc.L = Math.hypot(q.x - p.x, q.y - p.y) + 0.3;
+      wc.T = 0; wc.Ts = 0; wc.peak = 0;
+      wc.limit = 30000 + this.world.rng() * 10000;
+      this.world.msg(a.kind === 'tree' ? 'Winch hooked to tree. Hold SPACE to reel in' : 'Winch hooked to boulder. Hold SPACE to reel in', '#9effa8');
+    }
+
+    step(dt, inp) {
+      const W = this.world, T = W.terrain;
+      // --- weight shift: moves the CoM along the body, plus the driver's body-throw torque
+      this.lean += (inp.lean - this.lean) * Math.min(1, dt * 5);
+      let ca = Math.cos(this.a), sa = Math.sin(this.a);
+      const ncx = this.baseComX + this.lean * 0.4, dc = ncx - this.comX;
+      if (dc !== 0) { this.x += ca * dc; this.y += sa * dc; this.comX = ncx; }
+      this.vy -= G * dt;
+      this.w -= inp.lean * 3400 / this.I * dt;
+
+      // --- suspension (spring + damper + bump/droop stops + stiff lateral link)
+      const ux = sa, uy = -ca, tx = ca, ty = sa;
+      for (const wh of this.wheels) {
+        wh.vy -= G * dt;
+        if (wh.broken) continue;
+        const lx = wh.mx - this.comX, ly = wh.my - this.comY;
+        const mx = this.x + ca * lx - sa * ly, my = this.y + sa * lx + ca * ly;
+        const rx = wh.x - mx, ry = wh.y - my;
+        const s = rx * ux + ry * uy, l = rx * tx + ry * ty;
+        const pvx = this.vx - this.w * (my - this.y), pvy = this.vy + this.w * (mx - this.x);
+        const rvx = wh.vx - pvx, rvy = wh.vy - pvy;
+        const sv = rvx * ux + rvy * uy, lv = rvx * tx + rvy * ty;
+        let F = Math.max(0, wh.k * (wh.sFree - s)) - wh.c * sv, bump = 0;
+        if (s < wh.sMin) { bump = Math.max(0, wh.kb * (wh.sMin - s) - wh.cb * sv); F += bump; }
+        else if (s > wh.sMax) F -= Math.max(0, wh.kb * (s - wh.sMax) + wh.cb * sv);
+        const Fl = -wh.kl * l - wh.cl * lv;
+        const fx = F * ux + Fl * tx, fy = F * uy + Fl * ty;
+        wh.vx += fx / wh.m * dt; wh.vy += fy / wh.m * dt;
+        this.vx -= fx / this.M * dt; this.vy -= fy / this.M * dt;
+        this.w -= ((mx - this.x) * fy - (my - this.y) * fx) / this.I * dt;
+        wh.s = s; wh.bump = bump;
+        if (bump > DMG_T) {
+          wh.damage += (bump - DMG_T) * DMG_K * dt;
+          if (wh.damage >= 1 && !wh.broken) {
+            wh.broken = true; wh.damage = 1;
+            W.msg(`💥 ${wh.name.toUpperCase()} AXLE SNAPPED!`, '#ff5a3a');
+            W.event('break', mx, my);
+          }
+        }
+      }
+
+      // --- drivetrain
+      const rg = RANGES[this.range];
+      let sumV = 0, nl = 0;
+      for (const wh of this.wheels) if (!wh.broken) { sumV += -wh.w * wh.r; nl++; }
+      const avgV = nl ? sumV / nl : 0;
+      this.wheelV = avgV;
+      let drive = inp.gas, brake = 0;
+      if (inp.brake > 0.01) {
+        if (avgV > 0.6) brake = inp.brake; else drive -= inp.brake * 0.75;
+      }
+      if (this.shiftT > 0) { this.shiftT -= dt; drive = 0; }
+      let Ttot = 0, x = 0;
+      if (drive !== 0) {
+        const dirV = drive > 0 ? avgV : -avgV, top = drive > 0 ? rg.vTop : rg.vTop * 0.55;
+        x = Math.max(0, dirV) / top;
+        const curve = x < 0.75 ? 1 : Math.max(0, 1 - (x - 0.75) / 0.25);
+        Ttot = drive * rg.T * curve;
+      }
+      this.drive = drive;
+      this.rpmTarget = 850 + 5300 * Math.min(1.05, Math.abs(avgV) / rg.vTop) + (drive !== 0 ? 600 * Math.abs(drive) : 0);
+      for (const wh of this.wheels) {
+        if (wh.broken) continue;
+        wh.w -= (Ttot / nl) / wh.I * dt;
+        if (brake > 0) {
+          const dw = 9000 * brake / wh.I * dt;
+          wh.w = Math.abs(wh.w) <= dw ? 0 : wh.w - Math.sign(wh.w) * dw;
+        } else if (drive === 0 && !inp.reel) {
+          wh.w -= wh.w * Math.min(1, rg.eb / wh.I * dt);
+        }
+      }
+
+      // --- tire contacts
+      for (const wh of this.wheels) this.wheelContact(wh, dt, T);
+
+      // --- locked diffs force equal axle speeds
+      if (this.diffLocked && nl > 1) {
+        let sI = 0, sw = 0;
+        for (const wh of this.wheels) if (!wh.broken) { sI += wh.I; sw += wh.I * wh.w; }
+        for (const wh of this.wheels) if (!wh.broken) wh.w = sw / sI;
+      }
+
+      // --- body contacts
+      ca = Math.cos(this.a); sa = Math.sin(this.a);
+      this.roof = false;
+      const pts = this.hull;
+      for (let i = 0; i < pts.length + 2; i++) {
+        let h;
+        if (i < pts.length) h = pts[i];
+        else { const wh = this.wheels[i - pts.length]; if (!wh.broken) continue; h = this.stubs[i - pts.length]; }
+        const lx = h[0] - this.comX, ly = h[1] - this.comY;
+        const px = this.x + ca * lx - sa * ly, py = this.y + sa * lx + ca * ly;
+        let pen = 0, nx = 0, ny = 1, mu = 0.5, ter = false;
+        const gh = T.heightAt(px);
+        if (py < gh) { T.normalAt(px, TMPN); nx = TMPN.x; ny = TMPN.y; pen = (gh - py) * ny; ter = true; mu = MATS[T.matAt(px)].mu * 0.7; }
+        const o = T.obstacles;
+        for (let j = T.obsFirst(px); j < o.length && o[j].x < px + 3.5; j++) {
+          const b = o[j], dx = px - b.x, dy = py - b.y, d = Math.hypot(dx, dy);
+          if (d < b.r && b.r - d > pen && d > 1e-6) { pen = b.r - d; nx = dx / d; ny = dy / d; ter = false; mu = 0.5; }
+        }
+        if (pen <= 0) continue;
+        const N = this.pointContact(px, py, nx, ny, pen, mu, dt);
+        if (h[2] && N > 0) this.roof = true;
+        if (N > 0) { this.bodyHit = Math.max(this.bodyHit, N); if (ter) T.deform(px, N, 0, dt, 1.6); }
+      }
+
+      this.winchStep(dt, inp);
+
+      // --- integrate
+      this.x += this.vx * dt; this.y += this.vy * dt; this.a += this.w * dt;
+      for (const wh of this.wheels) {
+        if (wh.w > 90) wh.w = 90; else if (wh.w < -90) wh.w = -90;
+        wh.x += wh.vx * dt; wh.y += wh.vy * dt; wh.th += wh.w * dt;
+      }
+    }
+
+    pointContact(px, py, nx, ny, pen, mu, dt) {
+      const rx = px - this.x, ry = py - this.y;
+      let pvx = this.vx - this.w * ry, pvy = this.vy + this.w * rx;
+      const vn = pvx * nx + pvy * ny;
+      const N = KH * pen - CH * vn;
+      if (N <= 0) return 0;
+      this.impulse(nx * N * dt, ny * N * dt, px, py);
+      pvx = this.vx - this.w * ry; pvy = this.vy + this.w * rx;
+      const tx = ny, ty = -nx, vt = pvx * tx + pvy * ty;
+      const rt = rx * ty - ry * tx, K = 1 / this.M + rt * rt / this.I, lim = mu * N;
+      let F = -vt / (S0 / lim + dt * K);
+      if (F > lim) F = lim; else if (F < -lim) F = -lim;
+      this.impulse(F * tx * dt, F * ty * dt, px, py);
+      return N;
+    }
+
+    wheelContact(wh, dt, T) {
+      let k = T.circleContacts(wh.x, wh.y, wh.r, CONTACTS, 0);
+      k = T.obstacleContacts(wh.x, wh.y, wh.r, CONTACTS, k);
+      let Nt = 0, nsx = 0, nsy = 0, mus = 0, maxN = 0, mat = -1, dug = 0;
+      for (let i = 0; i < k; i++) {
+        const c = CONTACTS[i];
+        const vn = wh.vx * c.nx + wh.vy * c.ny;
+        let N = KT * c.pen - CT * vn;
+        c.N = 0;
+        if (N <= 0) continue;
+        if (N > 400000) N = 400000;
+        wh.vx += c.nx * N / wh.m * dt; wh.vy += c.ny * N / wh.m * dt;
+        Nt += N; nsx += c.nx * N; nsy += c.ny * N; mus += MATS[c.mat].mu * N;
+        if (N > maxN) { maxN = N; mat = c.mat; wh.cx = c.px; wh.cy = c.py; }
+        c.N = N;
+      }
+      // the wheel's load spreads over its contacts, so each one only gets its share of the bearing capacity
+      for (let i = 0; i < k; i++) {
+        const c = CONTACTS[i];
+        if (c.ter && c.N > 0) dug += T.deform(c.px, c.N, wh.slip * c.ny, dt, c.N / Nt);
+      }
+      wh.N = Nt; wh.mat = mat; wh.dug = dug;
+      // bulldozing: pushing a tire through mud/sand costs more the faster you go
+      if (Nt > 0 && MATS[mat].visc) {
+        const sp = Math.hypot(wh.vx, wh.vy), f = Math.min(1, MATS[mat].visc * (0.35 + wh.sink) * sp / wh.m * dt);
+        wh.vx -= wh.vx * f; wh.vy -= wh.vy * f * 0.3;
+      }
+      // sinkage below the undisturbed surface: viscous mud/sand drag on the wheel and its spin
+      const sink = T.origAt(wh.x) - (wh.y - wh.r);
+      wh.sink = sink > 0 ? Math.min(sink, 2 * wh.r) : 0;
+      if (wh.sink > 0.02) {
+        const dr = MATS[T.matAt(wh.x)].drag * wh.sink;
+        if (dr > 0) {
+          const f = Math.min(1, dr / wh.m * dt);
+          wh.vx -= wh.vx * f; wh.vy -= wh.vy * f * 0.6;
+          wh.w -= wh.w * Math.min(1, dr * 0.3 * wh.r * wh.r / wh.I * dt);
+          if (wh.x > 0) this.mud = Math.min(1, this.mud + dt * 0.08 * Math.min(1, Math.abs(wh.w) / 6 + 0.2));
+        }
+      }
+      if (Nt <= 0) { wh.slip = 0; return; }
+      const L = Math.hypot(nsx, nsy), nx = nsx / L, ny = nsy / L, tx = ny, ty = -nx;
+      const mu = mus / Nt;
+      const rcx = -wh.r * nx, rcy = -wh.r * ny;
+      const vcx = wh.vx - wh.w * rcy, vcy = wh.vy + wh.w * rcx;
+      const slip = vcx * tx + vcy * ty;
+      const rct = rcx * ty - rcy * tx;
+      const K = 1 / wh.m + rct * rct / wh.I, lim = mu * Nt;
+      let F = -slip / (S0 / lim + dt * K);
+      if (F > lim) F = lim; else if (F < -lim) F = -lim;
+      wh.vx += F * tx / wh.m * dt; wh.vy += F * ty / wh.m * dt; wh.w += rct * F / wh.I * dt;
+      wh.slip = slip; wh.nx = nx; wh.ny = ny;
+      const rr = MATS[mat].crr * Nt * wh.r / wh.I * dt;
+      wh.w = Math.abs(wh.w) <= rr ? 0 : wh.w - Math.sign(wh.w) * rr;
+    }
+
+    winchStep(dt, inp) {
+      const wc = this.winch;
+      if (!wc.on) return;
+      const a = wc.anchor;
+      if (a.dead) { wc.on = false; return; }
+      const p = this.toWorld(this.winchLocal[0], this.winchLocal[1], {}), q = this.anchorPt(a);
+      const dx = q.x - p.x, dy = q.y - p.y, d = Math.hypot(dx, dy);
+      if (d < 0.5) { wc.on = false; return; }
+      const pvx = this.vx - this.w * (p.y - this.y), pvy = this.vy + this.w * (p.x - this.x);
+      const vr = (pvx * dx + pvy * dy) / d;
+      let Tn = 0;
+      if (d > wc.L) { Tn = KC * (d - wc.L) - CC * vr; if (Tn < 0) Tn = 0; }
+      if (Tn > 0) this.impulse(dx / d * Tn * dt, dy / d * Tn * dt, p.x, p.y);
+      if (inp.reel) wc.L = Math.max(1.5, wc.L - WINCH_SPEED * Math.max(0, 1 - Tn / WINCH_STALL) * dt);
+      else if (inp.payout) wc.L = Math.min(WINCH_RANGE + 8, wc.L + 1.6 * dt);
+      if (d > WINCH_RANGE + 10) wc.L = d; // drum runs out: free-spool
+      wc.T = Tn;
+      wc.Ts += (Tn - wc.Ts) * Math.min(1, dt * 25);
+      if (wc.Ts > wc.peak) wc.peak = wc.Ts;
+      if (wc.Ts > wc.limit) {
+        wc.on = false;
+        this.world.msg('🪢 CABLE SNAPPED!', '#ff5a3a');
+        this.world.event('snap', p.x, p.y, q.x, q.y);
+      } else if (wc.Ts > a.strength) {
+        wc.on = false; a.dead = true;
+        if (a.kind === 'tree') { a.ref.alive = false; a.ref.fallDir = p.x < q.x ? -1 : 1; }
+        this.world.msg('🌲 You pulled the tree out by its roots!', '#ffb35a');
+        this.world.event('uproot', q.x, q.y);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------- World
+  const IDLE = { gas: 0, brake: 0, lean: 0, reel: false, payout: false };
+  const FAILS = {
+    flip: { title: 'FLIPPED!', lines: ['Shiny side down. Physics wins again.', 'That was a roof landing, not a parking job.', 'Your center of mass had other plans.', 'Next time, lean the other way!'] },
+    stuck: { title: 'STUCK FOR GOOD', lines: ['The mud has accepted you as one of its own.', 'Four wheels spinning, zero meters gained.', 'Should have fed it less throttle.', 'A tow truck has been dispatched (in 3–5 business days).'] },
+    broken: { title: 'AXLE SNAPPED', lines: ['That landing was louder than the engine.', 'The wheel is going on without you.', 'Suspension travel: exceeded. Warranty: void.', 'Turns out bump stops have limits.'] },
+  };
+
+  class World {
+    constructor(seed) {
+      this.seed = seed;
+      this.rng = mulberry32(seed ^ 0x9e3779b9);
+      this.terrain = new Terrain(seed);
+      this.terrain.ensure(400);
+      this.terrain.placeTrees();
+      this.msgs = []; this.events = []; this.fx = [];
+      this.vehicle = new Vehicle(this, 24);
+      this.startX = this.vehicle.x; this.maxX = this.startX;
+      this.time = 0; this.state = 'run'; this.fail = null; this.overT = 0;
+      this.stuckT = 0; this.flipT = 0; this.brokenT = 0;
+    }
+    msg(text, color) { this.msgs.push({ text, color: color || '#fff', t: 0 }); }
+    event(type, x, y, x2, y2) { this.events.push({ type, x, y, x2, y2 }); }
+    get distance() { return Math.max(0, this.maxX - this.startX); }
+    tick(dt, inp) {
+      const v = this.vehicle, I = this.state === 'run' ? inp : IDLE, sub = 5, h = dt / sub;
+      for (let i = 0; i < sub; i++) v.step(h, I);
+      this.time += dt;
+      v.rpm += (v.rpmTarget - v.rpm) * Math.min(1, dt * 8);
+      this.terrain.ensure(v.x + 300);
+      this.terrain.placeTrees();
+      if (v.x > this.maxX) this.maxX = v.x;
+      for (const t of this.terrain.trees) if (!t.alive && t.fall < 1) t.fall = Math.min(1, t.fall + dt * (0.15 + t.fall * 2.5));
+      this.emitFx(v, dt);
+      if (this.state !== 'run') { this.overT += dt; return; }
+
+      // failure detection
+      const up = Math.cos(v.a), spd = v.speed;
+      if ((up < -0.3 || (up < 0.2 && v.roof)) && Math.abs(v.w) < 2.5) this.flipT += dt;
+      else this.flipT = Math.max(0, this.flipT - dt * 2);
+      if (this.flipT > FLIP_LIMIT) return this.end('flip');
+
+      const trying = inp.gas > 0.2 || inp.brake > 0.2 || (inp.reel && v.winch.on);
+      if (spd < 0.35 && trying) this.stuckT += dt * (v.winch.on && inp.reel ? 0.5 : 1);
+      else if (spd > 0.8) this.stuckT = Math.max(0, this.stuckT - dt * 1.5);
+      if (this.stuckT > STUCK_LIMIT) return this.end('stuck');
+
+      if (v.wheels.some(w => w.broken)) this.brokenT += dt;
+      if (this.brokenT > 2.5) return this.end('broken');
+    }
+    end(code) {
+      this.state = 'over';
+      const f = FAILS[code];
+      this.fail = { code, title: f.title, text: f.lines[Math.floor(this.rng() * f.lines.length)] };
+    }
+    emitFx(v, dt) {
+      for (const wh of v.wheels) {
+        if (wh.N <= 0 || wh.mat < 0) continue;
+        const s = Math.abs(wh.slip);
+        if (s < 1.2) continue;
+        const M = MATS[wh.mat];
+        const rate = (M.soft ? 1 : 0.35) * Math.min(6, s * wh.N / 9000);
+        let n = Math.floor(rate * dt * 60 + this.rng());
+        const dir = Math.sign(wh.slip);
+        while (n-- > 0) {
+          const sp = Math.min(9, s * (0.4 + this.rng() * 0.5));
+          this.fx.push({
+            type: M.soft ? 'chunk' : 'smoke', mat: wh.mat,
+            x: wh.cx + (this.rng() - 0.5) * 0.3, y: wh.cy + 0.05,
+            vx: dir * wh.ny * sp + wh.vx * 0.3, vy: 1.5 + this.rng() * 3 + sp * 0.35,
+            life: M.soft ? 1.6 : 1.1, size: M.soft ? 0.05 + this.rng() * 0.08 : 0.25 + this.rng() * 0.2,
+          });
+        }
+      }
+    }
+  }
+
+  return { World, Terrain, Vehicle, MATS, DX, RANGES, WINCH_RANGE, STUCK_LIMIT, FLIP_LIMIT, ROCK, DIRT, SAND, MUD, WOOD };
+})();
+</script>
+
+<!-- ===================== RENDERING / INPUT ===================== -->
+<script>
+(function () {
+  'use strict';
+  const { World, MATS, DX, WINCH_RANGE, STUCK_LIMIT, FLIP_LIMIT } = CP;
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0 && matchMedia('(pointer: coarse)').matches);
+  if (isTouch) document.body.classList.add('touch');
+
+  let W = 0, H = 0, DPR = 1;
+  function resize() {
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  }
+  window.addEventListener('resize', resize); resize();
+
+  let best = 0;
+  try { best = +localStorage.getItem('mudrunner_best') || 0; } catch (e) { /* storage unavailable */ }
+
+  let world = new World((Math.random() * 1e9) | 0);
+  let started = false, paused = false, overShown = false;
+  const cam = { x: world.vehicle.x + 3, y: world.vehicle.y + 1, z: 1 };
+  const particles = [];
+  const toasts = [];
+
+  // ------------------------------------------------------------ input
+  const keys = {};
+  const touch = { gas: 0, brake: false, lf: false, lb: false, reel: false, tilt: false, tiltLean: 0 };
+  const inp = { gas: 0, brake: 0, lean: 0, reel: false, payout: false };
+  let kbGas = 0, kbBrake = 0;
+
+  function restart() {
+    world = new World((Math.random() * 1e9) | 0);
+    cam.x = world.vehicle.x + 3; cam.y = world.vehicle.y + 1;
+    particles.length = 0; toasts.length = 0; overShown = false; kbGas = 0; kbBrake = 0;
+    document.getElementById('overOv').classList.remove('show');
+    document.getElementById('nameEntry').style.display = 'none';
+    paused = false;
+  }
+  function start() {
+    if (started) return;
+    started = true;
+    document.getElementById('startOv').classList.remove('show');
+    audio.init();
+    world.msg('Feather the throttle in mud. Wheelspin digs you in!', '#ffd66b');
+  }
+  window.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (document.getElementById('lbOv').classList.contains('show')) { if (e.code === 'Escape') closeLb(); return; }
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
+    if (!started) { if (e.code === 'Enter' || e.code === 'Space') start(); return; }
+    if (e.repeat) { keys[e.code] = true; return; }
+    keys[e.code] = true;
+    audio.init();
+    const v = world.vehicle;
+    switch (e.code) {
+      case 'KeyR': restart(); break;
+      case 'KeyP': case 'Escape': togglePause(); break;
+      case 'KeyM': toggleMute(); break;
+    }
+    if (world.state !== 'run' || paused) return;
+    switch (e.code) {
+      case 'KeyE': case 'KeyF': v.toggleWinch(); break;
+      case 'KeyL': v.toggleDiff(); break;
+      case 'KeyG': v.toggleRange(); break;
+    }
+  });
+  window.addEventListener('keyup', e => { keys[e.code] = false; });
+  window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; if (started && world.state === 'run' && !paused) togglePause(); });
+
+  function togglePause() {
+    if (!started || world.state !== 'run') return;
+    paused = !paused;
+    document.getElementById('btnPause').textContent = paused ? '▶ Resume' : '⏸ Pause';
+  }
+  function toggleMute() {
+    audio.muted = !audio.muted;
+    document.getElementById('btnMute').textContent = audio.muted ? '🔇 Muted' : '🔊 Sound';
+  }
+  document.getElementById('btnStart').addEventListener('click', start);
+  document.getElementById('btnRetry').addEventListener('click', restart);
+  document.getElementById('btnMute').addEventListener('click', e => { audio.init(); toggleMute(); e.target.blur(); });
+  document.getElementById('btnPause').addEventListener('click', e => { togglePause(); e.target.blur(); });
+
+  // touch controls
+  function hold(id, on, off) {
+    const el = document.getElementById(id);
+    el.addEventListener('pointerdown', e => { e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('on'); audio.init(); on(e, el); });
+    const end = e => { el.classList.remove('on'); off && off(e, el); };
+    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+    return el;
+  }
+  const gasEl = document.getElementById('pedalGas'), gasFill = document.getElementById('gasFill');
+  function gasFromEvent(e) {
+    const r = gasEl.getBoundingClientRect();
+    touch.gas = Math.max(0, Math.min(1, (r.bottom - e.clientY) / r.height * 1.15 - 0.05));
+  }
+  hold('pedalGas', e => gasFromEvent(e), () => { touch.gas = 0; });
+  gasEl.addEventListener('pointermove', e => { if (gasEl.classList.contains('on')) gasFromEvent(e); });
+  hold('pedalBrake', () => touch.brake = true, () => touch.brake = false);
+  hold('leanFwd', () => touch.lf = true, () => touch.lf = false);
+  hold('leanBack', () => touch.lb = true, () => touch.lb = false);
+  hold('bReel', () => touch.reel = true, () => touch.reel = false);
+  hold('bWinch', () => { if (started && world.state === 'run') world.vehicle.toggleWinch(); });
+  hold('bDiff', () => { if (started && world.state === 'run') world.vehicle.toggleDiff(); });
+  hold('bRange', () => { if (started && world.state === 'run') world.vehicle.toggleRange(); });
+  hold('bTilt', (e, el) => {
+    const enable = () => {
+      touch.tilt = !touch.tilt;
+      el.textContent = 'TILT: ' + (touch.tilt ? 'ON' : 'OFF');
+      if (!touch.tilt) touch.tiltLean = 0;
+    };
+    if (!touch.tilt && typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) {
+      DeviceOrientationEvent.requestPermission().then(s => { if (s === 'granted') enable(); }).catch(() => {});
+    } else enable();
+  });
+  window.addEventListener('deviceorientation', e => {
+    if (!touch.tilt) return;
+    const landscape = (screen.orientation ? screen.orientation.angle : window.orientation || 0) % 180 !== 0;
+    let a = landscape ? e.beta : e.gamma;
+    if (landscape && (screen.orientation ? screen.orientation.angle : window.orientation) === 270 || window.orientation === -90) a = -a;
+    touch.tiltLean = Math.max(-1, Math.min(1, (a || 0) / 22));
+  });
+
+  function readInput(dt) {
+    const gasK = keys.ArrowRight || keys.KeyD, brkK = keys.ArrowLeft || keys.KeyA;
+    kbGas = gasK ? Math.min(1, kbGas + dt * 0.9) : Math.max(0, kbGas - dt * 4);
+    kbBrake = brkK ? Math.min(1, kbBrake + dt * 2.5) : 0;
+    inp.gas = Math.max(kbGas, touch.gas);
+    inp.brake = Math.max(kbBrake, touch.brake ? 1 : 0);
+    let lean = ((keys.ArrowUp || keys.KeyW || touch.lf) ? 1 : 0) - ((keys.ArrowDown || keys.KeyS || touch.lb) ? 1 : 0);
+    if (touch.tilt && lean === 0) lean = touch.tiltLean;
+    inp.lean = lean;
+    inp.reel = !!(keys.Space || touch.reel);
+    inp.payout = !!keys.KeyX;
+    gasFill.style.height = (inp.gas * 100).toFixed(0) + '%';
+    const rb = document.getElementById('bRange'), db = document.getElementById('bDiff'), wb = document.getElementById('bWinch');
+    const v = world.vehicle;
+    rb.textContent = v.range; db.textContent = v.diffLocked ? 'LOCKED' : 'DIFF';
+    db.classList.toggle('on', v.diffLocked); wb.classList.toggle('on', v.winch.on);
+  }
+
+  // ------------------------------------------------------------ audio
+  const audio = {
+    ctx: null, muted: false,
+    init() {
+      if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+        const c = this.ctx = new AC();
+        this.o1 = c.createOscillator(); this.o1.type = 'sawtooth';
+        this.o2 = c.createOscillator(); this.o2.type = 'square';
+        const g2 = c.createGain(); g2.gain.value = 0.35;
+        this.f = c.createBiquadFilter(); this.f.type = 'lowpass'; this.f.frequency.value = 400; this.f.Q.value = 3;
+        this.g = c.createGain(); this.g.gain.value = 0;
+        this.o1.connect(this.f); this.o2.connect(g2); g2.connect(this.f); this.f.connect(this.g); this.g.connect(c.destination);
+        this.wo = c.createOscillator(); this.wo.type = 'triangle'; this.wg = c.createGain(); this.wg.gain.value = 0;
+        this.wo.connect(this.wg); this.wg.connect(c.destination);
+        this.o1.start(); this.o2.start(); this.wo.start();
+      } catch (e) { this.ctx = null; }
+    },
+    update(rpm, thr, reel, tension, live) {
+      if (!this.ctx) return;
+      const t = this.ctx.currentTime, n = (rpm - 850) / 5300;
+      const base = 30 + n * 95;
+      this.o1.frequency.setTargetAtTime(base, t, 0.04);
+      this.o2.frequency.setTargetAtTime(base * 0.5, t, 0.04);
+      this.f.frequency.setTargetAtTime(220 + n * 900 + thr * 500, t, 0.05);
+      this.g.gain.setTargetAtTime(this.muted || !live ? 0 : 0.035 + thr * 0.05, t, 0.08);
+      this.wo.frequency.setTargetAtTime(380 + 500 * Math.max(0, 1 - tension / 32000), t, 0.05);
+      this.wg.gain.setTargetAtTime(this.muted || !reel ? 0 : 0.025, t, 0.05);
+    },
+    bang(freq, dur, vol) {
+      if (!this.ctx || this.muted) return;
+      const c = this.ctx, t = c.currentTime, len = Math.floor(c.sampleRate * dur);
+      const buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+      const s = c.createBufferSource(); s.buffer = buf;
+      const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = freq;
+      const g = c.createGain(); g.gain.value = vol;
+      s.connect(f); f.connect(g); g.connect(c.destination); s.start(t);
+    },
+  };
+
+  // ------------------------------------------------------------ helpers
+  function hash(n) { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+  const MAT_COL = {
+    0: { fill: '#80818a', top: '#b3b5bc', dark: '#5d5e66' },
+    1: { fill: '#7b5233', top: '#5fa13b', dark: '#4b311d' },
+    2: { fill: '#dcb96e', top: '#f1d797', dark: '#b8944c' },
+    3: { fill: '#4a3220', top: '#6e4d32', dark: '#2e1e12' },
+  };
+
+  // ------------------------------------------------------------ drawing: world
+  let ppm = 40;
+  function worldTransform() {
+    ctx.setTransform(DPR * ppm, 0, 0, -DPR * ppm, DPR * (W / 2 - cam.x * ppm), DPR * (H / 2 + cam.y * ppm));
+  }
+  function drawSky() {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#6fb2e6'); g.addColorStop(0.55, '#bfe0f2'); g.addColorStop(1, '#f2e2c4');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // sun
+    ctx.fillStyle = 'rgba(255,245,200,0.9)';
+    ctx.beginPath(); ctx.arc(W * 0.8, H * 0.18, 34, 0, Math.PI * 2); ctx.fill();
+    // clouds
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    for (let i = 0; i < 6; i++) {
+      const span = W + 400;
+      const x = ((i * 371 - cam.x * 4 - world.time * 6) % span + span) % span - 200, y = 50 + hash(i) * H * 0.25;
+      for (let j = 0; j < 4; j++) { ctx.beginPath(); ctx.arc(x + j * 26, y + Math.sin(j * 2 + i) * 6, 22 + hash(i * 7 + j) * 14, 0, Math.PI * 2); ctx.fill(); }
+    }
+    // parallax ridges
+    const layers = [[0.12, '#93a9b8', 0.55, 90, 0.004], [0.25, '#7d9a7e', 0.68, 60, 0.009], [0.45, '#5f7f55', 0.8, 40, 0.017]];
+    for (const [par, col, base, amp, fr] of layers) {
+      ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(0, H);
+      for (let sx = 0; sx <= W + 10; sx += 10) {
+        const wx = sx + cam.x * ppm * par;
+        const y = H * base - (cam.y * ppm * par * 0.3) - amp * (Math.sin(wx * fr) * 0.6 + Math.sin(wx * fr * 2.3 + 1) * 0.3 + Math.sin(wx * fr * 5.1 + 2) * 0.1);
+        ctx.lineTo(sx, y);
+      }
+      ctx.lineTo(W, H); ctx.fill();
+    }
+  }
+
+  function drawTree(t) {
+    if (t.y === null) return;
+    ctx.save();
+    ctx.translate(t.x, t.y);
+    if (!t.alive) ctx.rotate(-t.fallDir * t.fall * t.fall * Math.PI / 2 * 0.97);
+    const tr = t.tr;
+    ctx.fillStyle = '#5b3a22';
+    ctx.beginPath(); ctx.moveTo(-tr * 1.4, -0.6); ctx.lineTo(-tr, t.h * 0.75); ctx.lineTo(tr, t.h * 0.75); ctx.lineTo(tr * 1.4, -0.6); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.fillRect(tr * 0.2, 0, tr * 0.7, t.h * 0.7);
+    const greens = ['#2f6b2c', '#3b8034', '#4b9440'];
+    for (let i = 0; i < 7; i++) {
+      const a = hash(t.seed * 100 + i) * Math.PI * 2, rr = 0.7 + hash(t.seed * 50 + i) * 1.0;
+      ctx.fillStyle = greens[i % 3];
+      ctx.beginPath(); ctx.arc(Math.cos(a) * 0.9, t.h * 0.78 + Math.sin(a) * 0.8 + 0.4, rr, 0, Math.PI * 2); ctx.fill();
+    }
+    if (!t.alive) { // roots
+      ctx.strokeStyle = '#4b2f1b'; ctx.lineWidth = 0.08;
+      for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(0, -0.3); ctx.lineTo(i * 0.35, -0.9 - Math.abs(i) * 0.1); ctx.stroke(); }
+    }
+    ctx.restore();
+  }
+
+  function drawTerrain(x0, x1, yb) {
+    const T = world.terrain, s = T.surf, hd = T.hard, m = T.mat;
+    const i0 = Math.max(0, Math.floor(x0 / DX) - 1), i1 = Math.min(T.n - 1, Math.ceil(x1 / DX) + 1);
+    // earth body
+    const g = ctx.createLinearGradient(0, cam.y, 0, yb);
+    g.addColorStop(0, '#6a4529'); g.addColorStop(1, '#2b1a0e');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.moveTo(i0 * DX, yb);
+    for (let i = i0; i <= i1; i++) ctx.lineTo(i * DX, s[i]);
+    ctx.lineTo(i1 * DX, yb); ctx.closePath(); ctx.fill();
+    // layered runs by material
+    let i = i0;
+    while (i < i1) {
+      const mt = m[i]; let j = i;
+      while (j < i1 && m[j + 1] === mt) j++;
+      const e = Math.min(j + 1, i1);
+      const C = MAT_COL[mt] || MAT_COL[1];
+      if (mt === 0) {
+        ctx.fillStyle = C.fill;
+        ctx.beginPath(); ctx.moveTo(i * DX, s[i]);
+        for (let k = i; k <= e; k++) ctx.lineTo(k * DX, s[k]);
+        for (let k = e; k >= i; k--) ctx.lineTo(k * DX, s[k] - 1.1 - 0.4 * hash(k * 0.37 | 0));
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = C.dark; ctx.lineWidth = 0.04;
+        for (let k = i; k <= e; k += 7) { ctx.beginPath(); ctx.moveTo(k * DX, s[k] - 0.15); ctx.lineTo(k * DX + 0.25, s[k] - 0.6); ctx.stroke(); }
+      } else if (mt === 2 || mt === 3) {
+        ctx.fillStyle = C.fill;
+        ctx.beginPath(); ctx.moveTo(i * DX, s[i]);
+        for (let k = i; k <= e; k++) ctx.lineTo(k * DX, s[k]);
+        for (let k = e; k >= i; k--) ctx.lineTo(k * DX, Math.min(hd[k], s[k]) - 0.02);
+        ctx.closePath(); ctx.fill();
+      }
+      // top line
+      ctx.strokeStyle = C.top; ctx.lineJoin = 'round';
+      ctx.lineWidth = mt === 1 ? 0.16 : mt === 3 ? 0.1 : 0.08;
+      ctx.beginPath(); ctx.moveTo(i * DX, s[i]);
+      for (let k = i + 1; k <= e; k++) ctx.lineTo(k * DX, s[k]);
+      ctx.stroke();
+      if (mt === 3) {
+        ctx.strokeStyle = 'rgba(190,160,120,0.45)'; ctx.lineWidth = 0.03;
+        ctx.beginPath(); ctx.moveTo(i * DX, s[i] + 0.02);
+        for (let k = i + 1; k <= e; k++) ctx.lineTo(k * DX, s[k] + 0.02);
+        ctx.stroke();
+      }
+      if (mt === 1 && ppm > 18) {
+        ctx.strokeStyle = '#4f8f31'; ctx.lineWidth = 0.035;
+        ctx.beginPath();
+        for (let k = i; k <= e; k++) {
+          if (hash(k) > 0.28) continue;
+          const bx = k * DX, by = s[k];
+          if (T.orig[k] - by > 0.04) continue;
+          ctx.moveTo(bx, by); ctx.lineTo(bx - 0.06, by + 0.16 + hash(k + 3) * 0.12);
+          ctx.moveTo(bx, by); ctx.lineTo(bx + 0.07, by + 0.14 + hash(k + 9) * 0.1);
+        }
+        ctx.stroke();
+      }
+      i = j + 1;
+    }
+  }
+
+  function drawObstacles(x0, x1) {
+    for (const o of world.terrain.obstacles) {
+      if (o.x + o.r < x0 || o.x - o.r > x1) continue;
+      if (o.kind === 'log') {
+        ctx.fillStyle = '#6b4426'; ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#c89a62'; ctx.beginPath(); ctx.arc(o.x, o.y, o.r * 0.78, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#8f6a3e'; ctx.lineWidth = 0.025;
+        for (let k = 1; k <= 3; k++) { ctx.beginPath(); ctx.arc(o.x, o.y, o.r * 0.2 * k, 0, Math.PI * 2); ctx.stroke(); }
+      } else {
+        ctx.fillStyle = '#7f8088';
+        ctx.beginPath();
+        for (let k = 0; k <= 14; k++) {
+          const a = k / 14 * Math.PI * 2, rr = o.r * (0.97 + 0.05 * hash(o.seed * 99 + (k % 14)));
+          k === 0 ? ctx.moveTo(o.x + Math.cos(a) * rr, o.y + Math.sin(a) * rr) : ctx.lineTo(o.x + Math.cos(a) * rr, o.y + Math.sin(a) * rr);
+        }
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.arc(o.x - o.r * 0.3, o.y + o.r * 0.35, o.r * 0.35, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.arc(o.x + o.r * 0.25, o.y - o.r * 0.3, o.r * 0.5, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+
+  const P = { x: 0, y: 0 }, Q = { x: 0, y: 0 };
+  function drawCable(v) {
+    const wc = v.winch;
+    if (!wc.on) return;
+    v.toWorld(v.winchLocal[0], v.winchLocal[1], P);
+    const q = v.anchorPt(wc.anchor);
+    const d = Math.hypot(q.x - P.x, q.y - P.y), slack = Math.max(0, wc.L - d);
+    const t = Math.min(1, wc.Ts / wc.limit);
+    ctx.strokeStyle = `rgb(${Math.round(60 + 195 * t)},${Math.round(60 - 20 * t)},${Math.round(60 - 20 * t)})`;
+    ctx.lineWidth = 0.04 + 0.03 * t;
+    ctx.beginPath(); ctx.moveTo(P.x, P.y);
+    ctx.quadraticCurveTo((P.x + q.x) / 2, (P.y + q.y) / 2 - Math.min(3, slack * 0.9), q.x, q.y);
+    ctx.stroke();
+    ctx.fillStyle = '#c0392b'; ctx.fillRect(q.x - 0.12, q.y - 0.08, 0.24, 0.16);
+  }
+
+  function drawSpring(ax, ay, bx, by, coils, wdt, col) {
+    const dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
+    ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(ax, ay);
+    const n = coils * 2;
+    for (let i = 1; i < n; i++) {
+      const t = i / n, s = (i % 2 ? 1 : -1) * wdt;
+      ctx.lineTo(ax + dx * t + nx * s, ay + dy * t + ny * s);
+    }
+    ctx.lineTo(bx, by); ctx.stroke();
+  }
+
+  function drawWheel(wh) {
+    const T = world.terrain, r = wh.r, n = 44;
+    ctx.fillStyle = '#1d1d1f';
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = i / n * Math.PI * 2 + wh.th;
+      const lug = (i % 4 < 2) ? 1 : 0.93;
+      let px = wh.x + Math.cos(a) * r * lug, py = wh.y + Math.sin(a) * r * lug;
+      const gh = T.heightAt(px);
+      if (py < gh) py = gh + (py - gh) * 0.15; // squish against the ground
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.closePath(); ctx.fill();
+    // sidewall + rim
+    ctx.fillStyle = '#2c2c30'; ctx.beginPath(); ctx.arc(wh.x, wh.y, r * 0.78, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#c9ccd3'; ctx.beginPath(); ctx.arc(wh.x, wh.y, r * 0.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#8e939c'; ctx.beginPath(); ctx.arc(wh.x, wh.y, r * 0.42, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#d9dce2'; ctx.lineWidth = 0.05;
+    for (let k = 0; k < 5; k++) {
+      const a = wh.th + k * Math.PI * 2 / 5;
+      ctx.beginPath(); ctx.moveTo(wh.x, wh.y); ctx.lineTo(wh.x + Math.cos(a) * r * 0.44, wh.y + Math.sin(a) * r * 0.44); ctx.stroke();
+    }
+    ctx.fillStyle = '#3a3d44'; ctx.beginPath(); ctx.arc(wh.x, wh.y, r * 0.12, 0, Math.PI * 2); ctx.fill();
+    if (world.vehicle.mud > 0.05) {
+      ctx.fillStyle = `rgba(74,50,32,${Math.min(0.7, world.vehicle.mud)})`;
+      ctx.beginPath(); ctx.arc(wh.x, wh.y, r * 0.98, Math.PI * 1.1, Math.PI * 1.9); ctx.fill();
+    }
+  }
+
+  function drawVehicle(v) {
+    // suspension links & coilovers (world space, behind the body)
+    for (const wh of v.wheels) {
+      if (wh.broken) continue;
+      const sg = Math.sign(wh.mx);
+      v.toWorld(wh.mx - sg * 1.0, -0.15, P);
+      ctx.strokeStyle = '#2b2b2e'; ctx.lineWidth = 0.11; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(wh.x, wh.y); ctx.stroke();
+      v.toWorld(wh.mx - sg * 0.32, 0.55, Q);
+      const comp = Math.max(0, Math.min(1, (wh.sMax - wh.s) / (wh.sMax - wh.sMin)));
+      ctx.lineWidth = 0.06; ctx.strokeStyle = '#555';
+      ctx.beginPath(); ctx.moveTo(Q.x, Q.y); ctx.lineTo(wh.x, wh.y); ctx.stroke();
+      ctx.lineWidth = 0.04;
+      drawSpring(Q.x, Q.y, wh.x * 0.85 + Q.x * 0.15, wh.y * 0.85 + Q.y * 0.15, 7, 0.09, comp > 0.88 ? '#ff4a3a' : '#f2c230');
+    }
+    // body
+    v.toWorld(0, 0, P);
+    ctx.save();
+    ctx.translate(P.x, P.y); ctx.rotate(v.a);
+    ctx.lineJoin = 'round';
+    // frame
+    ctx.fillStyle = '#222'; ctx.fillRect(-2.1, -0.3, 4.2, 0.28);
+    // bumpers + winch
+    ctx.fillStyle = '#333'; ctx.fillRect(2.05, -0.22, 0.32, 0.5); ctx.fillRect(-2.25, -0.22, 0.3, 0.5);
+    ctx.fillStyle = '#555'; ctx.fillRect(2.18, -0.05, 0.22, 0.2);
+    // tub + hood + bed
+    ctx.fillStyle = '#e8892b';
+    ctx.beginPath();
+    ctx.moveTo(-2.1, -0.02); ctx.lineTo(2.15, -0.02); ctx.lineTo(2.15, 0.42); ctx.lineTo(2.0, 0.62); ctx.lineTo(0.75, 0.68);
+    ctx.lineTo(-0.95, 0.68); ctx.lineTo(-0.95, 0.76); ctx.lineTo(-2.08, 0.76); ctx.lineTo(-2.1, 0.5); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(-2.1, -0.02, 4.25, 0.16);
+    // fender cut-outs
+    ctx.fillStyle = '#1a1a1a';
+    for (const sx of [1.5, -1.5]) { ctx.beginPath(); ctx.arc(sx, -0.02, 0.62, 0, Math.PI); ctx.fill(); }
+    ctx.fillStyle = '#e8892b';
+    // cab glass + roll cage
+    ctx.fillStyle = 'rgba(160,215,240,0.55)';
+    ctx.beginPath(); ctx.moveTo(0.72, 0.68); ctx.lineTo(0.34, 1.28); ctx.lineTo(-0.9, 1.28); ctx.lineTo(-0.92, 0.68); ctx.closePath(); ctx.fill();
+    // driver
+    const hx = -0.22 + v.lean * 0.22, hy = 1.0 + Math.abs(v.lean) * -0.04;
+    ctx.fillStyle = '#2a4f8a'; ctx.beginPath(); ctx.ellipse(-0.3 + v.lean * 0.12, 0.8, 0.2, 0.18, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#f2c9a0'; ctx.beginPath(); ctx.arc(hx, hy, 0.13, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#d63a2c'; ctx.beginPath(); ctx.arc(hx, hy + 0.03, 0.15, 0, Math.PI); ctx.fill();
+    ctx.strokeStyle = '#2b2b2e'; ctx.lineWidth = 0.07;
+    ctx.beginPath(); ctx.moveTo(0.74, 0.68); ctx.lineTo(0.34, 1.3); ctx.lineTo(-0.92, 1.3); ctx.lineTo(-0.95, 0.7);
+    ctx.moveTo(-0.3, 1.3); ctx.lineTo(-0.3, 0.7); ctx.moveTo(-0.92, 1.3); ctx.lineTo(-1.6, 0.76); ctx.stroke();
+    // roof rack + jerry can + spare
+    ctx.fillStyle = '#2d6a3e'; ctx.fillRect(-1.85, 0.76, 0.32, 0.38);
+    ctx.fillStyle = '#1d1d1f'; ctx.beginPath(); ctx.arc(-1.3, 1.0, 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#8e939c'; ctx.beginPath(); ctx.arc(-1.3, 1.0, 0.13, 0, Math.PI * 2); ctx.fill();
+    // headlight + grill
+    ctx.fillStyle = '#fff6c8'; ctx.fillRect(2.07, 0.3, 0.1, 0.14);
+    ctx.fillStyle = '#c66e1b';
+    for (let k = 0; k < 3; k++) ctx.fillRect(1.7 - k * 0.12, 0.2, 0.05, 0.3);
+    // mud splatter
+    if (v.mud > 0.03) {
+      ctx.fillStyle = `rgba(74,50,32,${Math.min(0.85, v.mud * 0.9)})`;
+      for (let k = 0; k < 18; k++) {
+        const px = -2.1 + hash(k) * 4.2, py = -0.02 + hash(k + 50) * 0.45 * (0.4 + v.mud);
+        ctx.beginPath(); ctx.arc(px, py, 0.05 + hash(k + 99) * 0.12, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    // centre of mass marker
+    ctx.save(); ctx.translate(v.comX, v.comY);
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 0.11, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#111';
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 0.11, 0, Math.PI / 2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 0.11, Math.PI, Math.PI * 1.5); ctx.fill();
+    ctx.restore();
+    ctx.restore();
+    for (const wh of v.wheels) drawWheel(wh);
+  }
+
+  function drawParticles(dt) {
+    const T = world.terrain;
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.life -= dt;
+      if (p.type === 'smoke') { p.x += p.vx * dt * 0.3; p.y += 0.6 * dt; p.size += dt * 0.5; }
+      else if (p.type === 'whip') { p.t += dt; }
+      else if (!p.stuck) {
+        p.vy -= 9.81 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+        if (p.y < T.heightAt(p.x)) { p.stuck = true; p.y = T.heightAt(p.x); p.life = Math.min(p.life, 0.6); }
+      }
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      if (p.type === 'smoke') {
+        ctx.fillStyle = `rgba(200,200,200,${0.35 * Math.min(1, p.life)})`;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+      } else if (p.type === 'whip') {
+        const k = Math.min(1, p.t * 3);
+        ctx.strokeStyle = `rgba(80,60,60,${1 - k})`; ctx.lineWidth = 0.05;
+        ctx.beginPath(); ctx.moveTo(p.x, p.y);
+        ctx.quadraticCurveTo(p.x + (p.x2 - p.x) * 0.3, p.y + 2 * Math.sin(p.t * 20) * (1 - k), p.x + (p.x2 - p.x) * 0.5 * (1 - k), p.y + (p.y2 - p.y) * 0.5 * (1 - k) - 2 * k);
+        ctx.stroke();
+      } else {
+        const C = MAT_COL[p.mat] || MAT_COL[3];
+        ctx.fillStyle = C.fill;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+
+  // ------------------------------------------------------------ HUD
+  function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); }
+  function bar(x, y, w, h, frac, col, bg) {
+    ctx.fillStyle = bg || 'rgba(0,0,0,0.35)'; roundRect(x, y, w, h, h / 2); ctx.fill();
+    ctx.fillStyle = col; roundRect(x, y, Math.max(h, w * Math.max(0, Math.min(1, frac))), h, h / 2); if (frac > 0.005) ctx.fill();
+  }
+  function drawHUD(dt) {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const v = world.vehicle, small = W < 700;
+    ctx.textBaseline = 'top';
+    // distance
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; roundRect(10, 10, small ? 150 : 190, small ? 50 : 62, 12); ctx.fill();
+    ctx.fillStyle = '#ffcf5a'; ctx.font = `800 ${small ? 24 : 32}px system-ui, sans-serif`; ctx.textAlign = 'left';
+    ctx.fillText(Math.floor(world.distance) + ' m', 22, 15);
+    ctx.fillStyle = '#e8dccb'; ctx.font = `600 ${small ? 11 : 13}px system-ui, sans-serif`;
+    ctx.fillText('BEST ' + Math.floor(Math.max(best, world.distance)) + ' m', 22, small ? 42 : 51);
+
+    // right panel: speed / rpm / range / diff
+    const pw = small ? 150 : 200, px = W - pw - 10;
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; roundRect(px, 10, pw, small ? 92 : 112, 12); ctx.fill();
+    ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.font = `800 ${small ? 20 : 26}px system-ui, sans-serif`;
+    ctx.fillText(Math.round(Math.abs(v.vx) * 3.6) + ' km/h', px + 12, 15);
+    ctx.font = `600 ${small ? 10 : 12}px system-ui, sans-serif`; ctx.fillStyle = '#d8ccb8';
+    ctx.fillText('RPM', px + 12, small ? 42 : 48);
+    const rpmF = Math.min(1, v.rpm / 6500);
+    bar(px + 44, small ? 43 : 49, pw - 56, 8, rpmF, rpmF > 0.85 ? '#ff5a3a' : '#ffd66b');
+    ctx.fillStyle = v.range === 'LOW' ? '#8fe08a' : '#7cc4ff';
+    ctx.fillText('RANGE ' + v.range + (v.shiftT > 0 ? ' …' : '') + '  [G]', px + 12, small ? 58 : 66);
+    ctx.fillStyle = v.diffLocked ? '#ffd66b' : '#d8ccb8';
+    ctx.fillText('DIFF ' + (v.diffLocked ? 'LOCKED 🔒' : 'OPEN') + '  [L]', px + 12, small ? 73 : 84);
+
+    // per-axle status: travel, damage, traction
+    const by = small ? 110 : 130;
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; roundRect(px, by, pw, small ? 84 : 96, 12); ctx.fill();
+    const names = ['FRONT', 'REAR'];
+    v.wheels.forEach((wh, i) => {
+      const y = by + 8 + i * (small ? 38 : 44);
+      ctx.fillStyle = '#e8dccb'; ctx.font = `700 ${small ? 10 : 11}px system-ui, sans-serif`;
+      const spin = wh.N > 0 && Math.abs(wh.slip) > 1.5, air = wh.N <= 0 && !wh.broken;
+      let tag = wh.broken ? 'BROKEN' : air ? 'AIR (no traction)' : (wh.mat >= 0 ? MATS[wh.mat].name : '');
+      ctx.fillText(names[i] + ' · ' + tag, px + 12, y);
+      if (spin && Math.floor(world.time * 6) % 2 === 0) { ctx.fillStyle = '#ff7a4a'; ctx.textAlign = 'right'; ctx.fillText('SPIN!', px + pw - 10, y); ctx.textAlign = 'left'; }
+      const comp = Math.max(0, Math.min(1, (wh.sMax - wh.s) / (wh.sMax - wh.sMin)));
+      bar(px + 12, y + 15, pw - 24, 6, comp, comp > 0.88 ? '#ff5a3a' : '#7cc4ff');
+      bar(px + 12, y + 24, pw - 24, 4, wh.damage, '#ff5a3a');
+    });
+
+    // bottom gauges: throttle, brake, lean
+    const gx = isTouch ? W / 2 - 90 : 20, gy = H - (isTouch ? 30 : 92);
+    ctx.font = '700 11px system-ui, sans-serif'; ctx.textAlign = 'left';
+    if (!isTouch) {
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'; roundRect(gx - 8, gy - 10, 196, 76, 12); ctx.fill();
+      ctx.fillStyle = '#e8dccb'; ctx.fillText('THROTTLE', gx, gy - 4);
+      bar(gx, gy + 10, 180, 9, inp.gas, inp.gas > 0.7 ? '#ff7a3a' : '#5fd16f');
+      ctx.fillStyle = '#e8dccb'; ctx.fillText('LEAN  ◀ back · fwd ▶', gx, gy + 24);
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'; roundRect(gx, gy + 39, 180, 8, 4); ctx.fill();
+      ctx.fillStyle = '#ffd66b'; ctx.beginPath(); ctx.arc(gx + 90 + v.lean * 86, gy + 43, 6, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // winch panel
+    const wc = v.winch;
+    // narrow screens stack the winch panel and warnings below the corner panels
+    const narrow = W < 760;
+    const wTop = narrow ? (small ? 205 : 250) : 10;
+    const wy = narrow ? wTop + (wc.on ? 56 : 0) : (wc.on ? 64 : 12);
+    if (wc.on) {
+      const ww = small ? 200 : 260, wx = W / 2 - ww / 2;
+      ctx.fillStyle = 'rgba(0,0,0,0.4)'; roundRect(wx, wTop, ww, 46, 12); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = '700 12px system-ui, sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText(`WINCH ${(wc.Ts / 1000).toFixed(1)} kN · ${wc.L.toFixed(1)} m`, wx + 12, wTop + 6);
+      const lim = Math.min(wc.limit, wc.anchor.strength), maxS = Math.max(wc.limit, Math.min(wc.anchor.strength, 60000)) * 1.05;
+      bar(wx + 12, wTop + 26, ww - 24, 9, wc.Ts / maxS, wc.Ts > lim * 0.8 ? '#ff4a3a' : wc.Ts > lim * 0.55 ? '#ffb13a' : '#5fd16f');
+      ctx.fillStyle = '#ff4a3a'; ctx.fillRect(wx + 12 + (ww - 24) * (wc.limit / maxS) - 1, wTop + 23, 2, 15);
+      if (wc.anchor.strength < 60000) { ctx.fillStyle = '#7ad18a'; ctx.fillRect(wx + 12 + (ww - 24) * (wc.anchor.strength / maxS) - 1, wTop + 23, 2, 15); }
+    }
+
+    // stuck / flip warnings
+    ctx.textAlign = 'center';
+    if (world.state === 'run') {
+      if (world.stuckT > 2.5) {
+        const left = Math.max(0, STUCK_LIMIT - world.stuckT);
+        ctx.fillStyle = 'rgba(120,30,10,0.75)'; roundRect(W / 2 - Math.min(170, W / 2 - 8), wy, Math.min(340, W - 16), 44, 12); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = '800 15px system-ui, sans-serif';
+        ctx.fillText(`STUCK! ${left.toFixed(1)}s left to get moving`, W / 2, wy + 6);
+        ctx.font = `600 ${small ? 9 : 11}px system-ui, sans-serif`;
+        ctx.fillText(isTouch ? 'Ease off the gas, rock back and forth, lock diffs or WINCH' : 'Ease off, rock with ←/→, lock diffs (L) or winch (E + Space)', W / 2, wy + 26);
+      } else if (world.flipT > 0.3) {
+        ctx.fillStyle = 'rgba(120,30,10,0.75)'; roundRect(W / 2 - 120, wy, 240, 30, 12); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = '800 15px system-ui, sans-serif';
+        ctx.fillText(`ROLLING OVER… ${Math.max(0, FLIP_LIMIT - world.flipT).toFixed(1)}s`, W / 2, wy + 7);
+      }
+    }
+    // toasts
+    for (const m of world.msgs.splice(0)) toasts.push(m);
+    const busy = world.state === 'run' && (world.stuckT > 2.5 || world.flipT > 0.3);
+    let ty = narrow || H < 520 ? wy + (busy ? 54 : 0) : Math.max(H * 0.3, wy + 54);
+    for (let i = toasts.length - 1; i >= 0; i--) {
+      const m = toasts[i]; m.t += dt;
+      if (m.t > 3) { toasts.splice(i, 1); continue; }
+    }
+    ctx.font = `800 ${small ? 14 : 18}px system-ui, sans-serif`;
+    for (const m of toasts.slice(H < 520 ? -2 : -3)) {
+      const a = Math.min(1, (3 - m.t) * 2, m.t * 8);
+      ctx.globalAlpha = a;
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      let fs = small ? 14 : 18;
+      ctx.font = `800 ${fs}px system-ui, sans-serif`;
+      while (ctx.measureText(m.text).width + 28 > W - 16 && fs > 9) ctx.font = `800 ${--fs}px system-ui, sans-serif`;
+      const tw = ctx.measureText(m.text).width + 28;
+      roundRect(W / 2 - tw / 2, ty - 6, tw, small ? 28 : 32, 14); ctx.fill();
+      ctx.fillStyle = m.color; ctx.fillText(m.text, W / 2, ty);
+      ty += small ? 34 : 40;
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawAnchorHint(v) {
+    if (v.winch.on || world.state !== 'run') return;
+    const a = v.findAnchor();
+    if (!a) return;
+    const q = v.anchorPt(a);
+    ctx.save();
+    ctx.setLineDash([0.2, 0.15]); ctx.strokeStyle = 'rgba(255,214,107,0.9)'; ctx.lineWidth = 0.06;
+    ctx.beginPath(); ctx.arc(q.x, q.y, 0.45 + 0.08 * Math.sin(world.time * 5), 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+    // label in screen space
+    const sx = W / 2 + (q.x - cam.x) * ppm, sy = H / 2 - (q.y - cam.y) * ppm;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.font = '800 12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; roundRect(sx - 48, sy - 0.6 * ppm - 20, 96, 18, 9); ctx.fill();
+    ctx.fillStyle = '#ffd66b'; ctx.fillText(isTouch ? 'WINCH ↗' : '[E] WINCH', sx, sy - 0.6 * ppm - 4);
+    worldTransform();
+  }
+
+  // ------------------------------------------------------------ leaderboard
+  const SCORE_API = 'mud_runner_api.php';
+  const LB_SIZE = 20;
+  let leaderboard = null, myEntryId = null, pendingScore = 0, submitting = false;
+
+  function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+  function renderLb(id) {
+    const el = document.getElementById(id);
+    if (leaderboard === null) { el.innerHTML = '<h3>🏆 TOP 20</h3><div class="lb-empty">Loading…</div>'; return; }
+    if (leaderboard === false) { el.innerHTML = '<h3>🏆 TOP 20</h3><div class="lb-empty">Leaderboard unavailable right now.</div>'; return; }
+    const rows = leaderboard.map((r, i) => `<div class="lb-row ${i < 3 ? 'top3' : ''} ${r.id === myEntryId ? 'me' : ''}">
+        <span class="lb-rank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : '#' + (i + 1)}</span>
+        <span class="lb-name">${escapeHtml(r.name)}</span>
+        <span class="lb-score">${r.score} m</span></div>`).join('');
+    el.innerHTML = '<h3>🏆 TOP 20</h3>' + (rows || '<div class="lb-empty">No scores yet. Be the first!</div>');
+  }
+  function renderAllLb() { renderLb('overLb'); renderLb('mainLb'); }
+  async function loadLeaderboard() {
+    try {
+      const res = await fetch(SCORE_API + '?action=leaderboard', { cache: 'no-store' });
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      leaderboard = data.leaderboard || [];
+    } catch (e) {
+      if (leaderboard === null) leaderboard = false;
+    }
+    renderAllLb();
+  }
+  function qualifies(d) {
+    if (d <= 0) return false;
+    if (!leaderboard) return true; // unknown: let the server decide
+    return leaderboard.length < LB_SIZE || d > leaderboard[leaderboard.length - 1].score;
+  }
+  async function onGameOver(d) {
+    myEntryId = null;
+    renderLb('overLb');
+    await loadLeaderboard();
+    if (!qualifies(d) || world.state !== 'over') return;
+    pendingScore = d;
+    const box = document.getElementById('nameEntry'), inp = document.getElementById('nameInput');
+    // one name for every game: submit under the portal identity (identity.js), asking for one if needed
+    if (window.OIID) {
+      const id = await OIID.require({ title: '🎉 Top 20! Who are you?' });
+      if (id) { inp.value = id.name; submitScore(); return; }
+    }
+    box.style.display = '';
+    document.getElementById('nameStatus').textContent = '';
+    document.getElementById('btnSubmit').disabled = false;
+    inp.disabled = false;
+    try { inp.value = localStorage.getItem('mudrunner_name') || ''; } catch (e) { /* ignore */ }
+    if (!isTouch) setTimeout(() => inp.focus(), 50);
+  }
+  async function submitScore() {
+    if (submitting) return;
+    const inp = document.getElementById('nameInput'), st = document.getElementById('nameStatus'), btn = document.getElementById('btnSubmit');
+    const name = inp.value.trim();
+    if (!name) { st.textContent = 'Please enter your name!'; inp.focus(); return; }
+    submitting = true; btn.disabled = true; inp.disabled = true; st.textContent = 'Submitting…';
+    try {
+      const res = await fetch(SCORE_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ score: pendingScore, name }) });
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      try { localStorage.setItem('mudrunner_name', name); } catch (e) { /* ignore */ }
+      myEntryId = data.id;
+      document.getElementById('nameEntry').style.display = 'none';
+      document.getElementById('overBest').textContent = `🎉 ${name}, you're #${data.rank} on the leaderboard!`;
+      await loadLeaderboard();
+    } catch (e) {
+      st.textContent = 'Could not submit. Check your connection and try again.';
+      btn.disabled = false; inp.disabled = false;
+    } finally {
+      submitting = false;
+    }
+  }
+  let lbWasPaused = false;
+  function openLb() {
+    lbWasPaused = paused;
+    if (started && world.state === 'run' && !paused) togglePause();
+    document.getElementById('lbOv').classList.add('show');
+    renderLb('mainLb');
+    loadLeaderboard();
+  }
+  function closeLb() {
+    document.getElementById('lbOv').classList.remove('show');
+    if (started && world.state === 'run' && paused && !lbWasPaused) togglePause();
+  }
+  document.getElementById('btnSubmit').addEventListener('click', submitScore);
+  document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitScore(); e.stopPropagation(); });
+  document.getElementById('btnLb').addEventListener('click', e => { openLb(); e.target.blur(); });
+  document.getElementById('btnStartLb').addEventListener('click', openLb);
+  document.getElementById('btnLbClose').addEventListener('click', closeLb);
+  loadLeaderboard();
+
+  // ------------------------------------------------------------ loop
+  let last = performance.now(), acc = 0;
+  const STEP = 1 / 120;
+  function frame(now) {
+    let dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!started || paused) dt = 0;
+    readInput(dt);
+    acc += dt;
+    while (acc >= STEP) { world.tick(STEP, inp); acc -= STEP; }
+    const v = world.vehicle;
+    // fx from sim
+    for (const p of world.fx.splice(0)) if (particles.length < 600) particles.push(p);
+    for (const e of world.events.splice(0)) {
+      if (e.type === 'snap') { particles.push({ type: 'whip', x: e.x, y: e.y, x2: e.x2, y2: e.y2, t: 0, life: 0.6 }); audio.bang(3000, 0.25, 0.5); }
+      if (e.type === 'break') audio.bang(600, 0.4, 0.8);
+      if (e.type === 'uproot') audio.bang(250, 0.6, 0.6);
+    }
+    audio.update(v.rpm, world.state === 'run' ? Math.max(inp.gas, inp.brake) : 0, inp.reel && v.winch.on, v.winch.T, started && !paused && world.state === 'run');
+
+    // camera
+    const spd = v.speed;
+    const base = Math.max(20, Math.min(62, Math.min(W / 21, H / 12)));
+    ppm += (base * (1 - Math.min(0.3, spd / 50)) - ppm) * Math.min(1, dt * 2 + (dt === 0 ? 0 : 0));
+    if (!ppm || !isFinite(ppm)) ppm = base;
+    const tx = v.x + Math.max(-3, Math.min(6, v.vx * 0.5)) + 2.5, ty = v.y + 0.8 + Math.max(-2, Math.min(2, v.vy * 0.15));
+    if (Math.abs(tx - cam.x) > 25 || Math.abs(ty - cam.y) > 15) { cam.x = tx; cam.y = ty; }
+    cam.x += (tx - cam.x) * Math.min(1, dt * 3.5); cam.y += (ty - cam.y) * Math.min(1, dt * 3);
+
+    drawSky();
+    worldTransform();
+    const vw = W / ppm, vh = H / ppm, x0 = cam.x - vw / 2 - 1, x1 = cam.x + vw / 2 + 1, yb = cam.y - vh / 2 - 1;
+    for (const t of world.terrain.trees) if (t.x > x0 - 10 && t.x < x1 + 10) drawTree(t);
+    drawTerrain(x0, x1, yb);
+    drawObstacles(x0, x1);
+    drawCable(v);
+    drawVehicle(v);
+    drawParticles(dt);
+    drawAnchorHint(v);
+    drawHUD(dt);
+
+    if (world.state === 'over' && world.overT > 1.2 && !overShown) {
+      overShown = true;
+      const d = Math.floor(world.distance), nb = d > best;
+      if (nb) { best = d; try { localStorage.setItem('mudrunner_best', String(best)); } catch (e) { /* ignore */ } }
+      document.getElementById('overTitle').textContent = world.fail.title;
+      document.getElementById('overText').textContent = world.fail.text;
+      document.getElementById('overDist').textContent = d + ' m';
+      document.getElementById('overBest').textContent = nb ? '🏆 New personal best!' : 'Best: ' + Math.floor(best) + ' m';
+      document.getElementById('overOv').classList.add('show');
+      onGameOver(d);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# The admin password (and its hash) are swapped for placeholders when files are committed, and put back on checkout,
+# by the "secrets" filter. Its commands - with the real values - live only in .git/config, never in the repository.
+# On a fresh clone without that filter the files simply keep the placeholders. See SECRETS.md.
+*.php  filter=secrets
+*.html filter=secrets
+*.js   filter=secrets
+*.sql  filter=secrets
+*.md   filter=secrets
+*.txt  filter=secrets
+*.json filter=secrets

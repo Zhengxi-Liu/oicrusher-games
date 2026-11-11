@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: white;
+      padding: 20px;
+      overflow: hidden;
+    }
+    .announcement {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 215, 0, 0.95);
+      color: #000;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 100;
+      display: none;
+      max-width: 80%;
+      text-align: center;
+    }
+    .announcement.show {
+      display: block;
+    }
+    .container {
+      display: flex;
+      gap: 30px;
+      align-items: flex-start;
+    }
+    .game-area {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    }
+    canvas {
+      background: #1a1a2e;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    }
+    .score-display {
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .leaderboard {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 20px;
+      width: 280px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .leaderboard h2 {
+      color: #ffd700;
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 24px;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      margin: 8px 0;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      border-left: 3px solid #00ff88;
+    }
+    .leaderboard-item.top3 {
+      background: rgba(255, 215, 0, 0.2);
+      border-left-color: #ffd700;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal.show {
+      display: flex;
+    }
+    .modal-content {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      max-width: 400px;
+    }
+    .modal-content h3 {
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    .modal-content input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .modal-content button {
+      background: #00ff88;
+      color: #1a1a2e;
+      border: none;
+      padding: 12px 30px;
+      margin: 10px 5px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    .modal-content button:hover {
+      transform: scale(1.05);
+      background: #00cc6f;
+    }
+    .admin-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      font-size: 24px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s;
+      z-index: 50;
+    }
+    .admin-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+    .delete-list {
+      max-height: 300px;
+      overflow-y: auto;
+      margin: 20px 0;
+    }
+    .delete-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      margin: 8px 0;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+    }
+    .delete-item button {
+      background: #ff4444 !important;
+      padding: 8px 15px !important;
+      font-size: 14px !important;
+    }
+    .error-msg {
+      color: #ff4444;
+      margin: 10px 0;
+      display: none;
+    }
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin: 10px 0;
+      font-family: Arial, sans-serif;
+      resize: vertical;
+    }
+  </style>
+</head>
+<body>
+  <div class="announcement" id="announcement"></div>
+  
+  <div class="container">
+    <div class="game-area">
+      <div class="score-display">
+        <div>Score: <span id="score">0</span></div>
+        <div style="font-size: 16px; margin-top: 5px;">High Score: <span id="highScore">0</span></div>
+      </div>
+      <canvas id="gameCanvas" width="400" height="400"></canvas>
+      <div style="text-align: center; margin-top: 15px; font-size: 14px; opacity: 0.8;">
+        Use Arrow Keys or WASD to move<br>
+        Press Space to start
+      </div>
+    </div>
+
+    <div class="leaderboard">
+      <h2>🏆 Leaderboard</h2>
+      <div id="leaderboardList"></div>
+    </div>
+  </div>
+
+  <button class="admin-btn" id="adminBtn">⚙️</button>
+
+  <!-- Name Input Modal -->
+  <div class="modal" id="nameModal">
+    <div class="modal-content">
+      <h3>🎉 New High Score!</h3>
+      <p>You scored <span id="finalScore">0</span> points!</p>
+      <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+      <div>
+        <button onclick="submitScore()">Submit</button>
+        <button onclick="closeNameModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Modal -->
+  <div class="modal" id="adminModal">
+    <div class="modal-content">
+      <h3>Admin Panel</h3>
+      <input type="password" id="adminPassword" placeholder="Enter admin password">
+      <button onclick="verifyPassword()">Login</button>
+      <div class="error-msg" id="errorMsg">Incorrect password</div>
+      
+      <div id="adminContent" style="display: none;">
+        <h4 style="margin-top: 20px;">Manage Leaderboard</h4>
+        <div class="delete-list" id="deleteList"></div>
+        
+        <h4 style="margin-top: 20px;">Announcement</h4>
+        <textarea id="announcementText" placeholder="Enter announcement text"></textarea>
+        <button onclick="updateAnnouncement()">Update</button>
+        <button onclick="clearAnnouncement()">Clear</button>
+      </div>
+      
+      <button onclick="closeAdminModal()" style="margin-top: 20px;">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const GRID_SIZE = 20;
+    const TILE_COUNT = canvas.width / GRID_SIZE;
+    const API_URL = 'https://oicrusher.me/game/snake_api.php';
+    const ADMIN_PASSWORD = '__OLD_ADMIN_PASSWORD__';
+
+    let snake = [{x: 10, y: 10}];
+    let dx = 0;
+    let dy = 0;
+    let food = {x: 15, y: 15};
+    let score = 0;
+    let gameRunning = false;
+    let gameLoop;
+    let leaderboard = [];
+    let pendingScore = 0;
+
+    // Load leaderboard and announcement on startup
+    loadLeaderboard();
+    loadAnnouncement();
+
+    // Game functions
+    function startGame() {
+      snake = [{x: 10, y: 10}];
+      dx = 1;
+      dy = 0;
+      score = 0;
+      gameRunning = true;
+      spawnFood();
+      if (gameLoop) clearInterval(gameLoop);
+      gameLoop = setInterval(update, 100);
+    }
+
+    function update() {
+      if (!gameRunning) return;
+
+      const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+
+      // Check wall collision
+      if (head.x < 0 || head.x >= TILE_COUNT || head.y < 0 || head.y >= TILE_COUNT) {
+        endGame();
+        return;
+      }
+
+      // Check self collision
+      if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+        endGame();
+        return;
+      }
+
+      snake.unshift(head);
+
+      // Check food collision
+      if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        document.getElementById('score').textContent = score;
+        spawnFood();
+      } else {
+        snake.pop();
+      }
+
+      draw();
+    }
+
+    function draw() {
+      // Clear canvas
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw grid
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      for (let i = 0; i < TILE_COUNT; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * GRID_SIZE, 0);
+        ctx.lineTo(i * GRID_SIZE, canvas.height);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i * GRID_SIZE);
+        ctx.lineTo(canvas.width, i * GRID_SIZE);
+        ctx.stroke();
+      }
+
+      // Draw snake
+      snake.forEach((segment, index) => {
+        ctx.fillStyle = index === 0 ? '#00ff88' : '#00cc6f';
+        ctx.fillRect(segment.x * GRID_SIZE, segment.y * GRID_SIZE, GRID_SIZE - 2, GRID_SIZE - 2);
+      });
+
+      // Draw food
+      ctx.fillStyle = '#ff4444';
+      ctx.fillRect(food.x * GRID_SIZE, food.y * GRID_SIZE, GRID_SIZE - 2, GRID_SIZE - 2);
+    }
+
+    function spawnFood() {
+      do {
+        food = {
+          x: Math.floor(Math.random() * TILE_COUNT),
+          y: Math.floor(Math.random() * TILE_COUNT)
+        };
+      } while (snake.some(segment => segment.x === food.x && segment.y === food.y));
+    }
+
+    function endGame() {
+      gameRunning = false;
+      clearInterval(gameLoop);
+      
+      if (score > 0) {
+        pendingScore = score;
+        document.getElementById('finalScore').textContent = score;
+        document.getElementById('nameModal').classList.add('show');
+      }
+    }
+
+    // Controls
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !gameRunning) {
+        startGame();
+        return;
+      }
+
+      if (!gameRunning) return;
+
+      switch(e.key) {
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+          if (dy === 0) { dx = 0; dy = -1; }
+          break;
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+          if (dy === 0) { dx = 0; dy = 1; }
+          break;
+        case 'ArrowLeft':
+        case 'a':
+        case 'A':
+          if (dx === 0) { dx = -1; dy = 0; }
+          break;
+        case 'ArrowRight':
+        case 'd':
+        case 'D':
+          if (dx === 0) { dx = 1; dy = 0; }
+          break;
+      }
+    });
+
+    // API functions
+    async function loadLeaderboard() {
+      try {
+        const response = await fetch(API_URL + '?action=leaderboard');
+        const data = await response.json();
+        leaderboard = data.leaderboard || [];
+        window.leaderboard = leaderboard;
+        
+        const highScore = leaderboard.length > 0 ? leaderboard[0].score : 0;
+        document.getElementById('highScore').textContent = highScore;
+        
+        displayLeaderboard();
+      } catch (error) {
+        console.error('Failed to load leaderboard:', error);
+      }
+    }
+
+    function displayLeaderboard() {
+      const list = document.getElementById('leaderboardList');
+      if (leaderboard.length === 0) {
+        list.innerHTML = '<p style="text-align: center; opacity: 0.6;">No scores yet</p>';
+        return;
+      }
+
+      list.innerHTML = leaderboard.map((item, index) => `
+        <div class="leaderboard-item ${index < 3 ? 'top3' : ''}">
+          <span>#${index + 1} ${escapeHtml(item.name)}</span>
+          <span>${item.score}</span>
+        </div>
+      `).join('');
+    }
+
+    async function submitScore() {
+      const name = document.getElementById('playerName').value.trim();
+      if (!name) {
+        alert('Please enter your name!');
+        return;
+      }
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({score: pendingScore, name: name})
+        });
+
+        if (response.ok) {
+          closeNameModal();
+          await loadLeaderboard();
+          alert('Score submitted successfully!');
+        } else {
+          alert('Failed to submit score');
+        }
+      } catch (error) {
+        alert('Error submitting score');
+      }
+    }
+
+    async function loadAnnouncement() {
+      try {
+        const response = await fetch(API_URL + '?action=announcement');
+        const data = await response.json();
+        if (data.announcement) {
+          document.getElementById('announcement').textContent = data.announcement;
+          document.getElementById('announcement').classList.add('show');
+        }
+      } catch (error) {
+        console.error('Failed to load announcement:', error);
+      }
+    }
+
+    // Admin functions
+    function verifyPassword() {
+      const password = document.getElementById('adminPassword').value;
+      if (password === ADMIN_PASSWORD) {
+        document.getElementById('errorMsg').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
+        displayDeleteList();
+        loadAnnouncementText();
+      } else {
+        document.getElementById('errorMsg').style.display = 'block';
+      }
+    }
+
+    function displayDeleteList() {
+      const list = document.getElementById('deleteList');
+      if (!window.leaderboard || window.leaderboard.length === 0) {
+        list.innerHTML = '<p style="text-align: center; opacity: 0.6;">No entries</p>';
+        return;
+      }
+
+      list.innerHTML = window.leaderboard.map(item => `
+        <div class="delete-item">
+          <span>#${item.rank} ${escapeHtml(item.name)} - ${item.score}</span>
+          <button onclick="deleteEntry(${item.id})">Delete</button>
+        </div>
+      `).join('');
+    }
+
+    async function deleteEntry(id) {
+      if (!confirm('Delete this entry?')) return;
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: `action=delete&id=${id}&password=${ADMIN_PASSWORD}`
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          await loadLeaderboard();
+          displayDeleteList();
+          alert('Entry deleted');
+        } else {
+          alert('Failed to delete: ' + (result.error || 'Unknown error'));
+        }
+      } catch (error) {
+        alert('Error deleting entry');
+      }
+    }
+
+    async function loadAnnouncementText() {
+      try {
+        const response = await fetch(API_URL + '?action=announcement');
+        const data = await response.json();
+        document.getElementById('announcementText').value = data.announcement || '';
+      } catch (error) {
+        console.error('Failed to load announcement text:', error);
+      }
+    }
+
+    async function updateAnnouncement() {
+      const text = document.getElementById('announcementText').value;
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: `action=update_announcement&announcement=${encodeURIComponent(text)}&password=${ADMIN_PASSWORD}`
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          alert('Announcement updated!');
+          await loadAnnouncement();
+        } else {
+          alert('Failed to update');
+        }
+      } catch (error) {
+        alert('Error updating announcement');
+      }
+    }
+
+    function clearAnnouncement() {
+      document.getElementById('announcementText').value = '';
+      updateAnnouncement();
+    }
+
+    // Modal functions
+    function closeNameModal() {
+      document.getElementById('nameModal').classList.remove('show');
+      document.getElementById('playerName').value = '';
+    }
+
+    function closeAdminModal() {
+      document.getElementById('adminModal').classList.remove('show');
+      document.getElementById('adminPassword').value = '';
+      document.getElementById('adminContent').style.display = 'none';
+      document.getElementById('errorMsg').style.display = 'none';
+    }
+
+    document.getElementById('adminBtn').addEventListener('click', () => {
+      document.getElementById('adminModal').classList.add('show');
+    });
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Initial draw
+    draw();
+  </script>
+</body>
+</html>

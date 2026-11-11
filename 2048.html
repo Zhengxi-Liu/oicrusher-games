@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-L8GMZRR0GY');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #bbada0;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        .score-container {
+            font-size: 18px;
+        }
+
+        button {
+            background-color: #8f7a66;
+            color: #f9f6f2;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #776e65;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 100px);
+            grid-template-rows: repeat(4, 100px);
+            gap: 15px;
+        }
+
+        .grid-cell {
+            background-color: #cdc1b4;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #776e65;
+        }
+
+        .grid-cell[data-value="2"] { background-color: #eee4da; color: #776e65; }
+        .grid-cell[data-value="4"] { background-color: #ede0c8; color: #776e65; }
+        .grid-cell[data-value="8"] { background-color: #f2b179; color: #f9f6f2; }
+        .grid-cell[data-value="16"] { background-color: #f59563; color: #f9f6f2; }
+        .grid-cell[data-value="32"] { background-color: #f67c5f; color: #f9f6f2; }
+        .grid-cell[data-value="64"] { background-color: #f65e3b; color: #f9f6f2; }
+        .grid-cell[data-value="128"] { background-color: #edcf72; color: #f9f6f2; font-size: 20px; }
+        .grid-cell[data-value="256"] { background-color: #edcc61; color: #f9f6f2; font-size: 20px; }
+        .grid-cell[data-value="512"] { background-color: #edc850; color: #f9f6f2; font-size: 20px; }
+        .grid-cell[data-value="1024"] { background-color: #edc53f; color: #f9f6f2; font-size: 16px; }
+        .grid-cell[data-value="2048"] { background-color: #edc22e; color: #f9f6f2; font-size: 16px; }
+
+        .instructions {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 16px;
+            color: #776e65;
+        }
+    </style>
+  <script src="identity.js?v=2"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="score-container">
+                Score: <span id="score">0</span>
+            </div>
+            <button id="reset-button">Reset</button>
+        </div>
+        <div class="grid-container">
+            <div class="grid-cell" data-row="0" data-col="0"></div>
+            <div class="grid-cell" data-row="0" data-col="1"></div>
+            <div class="grid-cell" data-row="0" data-col="2"></div>
+            <div class="grid-cell" data-row="0" data-col="3"></div>
+
+            <div class="grid-cell" data-row="1" data-col="0"></div>
+            <div class="grid-cell" data-row="1" data-col="1"></div>
+            <div class="grid-cell" data-row="1" data-col="2"></div>
+            <div class="grid-cell" data-row="1" data-col="3"></div>
+
+            <div class="grid-cell" data-row="2" data-col="0"></div>
+            <div class="grid-cell" data-row="2" data-col="1"></div>
+            <div class="grid-cell" data-row="2" data-col="2"></div>
+            <div class="grid-cell" data-row="2" data-col="3"></div>
+
+            <div class="grid-cell" data-row="3" data-col="0"></div>
+            <div class="grid-cell" data-row="3" data-col="1"></div>
+            <div class="grid-cell" data-row="3" data-col="2"></div>
+            <div class="grid-cell" data-row="3" data-col="3"></div>
+        </div>
+    </div>
+
+    <div class="instructions">
+        <h2>How to Play</h2>
+        <p>Use the arrow keys to move the tiles. Tiles with the same number merge when they touch.</p>
+        <p>Add them up to reach 2048!</p>
+    </div>
+
+    <script>
+        const gridContainer = document.querySelector('.grid-container');
+        const cells = document.querySelectorAll('.grid-cell');
+        const scoreDisplay = document.getElementById('score');
+        const resetButton = document.getElementById('reset-button');
+        let grid = [
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0]
+        ];
+        let score = 0;
+
+        function updateGridDisplay() {
+            cells.forEach((cell, index) => {
+                const row = Math.floor(index / 4);
+                const col = index % 4;
+                const value = grid[row][col];
+                cell.textContent = value === 0 ? '' : value;
+                cell.dataset.value = value; // For CSS styling
+            });
+            scoreDisplay.textContent = score;
+        }
+
+        function generateNewTile() {
+            const emptyCells = [];
+            grid.forEach((row, rowIndex) => {
+                row.forEach((value, colIndex) => {
+                    if (value === 0) {
+                        emptyCells.push({ row: rowIndex, col: colIndex });
+                    }
+                });
+            });
+
+            if (emptyCells.length > 0) {
+                const randomIndex = Math.floor(Math.random() * emptyCells.length);
+                const { row, col } = emptyCells[randomIndex];
+                grid[row][col] = Math.random() < 0.9 ? 2 : 4; // 90% chance of 2, 10% chance of 4
+            }
+        }
+
+        function move(direction) {
+            let gridChanged = false;
+            let newGrid = grid.map(row => [...row]); // Create a new grid copy
+
+            switch (direction) {
+                case 'up':
+                    for (let col = 0; col < 4; col++) {
+                        const column = [newGrid[0][col], newGrid[1][col], newGrid[2][col], newGrid[3][col]];
+                        const movedColumn = moveAndMerge(column);
+                        for (let row = 0; row < 4; row++) {
+                            if (newGrid[row][col] !== movedColumn[row]) {
+                                gridChanged = true;
+                            }
+                            newGrid[row][col] = movedColumn[row];
+                        }
+                    }
+                    break;
+                case 'down':
+                    for (let col = 0; col < 4; col++) {
+                        const column = [newGrid[3][col], newGrid[2][col], newGrid[1][col], newGrid[0][col]];
+                        const movedColumn = moveAndMerge(column);
+                        for (let row = 0; row < 4; row++) {
+                            if (newGrid[3 - row][col] !== movedColumn[row]) {
+                                gridChanged = true;
+                            }
+                            newGrid[3 - row][col] = movedColumn[row];
+                        }
+                    }
+                    break;
+                case 'left':
+                    for (let row = 0; row < 4; row++) {
+                        const movedRow = moveAndMerge(newGrid[row]);
+                        if (newGrid[row].join('') !== movedRow.join('')) {
+                            gridChanged = true;
+                        }
+                        newGrid[row] = movedRow;
+                    }
+                    break;
+                case 'right':
+                    for (let row = 0; row < 4; row++) {
+                        const reversedRow = [...newGrid[row]].reverse();
+                        const movedRow = moveAndMerge(reversedRow);
+                        const finalRow = movedRow.reverse();
+                        if (newGrid[row].join('') !== finalRow.join('')) {
+                            gridChanged = true;
+                        }
+                        newGrid[row] = finalRow;
+                    }
+                    break;
+            }
+
+            grid = newGrid;
+            if (gridChanged) {
+                generateNewTile();
+                updateGridDisplay();
+                if (checkGameOver()) {
+                    alert(`Game Over! Your final score is: ${score}`);
+                }
+            }
+        }
+
+        function moveAndMerge(line) {
+            const nonZero = line.filter(num => num !== 0);
+            const merged = [];
+            for (let i = 0; i < nonZero.length; i++) {
+                if (i + 1 < nonZero.length && nonZero[i] === nonZero[i + 1]) {
+                    merged.push(nonZero[i] * 2);
+                    score += nonZero[i] * 2;
+                    i++;
+                } else {
+                    merged.push(nonZero[i]);
+                }
+            }
+            while (merged.length < 4) {
+                merged.push(0);
+            }
+            return merged;
+        }
+
+        function checkGameOver() {
+            for (let row = 0; row < 4; row++) {
+                for (let col = 0; col < 4; col++) {
+                    if (grid[row][col] === 0) {
+                        return false; // There are empty cells
+                    }
+                    if (row + 1 < 4 && grid[row][col] === grid[row + 1][col]) {
+                        return false; // Can merge down
+                    }
+                    if (col + 1 < 4 && grid[row][col] === grid[row][col + 1]) {
+                        return false; // Can merge right
+                    }
+                }
+            }
+            return true; // No empty cells and no possible merges
+        }
+
+        function resetGame() {
+            grid = [
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0]
+            ];
+            score = 0;
+            generateNewTile();
+            generateNewTile();
+            updateGridDisplay();
+        }
+
+        // Initialize the game
+        generateNewTile();
+        generateNewTile();
+        updateGridDisplay();
+
+        // Event listener for keyboard input
+        document.addEventListener('keydown', (event) => {
+            switch (event.key) {
+                case 'ArrowUp':
+                    move('up');
+                    break;
+                case 'ArrowDown':
+                    move('down');
+                    break;
+                case 'ArrowLeft':
+                    move('left');
+                    break;
+                case 'ArrowRight':
+                    move('right');
+                    break;
+            }
+        });
+
+        // Event listener for the reset button
+        resetButton.addEventListener('click', resetGame);
+    </script>
+</body>
+</html>

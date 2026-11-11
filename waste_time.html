@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Waste Your Time — The World's Most Pointless Competition</title>
+  <meta name="description" content="Hold the button. Waste time. Climb the global leaderboard of absolute nothing.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:           #06000f;
+      --primary:      #d946ef;
+      --primary-glow: rgba(217, 70, 239, 0.45);
+      --cyan:         #22d3ee;
+      --cyan-glow:    rgba(34, 211, 238, 0.4);
+      --purple:       #a855f7;
+      --gold:         #fbbf24;
+      --silver:       #cbd5e1;
+      --bronze:       #d97706;
+      --glass:        rgba(255, 255, 255, 0.04);
+      --glass-border: rgba(255, 255, 255, 0.10);
+      --text:         #f0e8ff;
+      --muted:        rgba(240, 232, 255, 0.45);
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated background blobs ── */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(110px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .blob-1 {
+      width: 560px; height: 560px;
+      background: rgba(168, 85, 247, 0.14);
+      top: -120px; left: -120px;
+      animation: drift1 14s ease-in-out infinite;
+    }
+    .blob-2 {
+      width: 440px; height: 440px;
+      background: rgba(34, 211, 238, 0.10);
+      bottom: -80px; right: -80px;
+      animation: drift2 18s ease-in-out infinite;
+    }
+    .blob-3 {
+      width: 340px; height: 340px;
+      background: rgba(217, 70, 239, 0.11);
+      top: 45%; left: 48%;
+      transform: translate(-50%, -50%);
+      animation: drift3 11s ease-in-out infinite;
+    }
+    @keyframes drift1 {
+      0%,100% { transform: translate(0,0); }
+      40%     { transform: translate(50px,-40px); }
+      70%     { transform: translate(-25px, 50px); }
+    }
+    @keyframes drift2 {
+      0%,100% { transform: translate(0,0); }
+      35%     { transform: translate(-40px, 25px); }
+      65%     { transform: translate(30px,-50px); }
+    }
+    @keyframes drift3 {
+      0%,100% { transform: translate(-50%,-50%); }
+      50%     { transform: translate(-55%,-44%); }
+    }
+
+    /* ── Header ── */
+    header {
+      position: relative; z-index: 1;
+      text-align: center;
+      padding: 44px 20px 16px;
+    }
+    .site-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1.9rem, 6vw, 3.8rem);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      background: linear-gradient(130deg, var(--primary) 30%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 22px var(--primary-glow));
+    }
+    .site-sub {
+      margin-top: 10px;
+      font-size: 0.78rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ── Main layout ── */
+    main {
+      position: relative; z-index: 1;
+      display: flex;
+      gap: 28px;
+      max-width: 1020px;
+      margin: 28px auto 60px;
+      padding: 0 20px;
+      align-items: flex-start;
+    }
+
+    /* ── Glass card ── */
+    .panel {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 26px;
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    /* ── Game panel ── */
+    .game-panel {
+      flex: 1;
+      min-width: 0;
+      padding: 32px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 26px;
+    }
+
+    /* Name input */
+    .name-group {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .name-group label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .name-group input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      padding: 13px 18px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      -webkit-appearance: none;
+    }
+    .name-group input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+    .name-group input::placeholder { color: var(--muted); }
+    .name-group input.error {
+      border-color: #f87171;
+      box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.3);
+    }
+
+    /* ── Hold button ── */
+    .btn-wrap {
+      position: relative;
+      width: 230px;
+      height: 230px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Expanding pulse rings */
+    .ring {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 210px; height: 210px;
+      border-radius: 50%;
+      border: 2px solid var(--primary);
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .btn-wrap.active .ring-1 { animation: ring-expand 1.6s ease-out infinite; }
+    .btn-wrap.active .ring-2 { animation: ring-expand 1.6s ease-out 0.53s infinite; }
+    .btn-wrap.active .ring-3 { animation: ring-expand 1.6s ease-out 1.06s infinite; }
+    @keyframes ring-expand {
+      0%   { transform: translate(-50%,-50%) scale(1);   opacity: 0.75; border-color: var(--cyan); }
+      100% { transform: translate(-50%,-50%) scale(1.9); opacity: 0; }
+    }
+
+    #hold-btn {
+      position: relative; z-index: 1;
+      width: 210px; height: 210px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      background: radial-gradient(circle at 38% 32%, #3b0764, #1a003c);
+      box-shadow:
+        0 0 0 2.5px var(--primary),
+        0 0 35px var(--primary-glow),
+        inset 0 0 28px rgba(168, 85, 247, 0.12);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: box-shadow 0.35s ease;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
+    }
+    #hold-btn.holding {
+      background: radial-gradient(circle at 38% 32%, #0c3b52, #1a003c);
+      box-shadow:
+        0 0 0 2.5px var(--cyan),
+        0 0 70px var(--cyan-glow),
+        0 0 130px rgba(34, 211, 238, 0.18),
+        inset 0 0 38px rgba(34, 211, 238, 0.13);
+      animation: btn-breathe 0.9s ease-in-out infinite;
+    }
+    @keyframes btn-breathe {
+      0%,100% { transform: scale(0.965); }
+      50%     { transform: scale(0.985); }
+    }
+    .btn-idle-icon {
+      font-size: 2rem;
+      line-height: 1;
+      transition: opacity 0.25s;
+    }
+    #hold-btn.holding .btn-idle-icon { opacity: 0; height: 0; overflow: hidden; }
+    .btn-label {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--text);
+      transition: color 0.25s;
+    }
+    #hold-btn.holding .btn-label { color: var(--cyan); }
+    .btn-live-timer {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.9rem;
+      color: var(--cyan);
+      opacity: 0;
+      transition: opacity 0.3s;
+      letter-spacing: 0.06em;
+    }
+    #hold-btn.holding .btn-live-timer { opacity: 1; }
+
+    /* ── Message box ── */
+    .msg-box {
+      width: 100%;
+      min-height: 66px;
+      padding: 16px 20px;
+      background: rgba(255,255,255,0.028);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #msg-text {
+      font-size: 0.92rem;
+      font-style: italic;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.55;
+      opacity: 0;
+      transition: opacity 0.55s ease;
+    }
+    #msg-text.show { opacity: 1; }
+
+    /* ── Submit area ── */
+    .submit-area {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      animation: slide-up 0.45s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .pending-time {
+      font-family: 'Orbitron', monospace;
+      font-size: 2.2rem;
+      font-weight: 900;
+      background: linear-gradient(130deg, var(--primary), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 12px var(--primary-glow));
+      letter-spacing: 0.04em;
+    }
+    .pending-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: -10px;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 16px 32px;
+      background: linear-gradient(130deg, var(--primary) 0%, var(--purple) 100%);
+      border: none;
+      border-radius: 14px;
+      color: #fff;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.25s;
+      box-shadow: 0 4px 24px var(--primary-glow);
+    }
+    .submit-btn:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 7px 32px var(--primary-glow);
+    }
+    .submit-btn:active:not(:disabled) { transform: translateY(0); }
+    .submit-btn:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
+
+    /* ── Leaderboard panel ── */
+    .lb-panel {
+      width: 300px;
+      flex-shrink: 0;
+      padding: 28px 24px;
+    }
+    .lb-head {
+      font-family: 'Orbitron', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.17em;
+      color: var(--cyan);
+      margin-bottom: 4px;
+    }
+    .lb-sub {
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 22px;
+    }
+    .lb-empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.88rem;
+      padding: 34px 0;
+      line-height: 1.6;
+    }
+
+    .lb-entry {
+      display: grid;
+      grid-template-columns: 30px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 11px;
+      margin-bottom: 5px;
+      border: 1px solid transparent;
+      transition: background 0.2s;
+    }
+    .lb-entry:hover { background: rgba(255,255,255,0.04); }
+    .lb-entry.r1 { background: rgba(251,191,36,0.08);  border-color: rgba(251,191,36,0.18); }
+    .lb-entry.r2 { background: rgba(203,213,225,0.06); border-color: rgba(203,213,225,0.14); }
+    .lb-entry.r3 { background: rgba(217,119,6,0.06);   border-color: rgba(217,119,6,0.14); }
+
+    .lb-rank {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-align: center;
+      color: var(--muted);
+    }
+    .lb-entry.r1 .lb-rank { color: var(--gold); }
+    .lb-entry.r2 .lb-rank { color: var(--silver); }
+    .lb-entry.r3 .lb-rank { color: var(--bronze); }
+
+    .lb-name {
+      font-size: 0.88rem;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .lb-time {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--primary);
+      white-space: nowrap;
+    }
+    .lb-entry.r1 .lb-time { color: var(--gold); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 32px; left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      background: rgba(12, 4, 24, 0.96);
+      border: 1px solid var(--primary);
+      border-radius: 18px;
+      padding: 15px 30px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text);
+      box-shadow: 0 8px 40px var(--primary-glow);
+      transition: transform 0.42s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s ease;
+      opacity: 0;
+      z-index: 200;
+      text-align: center;
+      max-width: 88vw;
+      pointer-events: none;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* ── Scrollbar ── */
+    #lb-list { max-height: 420px; overflow-y: auto; padding-right: 4px; }
+    #lb-list::-webkit-scrollbar { width: 4px; }
+    #lb-list::-webkit-scrollbar-track { background: transparent; }
+    #lb-list::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 720px) {
+      main { flex-direction: column; }
+      .lb-panel { width: 100%; }
+      .game-panel { padding: 26px 20px; }
+    }
+  </style>
+  <script src="identity.js?v=2"></script>
+</head>
+<body>
+
+  <!-- Background blobs -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <header>
+    <h1 class="site-title">WASTE YOUR TIME</h1>
+    <p class="site-sub">The world's most pointless competition</p>
+  </header>
+
+  <main>
+    <!-- ── Game panel ── -->
+    <section class="panel game-panel">
+
+      <div class="name-group">
+        <label for="player-name">YOUR NAME</label>
+        <input id="player-name" type="text" placeholder="Enter your name…"
+               maxlength="30" autocomplete="off" spellcheck="false">
+      </div>
+
+      <div class="btn-wrap" id="btn-wrap">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <button id="hold-btn" aria-label="Hold to waste time"
+                oncontextmenu="return false">
+          <span class="btn-idle-icon">⏱</span>
+          <span class="btn-label">HOLD</span>
+          <span class="btn-live-timer" id="live-timer">00:00.00</span>
+        </button>
+      </div>
+
+      <div class="msg-box">
+        <p id="msg-text">Hold the button to start wasting time.</p>
+      </div>
+
+      <div class="submit-area" id="submit-area" style="display:none">
+        <div class="pending-time" id="pending-time">0.000s</div>
+        <div class="pending-label">time wasted — submit to leaderboard?</div>
+        <button class="submit-btn" id="submit-btn">SUBMIT TO LEADERBOARD</button>
+      </div>
+
+    </section>
+
+    <!-- ── Leaderboard panel ── -->
+    <section class="panel lb-panel">
+      <h2 class="lb-head">HALL OF SHAME</h2>
+      <p class="lb-sub">Top time wasters worldwide</p>
+      <div id="lb-list">
+        <p class="lb-empty">Loading…</p>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    'use strict';
+
+    const API = 'waste_time_api.php';
+
+    /* ── Random messages shown while holding ── */
+    const MSGS = [
+      "Congratulations — you're officially wasting time.",
+      "Scientists confirm: this is entirely pointless.",
+      "Your ancestors survived centuries for THIS?",
+      "You could be learning guitar right now. But you're not.",
+      "The void stares back, impressed.",
+      "Loading productivity… just kidding.",
+      "Time is an illusion. This leaderboard is very real.",
+      "Every millisecond here is a millisecond earned.",
+      "NASA is tracking your dedication from orbit.",
+      "You are in the top 0.1% of time wasters globally.",
+      "Your future self says: worth it.",
+      "404: Purpose not found.",
+      "Achievement unlocked: Existential Commitment.",
+      "The global economy is definitely unaffected by this.",
+      "Hold tighter. The leaderboard demands it.",
+      "Philosophers wish they'd thought of this.",
+      "Your therapist doesn't need to know about this.",
+      "Surprisingly meditative, isn't it?",
+      "Time flies when you're doing absolutely nothing.",
+      "The button appreciates your dedication.",
+      "You are basically a monk right now.",
+      "Breaking news: local person wastes time — on purpose.",
+      "The internet was invented for this exact moment.",
+      "You have transcended productivity.",
+      "Technically, you're working on your record.",
+      "This will look great on your résumé.",
+      "Researchers baffled by your commitment to nothing.",
+      "You're creating memories. Questionable ones, but memories.",
+      "This is the most important thing you'll do today.",
+      "Hold on. You're doing amazing, sweetie.",
+      "Your phone battery weeps silently for you.",
+      "Somewhere, a productivity guru is losing their mind.",
+      "Have you considered not holding the button? No? Good.",
+      "Fun fact: every second here is a second you can't get back.",
+      "You are the main character right now.",
+      "The clock judges you. But not as much as your dad.",
+      "If trees could see this, they'd be confused.",
+      "Professional analysts call this 'peak performance'.",
+      "You've now wasted more time than the average meeting achieves.",
+      "Historians will note this in the annals of nothing.",
+    ];
+
+    /* ── State ── */
+    let isHolding   = false;
+    let holdStart   = null;
+    let pendingMs   = 0;
+    let rafId       = null;
+    let msgTimer    = null;
+    let lastMsgIdx  = -1;
+
+    /* ── DOM refs ── */
+    const holdBtn     = document.getElementById('hold-btn');
+    const btnWrap     = document.getElementById('btn-wrap');
+    const liveTimer   = document.getElementById('live-timer');
+    const msgText     = document.getElementById('msg-text');
+    const submitArea  = document.getElementById('submit-area');
+    const pendingTime = document.getElementById('pending-time');
+    const submitBtn   = document.getElementById('submit-btn');
+    const nameInput   = document.getElementById('player-name');
+    const lbList      = document.getElementById('lb-list');
+    const toast       = document.getElementById('toast');
+
+    /* ── Time helpers ── */
+    function fmtTimer(ms) {
+      const cs = Math.floor((ms % 1000) / 10);
+      const s  = Math.floor(ms / 1000) % 60;
+      const m  = Math.floor(ms / 60000);
+      return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;
+    }
+
+    function fmtTime(ms) {
+      if (ms < 1000) return ms + 'ms';
+      if (ms < 60000) return (ms / 1000).toFixed(3) + 's';
+      const s  = Math.floor(ms / 1000) % 60;
+      const m  = Math.floor(ms / 60000) % 60;
+      const h  = Math.floor(ms / 3600000);
+      const cs = Math.floor((ms % 1000) / 10);
+      if (h > 0) return `${h}h ${m}m ${s}s`;
+      return `${m}m ${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}s`;
+    }
+
+    /* ── Message cycling ── */
+    function showMsg(text) {
+      msgText.classList.remove('show');
+      setTimeout(() => {
+        msgText.textContent = text;
+        msgText.classList.add('show');
+      }, 480);
+    }
+
+    function pickRandomMsg() {
+      let idx;
+      do { idx = Math.floor(Math.random() * MSGS.length); }
+      while (idx === lastMsgIdx && MSGS.length > 1);
+      lastMsgIdx = idx;
+      return MSGS[idx];
+    }
+
+    function scheduleMsgs() {
+      if (!isHolding) return;
+      showMsg(pickRandomMsg());
+      msgTimer = setTimeout(scheduleMsgs, 2400 + Math.random() * 1600);
+    }
+
+    /* ── Timer RAF loop ── */
+    function tickTimer() {
+      if (!isHolding) return;
+      liveTimer.textContent = fmtTimer(Date.now() - holdStart);
+      rafId = requestAnimationFrame(tickTimer);
+    }
+
+    /* ── Hold start ── */
+    function onHoldStart(e) {
+      e.preventDefault();
+      if (isHolding) return;
+
+      isHolding  = true;
+      holdStart  = Date.now();
+
+      holdBtn.classList.add('holding');
+      btnWrap.classList.add('active');
+      submitArea.style.display = 'none';
+
+      rafId = requestAnimationFrame(tickTimer);
+      scheduleMsgs();
+    }
+
+    /* ── Hold end ── */
+    function onHoldEnd(e) {
+      e.preventDefault();
+      if (!isHolding) return;
+
+      isHolding = false;
+      const held = Date.now() - holdStart;
+      holdStart = null;
+
+      cancelAnimationFrame(rafId);
+      clearTimeout(msgTimer);
+
+      holdBtn.classList.remove('holding');
+      btnWrap.classList.remove('active');
+      liveTimer.textContent = '00:00.00';
+
+      msgText.classList.remove('show');
+      setTimeout(() => {
+        msgText.textContent = 'Hold the button to start wasting time.';
+        msgText.classList.add('show');
+      }, 520);
+
+      if (held >= 500) {
+        pendingMs = held;
+        pendingTime.textContent = fmtTime(pendingMs);
+        submitArea.style.display = 'flex';
+      }
+    }
+
+    /* ── Attach hold events ── */
+    holdBtn.addEventListener('mousedown',  onHoldStart);
+    holdBtn.addEventListener('mouseup',    onHoldEnd);
+    holdBtn.addEventListener('mouseleave', (e) => { if (isHolding) onHoldEnd(e); });
+    holdBtn.addEventListener('touchstart', onHoldStart, { passive: false });
+    holdBtn.addEventListener('touchend',   onHoldEnd,   { passive: false });
+    holdBtn.addEventListener('touchcancel',onHoldEnd,   { passive: false });
+
+    /* ── Submit ── */
+    // one name for every game: the portal identity (identity.js); the box just shows it
+    nameInput.readOnly = true;
+    nameInput.title = 'Your name in every game - click to change';
+    nameInput.addEventListener('click', () => OIID.open());
+    OIID.me().then(id => { if (id) nameInput.value = id.name; });
+    OIID.onChange(id => { nameInput.value = id ? id.name : ''; });
+
+    submitBtn.addEventListener('click', async () => {
+      const id = await OIID.require({ title: 'Who is submitting this time?' });
+      if (!id) return;
+      nameInput.value = id.name;
+      const name = nameInput.value.trim();
+      if (!name) {
+        nameInput.classList.add('error');
+        nameInput.focus();
+        showToast('Please enter your name first!');
+        setTimeout(() => nameInput.classList.remove('error'), 2000);
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'SUBMITTING…';
+
+      try {
+        const res  = await fetch(API, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ player_name: name, time_ms: pendingMs }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showToast(data.error || 'Submission failed. Try again.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'SUBMIT TO LEADERBOARD';
+          return;
+        }
+
+        showToast(`You ranked #${data.your_rank}! Your time is on the board.`);
+        renderLeaderboard(data.leaderboard);
+        submitArea.style.display = 'none';
+        pendingMs = 0;
+      } catch {
+        showToast('Network error. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'SUBMIT TO LEADERBOARD';
+      }
+    });
+
+    /* ── Toast ── */
+    let toastClear;
+    function showToast(msg) {
+      clearTimeout(toastClear);
+      toast.textContent = msg;
+      toast.classList.add('show');
+      toastClear = setTimeout(() => toast.classList.remove('show'), 3800);
+    }
+
+    /* ── Render leaderboard ── */
+    function rankClass(r) {
+      if (r === 1) return ' r1';
+      if (r === 2) return ' r2';
+      if (r === 3) return ' r3';
+      return '';
+    }
+
+    function renderLeaderboard(entries) {
+      if (!entries || entries.length === 0) {
+        lbList.innerHTML = '<p class="lb-empty">No scores yet.<br>Be the first to waste time!</p>';
+        return;
+      }
+      lbList.innerHTML = '';
+      for (const e of entries) {
+        const row = document.createElement('div');
+        row.className = 'lb-entry' + rankClass(e.rank);
+
+        const rank = document.createElement('span');
+        rank.className = 'lb-rank';
+        rank.textContent = e.rank <= 3 ? `#${e.rank}` : `${e.rank}`;
+
+        const name = document.createElement('span');
+        name.className = 'lb-name';
+        name.textContent = e.name;        // textContent — XSS safe
+
+        const time = document.createElement('span');
+        time.className = 'lb-time';
+        time.textContent = fmtTime(e.time_ms);
+
+        row.appendChild(rank);
+        row.appendChild(name);
+        row.appendChild(time);
+        lbList.appendChild(row);
+      }
+    }
+
+    /* ── Initial load ── */
+    async function loadLeaderboard() {
+      try {
+        const res  = await fetch(`${API}?action=leaderboard`);
+        const data = await res.json();
+        renderLeaderboard(data.leaderboard || []);
+      } catch {
+        lbList.innerHTML = '<p class="lb-empty">Could not load leaderboard.</p>';
+      }
+    }
+
+    loadLeaderboard();
+    // Show initial hint message
+    setTimeout(() => msgText.classList.add('show'), 300);
+  </script>
+</body>
+</html>

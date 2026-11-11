@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Daily Wordle - Guess the Word in 6 Tries | OICrusher Games</title>
+  <meta name="description" content="Play the daily Wordle: guess the hidden five-letter word in six tries. A new word every day.">
+  <link rel="canonical" href="https://oicrusher.me/game/wordle.html">
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:          #ffffff;
+      --text:        #1a1a1b;
+      --muted:       #787c7e;
+      --border:      #d3d6da;
+      --border-fill: #878a8c;
+      --key-bg:      #d3d6da;
+      --key-text:    #1a1a1b;
+      --modal-bg:    #ffffff;
+      --shadow:      rgba(0, 0, 0, 0.16);
+      --correct:     #6aaa64;
+      --present:     #c9b458;
+      --absent:      #787c7e;
+      --tile-text:   #ffffff;
+    }
+    body.dark {
+      --bg:          #121213;
+      --text:        #ffffff;
+      --muted:       #818384;
+      --border:      #3a3a3c;
+      --border-fill: #565758;
+      --key-bg:      #818384;
+      --key-text:    #ffffff;
+      --modal-bg:    #121213;
+      --shadow:      rgba(0, 0, 0, 0.6);
+      --correct:     #538d4e;
+      --present:     #b59f3b;
+      --absent:      #3a3a3c;
+    }
+    body.contrast { --correct: #f5793a; --present: #85c0f9; }
+
+    html, body { height: 100%; }
+    body {
+      font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    header h1 {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+    .hdr-group { display: flex; gap: 4px; align-items: center; min-width: 120px; }
+    .hdr-group.right { justify-content: flex-end; }
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 20px;
+    }
+    .icon-btn:hover { background: var(--border); }
+    .icon-btn svg { width: 24px; height: 24px; fill: currentColor; }
+    .puzzle-no { font-size: 13px; color: var(--muted); text-align: center; padding-top: 6px; flex-shrink: 0; }
+
+    /* ── Board ──────────────────────────────────────────── */
+    #board-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      min-height: 0;
+    }
+    #board {
+      display: grid;
+      grid-template-rows: repeat(6, 1fr);
+      gap: 5px;
+      padding: 10px;
+      width: min(350px, 100vw - 32px);
+      height: min(420px, calc(100vh - 56px - 220px - 30px));
+      aspect-ratio: 5 / 6;
+    }
+    .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+    .row.shake { animation: shake 0.6s; }
+    .row.win .tile { animation: bounce 1s; }
+    .tile {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--border);
+      font-size: 2rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      user-select: none;
+      line-height: 1;
+    }
+    .tile.filled { border-color: var(--border-fill); animation: pop 0.1s; }
+    .tile.correct, .tile.present, .tile.absent { color: var(--tile-text); border-color: transparent; }
+    .tile.correct { background: var(--correct); }
+    .tile.present { background: var(--present); }
+    .tile.absent  { background: var(--absent); }
+    .tile.flip-in  { animation: flipIn 0.25s ease-in forwards; }
+    .tile.flip-out { animation: flipOut 0.25s ease-out forwards; }
+
+    @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 40% { transform: scale(1.1); opacity: 1; } }
+    @keyframes flipIn  { 0% { transform: rotateX(0); } 100% { transform: rotateX(-90deg); } }
+    @keyframes flipOut { 0% { transform: rotateX(-90deg); } 100% { transform: rotateX(0); } }
+    @keyframes shake {
+      10%, 90% { transform: translateX(-1px); }
+      20%, 80% { transform: translateX(2px); }
+      30%, 50%, 70% { transform: translateX(-4px); }
+      40%, 60% { transform: translateX(4px); }
+    }
+    @keyframes bounce {
+      0%, 20% { transform: translateY(0); }
+      40% { transform: translateY(-30px); }
+      50% { transform: translateY(5px); }
+      60% { transform: translateY(-15px); }
+      80% { transform: translateY(2px); }
+      100% { transform: translateY(0); }
+    }
+
+    /* ── Keyboard ───────────────────────────────────────── */
+    #keyboard {
+      flex-shrink: 0;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 0 8px 8px;
+      user-select: none;
+    }
+    .kb-row { display: flex; width: 100%; margin-bottom: 8px; touch-action: manipulation; }
+    .kb-row .spacer { flex: 0.5; }
+    .key {
+      flex: 1;
+      height: 58px;
+      margin-right: 6px;
+      border: 0;
+      border-radius: 4px;
+      background: var(--key-bg);
+      color: var(--key-text);
+      font-family: inherit;
+      font-size: 1.25em;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: rgba(0,0,0,0.3);
+    }
+    .key:last-child { margin-right: 0; }
+    .key.wide { flex: 1.5; font-size: 12px; }
+    .key.correct, .key.present, .key.absent { color: #fff; }
+    .key.correct { background: var(--correct); }
+    .key.present { background: var(--present); }
+    .key.absent  { background: var(--absent); }
+    .key svg { width: 24px; height: 24px; fill: currentColor; }
+
+    /* ── Toasts ─────────────────────────────────────────── */
+    #toasts {
+      position: fixed;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      background: var(--text);
+      color: var(--bg);
+      padding: 13px 16px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 14px;
+      transition: opacity 0.3s;
+    }
+    .toast.fade { opacity: 0; }
+
+    /* ── Modals ─────────────────────────────────────────── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+      padding: 16px;
+    }
+    body:not(.dark) .overlay { background: rgba(255, 255, 255, 0.5); }
+    .overlay.open { display: flex; }
+    .modal {
+      position: relative;
+      background: var(--modal-bg);
+      color: var(--text);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 23px 0 var(--shadow);
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 32px 24px 24px;
+      animation: slideIn 0.2s ease-out;
+    }
+    @keyframes slideIn { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .modal .close {
+      position: absolute;
+      top: 12px; right: 12px;
+      background: none; border: none;
+      color: var(--text);
+      font-size: 24px;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .modal h2 { font-size: 16px; text-transform: uppercase; text-align: center; letter-spacing: 0.05em; margin: 4px 0 12px; }
+    .modal h3 { font-family: Georgia, serif; font-size: 28px; margin-bottom: 4px; }
+
+    /* Help */
+    .help p, .help li { font-size: 15px; line-height: 1.5; }
+    .help ul { padding-left: 20px; margin: 10px 0 16px; }
+    .help .subtitle { font-size: 19px; margin-bottom: 12px; }
+    .example { margin: 14px 0 6px; display: flex; gap: 4px; }
+    .example .tile { width: 32px; height: 32px; font-size: 1.2rem; }
+    .help hr { border: 0; border-top: 1px solid var(--border); margin: 18px 0; }
+
+    /* Stats */
+    .stats-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 16px; }
+    .stat { flex: 1; max-width: 80px; text-align: center; }
+    .stat .num { font-size: 36px; font-weight: 400; }
+    .stat .lbl { font-size: 12px; }
+    .dist { width: 85%; margin: 0 auto 20px; }
+    .dist-row { display: flex; align-items: center; margin-bottom: 4px; font-size: 14px; }
+    .dist-row .n { width: 14px; }
+    .dist-row .bar {
+      background: var(--absent);
+      color: #fff;
+      font-weight: 700;
+      text-align: right;
+      padding: 2px 8px;
+      min-width: 7%;
+      margin-left: 4px;
+    }
+    .dist-row .bar.hi { background: var(--correct); }
+    .footer-row { display: flex; align-items: center; border-top: 1px solid var(--border); padding-top: 16px; }
+    .footer-row > div { flex: 1; text-align: center; }
+    .countdown-lbl { font-size: 14px; font-weight: 700; text-transform: uppercase; }
+    #countdown { font-size: 36px; font-variant-numeric: tabular-nums; }
+    .share-btn {
+      background: var(--correct);
+      color: #fff;
+      border: none;
+      border-radius: 24px;
+      font-family: inherit;
+      font-size: 18px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 0 28px;
+      height: 52px;
+      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .share-btn:hover { filter: brightness(1.08); }
+    .result-word { text-align: center; font-size: 15px; margin-bottom: 14px; }
+    .result-word b { letter-spacing: 0.1em; }
+    .divider { width: 1px; align-self: stretch; background: var(--border); flex: 0 0 1px !important; }
+
+    /* Settings */
+    .setting {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .setting .title { font-size: 18px; }
+    .setting .desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .switch {
+      position: relative;
+      width: 32px; height: 20px;
+      background: var(--border-fill);
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .switch::after {
+      content: '';
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 16px; height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .switch.on { background: var(--correct); }
+    .switch.on::after { transform: translateX(12px); }
+    .switch:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    @media (max-height: 640px) {
+      .key { height: 48px; }
+      #board { height: min(360px, calc(100vh - 56px - 190px - 30px)); }
+    }
+    @media (max-width: 400px) {
+      header h1 { font-size: 26px; }
+      .hdr-group { min-width: 80px; gap: 0; }
+      .icon-btn { width: 32px; }
+    }
+  </style>
+  <script src="identity.js?v=2"></script>
+</head>
+<body>
+  <header>
+    <div class="hdr-group">
+      <a class="icon-btn" href="index.html" title="Back to Game Portal" aria-label="Back to Game Portal">
+        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </a>
+      <button class="icon-btn" id="btn-help" title="How to play" aria-label="How to play">
+        <svg viewBox="0 0 24 24"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
+      </button>
+    </div>
+    <h1>Wordle</h1>
+    <div class="hdr-group right">
+      <button class="icon-btn" id="btn-stats" title="Statistics" aria-label="Statistics">
+        <svg viewBox="0 0 24 24"><path d="M16 11V3H8v6H2v12h20V11h-6zm-6-6h4v14h-4V5zm-6 6h4v8H4v-8zm16 8h-4v-6h4v6z"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-settings" title="Settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="puzzle-no" id="puzzle-no"></div>
+  <div id="board-wrap"><div id="board"></div></div>
+
+  <div id="keyboard">
+    <div class="kb-row">
+      <button class="key" data-key="q">q</button><button class="key" data-key="w">w</button><button class="key" data-key="e">e</button><button class="key" data-key="r">r</button><button class="key" data-key="t">t</button><button class="key" data-key="y">y</button><button class="key" data-key="u">u</button><button class="key" data-key="i">i</button><button class="key" data-key="o">o</button><button class="key" data-key="p">p</button>
+    </div>
+    <div class="kb-row">
+      <div class="spacer"></div>
+      <button class="key" data-key="a">a</button><button class="key" data-key="s">s</button><button class="key" data-key="d">d</button><button class="key" data-key="f">f</button><button class="key" data-key="g">g</button><button class="key" data-key="h">h</button><button class="key" data-key="j">j</button><button class="key" data-key="k">k</button><button class="key" data-key="l">l</button>
+      <div class="spacer"></div>
+    </div>
+    <div class="kb-row">
+      <button class="key wide" data-key="enter">enter</button>
+      <button class="key" data-key="z">z</button><button class="key" data-key="x">x</button><button class="key" data-key="c">c</button><button class="key" data-key="v">v</button><button class="key" data-key="b">b</button><button class="key" data-key="n">n</button><button class="key" data-key="m">m</button>
+      <button class="key wide" data-key="backspace" aria-label="backspace">
+        <svg viewBox="0 0 24 24"><path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H7.07L2.4 12l4.66-7H22v14zm-11.59-2L14 13.41 17.59 17 19 15.59 15.41 12 19 8.41 17.59 7 14 10.59 10.41 7 9 8.41 12.59 12 9 15.59z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="toasts"></div>
+
+  <!-- Help -->
+  <div class="overlay" id="help-modal">
+    <div class="modal help">
+      <button class="close" aria-label="Close">&times;</button>
+      <h3>How To Play</h3>
+      <p class="subtitle">Guess the Wordle in 6 tries.</p>
+      <ul>
+        <li>Each guess must be a valid 5-letter word.</li>
+        <li>The color of the tiles will change to show how close your guess was to the word.</li>
+      </ul>
+      <p><b>Examples</b></p>
+      <div class="example"><div class="tile correct">w</div><div class="tile filled">e</div><div class="tile filled">a</div><div class="tile filled">r</div><div class="tile filled">y</div></div>
+      <p><b>W</b> is in the word and in the correct spot.</p>
+      <div class="example"><div class="tile filled">p</div><div class="tile present">i</div><div class="tile filled">l</div><div class="tile filled">l</div><div class="tile filled">s</div></div>
+      <p><b>I</b> is in the word but in the wrong spot.</p>
+      <div class="example"><div class="tile filled">v</div><div class="tile filled">a</div><div class="tile filled">g</div><div class="tile absent">u</div><div class="tile filled">e</div></div>
+      <p><b>U</b> is not in the word in any spot.</p>
+      <hr>
+      <p>A new puzzle is released daily at midnight. You get <b>one game per day</b>, and your progress and stats are saved in this browser.</p>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="overlay" id="stats-modal">
+    <div class="modal">
+      <button class="close" aria-label="Close">&times;</button>
+      <div class="result-word" id="result-word" hidden></div>
+      <h2>Statistics</h2>
+      <div class="stats-row">
+        <div class="stat"><div class="num" id="st-played">0</div><div class="lbl">Played</div></div>
+        <div class="stat"><div class="num" id="st-win">0</div><div class="lbl">Win %</div></div>
+        <div class="stat"><div class="num" id="st-streak">0</div><div class="lbl">Current Streak</div></div>
+        <div class="stat"><div class="num" id="st-max">0</div><div class="lbl">Max Streak</div></div>
+      </div>
+      <h2>Guess Distribution</h2>
+      <div class="dist" id="dist"></div>
+      <div class="footer-row" id="stats-footer" hidden>
+        <div>
+          <div class="countdown-lbl">Next Wordle</div>
+          <div id="countdown">--:--:--</div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <button class="share-btn" id="btn-share">Share
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="overlay" id="settings-modal">
+    <div class="modal">
+      <button class="close" aria-label="Close">&times;</button>
+      <h2>Settings</h2>
+      <div class="setting">
+        <div><div class="title">Hard Mode</div><div class="desc">Any revealed hints must be used in subsequent guesses</div></div>
+        <button class="switch" id="sw-hard" aria-label="Hard mode"></button>
+      </div>
+      <div class="setting">
+        <div><div class="title">Dark Theme</div></div>
+        <button class="switch" id="sw-dark" aria-label="Dark theme"></button>
+      </div>
+      <div class="setting">
+        <div><div class="title">High Contrast Mode</div><div class="desc">For improved color vision</div></div>
+        <button class="switch" id="sw-contrast" aria-label="High contrast mode"></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="wordle_words.js"></script>
+  <script>
+  (() => {
+    const WORD_LEN = 5, MAX_GUESSES = 6;
+    const FLIP_MS = 250;                       // half of one tile flip
+    const EPOCH = new Date(2026, 0, 1);        // puzzle #1, local midnight
+    const KEY_STATE  = 'wordle_state';
+    const KEY_STATS  = 'wordle_stats';
+    const KEY_PREFS  = 'wordle_prefs';
+    const VALID = new Set(WORDLE_GUESSES.concat(WORDLE_ANSWERS));
+    const PRAISE = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Phew'];
+
+    // ── Storage helpers (private windows may throw) ──────────────────────
+    const load = (k, fallback) => {
+      try { const v = JSON.parse(localStorage.getItem(k)); return v ?? fallback; }
+      catch { return fallback; }
+    };
+    const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+
+    // ── Today's puzzle (local calendar day, like NYT) ────────────────────
+    function dayIndex(d = new Date()) {
+      const local = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      return Math.round((local - EPOCH) / 86400000);
+    }
+    const today = dayIndex();
+    const n = WORDLE_ANSWERS.length;
+    const solution = WORDLE_ANSWERS[((today % n) + n) % n];
+    const puzzleNo = today + 1;
+
+    // ── Persistent state ─────────────────────────────────────────────────
+    let state = load(KEY_STATE, null);
+    if (!state || state.day !== today) {
+      state = { day: today, guesses: [], status: 'playing', hard: !!(state && state.hard) };
+    }
+    const stats = load(KEY_STATS, {
+      played: 0, wins: 0, streak: 0, maxStreak: 0, lastWinDay: null,
+      dist: [0, 0, 0, 0, 0, 0],
+    });
+    const prefs = load(KEY_PREFS, {
+      dark: window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches,
+      contrast: false,
+    });
+
+    let current = '';
+    let busy = false;
+
+    // ── Evaluate a guess (handles repeated letters correctly) ────────────
+    function evaluate(guess, answer) {
+      const res = Array(WORD_LEN).fill('absent');
+      const remaining = {};
+      for (let i = 0; i < WORD_LEN; i++) {
+        if (guess[i] === answer[i]) res[i] = 'correct';
+        else remaining[answer[i]] = (remaining[answer[i]] || 0) + 1;
+      }
+      for (let i = 0; i < WORD_LEN; i++) {
+        if (res[i] !== 'correct' && remaining[guess[i]] > 0) {
+          res[i] = 'present';
+          remaining[guess[i]]--;
+        }
+      }
+      return res;
+    }
+
+    // Hard mode: greens must stay put, yellows must be reused.
+    function hardModeError(guess) {
+      const ord = ['1st', '2nd', '3rd', '4th', '5th'];
+      for (const prev of state.guesses) {
+        const ev = evaluate(prev, solution);
+        for (let i = 0; i < WORD_LEN; i++) {
+          if (ev[i] === 'correct' && guess[i] !== prev[i])
+            return `${ord[i]} letter must be ${prev[i].toUpperCase()}`;
+        }
+        const need = {};
+        for (let i = 0; i < WORD_LEN; i++)
+          if (ev[i] !== 'absent') need[prev[i]] = (need[prev[i]] || 0) + 1;
+        for (const ch in need) {
+          const have = guess.split('').filter(c => c === ch).length;
+          if (have < need[ch]) return `Guess must contain ${ch.toUpperCase()}`;
+        }
+      }
+      return null;
+    }
+
+    // ── DOM building ─────────────────────────────────────────────────────
+    const boardEl = document.getElementById('board');
+    const rows = [];
+    for (let r = 0; r < MAX_GUESSES; r++) {
+      const row = document.createElement('div');
+      row.className = 'row';
+      for (let c = 0; c < WORD_LEN; c++) {
+        const t = document.createElement('div');
+        t.className = 'tile';
+        row.appendChild(t);
+      }
+      boardEl.appendChild(row);
+      rows.push(row);
+    }
+    const keyEls = {};
+    document.querySelectorAll('.key').forEach(k => { keyEls[k.dataset.key] = k; });
+
+    document.getElementById('puzzle-no').textContent =
+      `No. ${puzzleNo} · ${new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}`;
+
+    function paintTile(tile, letter, cls) {
+      tile.textContent = letter || '';
+      tile.className = 'tile' + (letter ? ' filled' : '') + (cls ? ' ' + cls : '');
+    }
+
+    const rank = { absent: 1, present: 2, correct: 3 };
+    function paintKeys() {
+      const best = {};
+      for (const g of state.guesses) {
+        const ev = evaluate(g, solution);
+        for (let i = 0; i < WORD_LEN; i++) {
+          if (!best[g[i]] || rank[ev[i]] > rank[best[g[i]]]) best[g[i]] = ev[i];
+        }
+      }
+      for (const k in keyEls) {
+        if (k.length !== 1) continue;
+        keyEls[k].classList.remove('correct', 'present', 'absent');
+        if (best[k]) keyEls[k].classList.add(best[k]);
+      }
+    }
+
+    function restoreBoard() {
+      state.guesses.forEach((g, r) => {
+        const ev = evaluate(g, solution);
+        [...rows[r].children].forEach((t, i) => paintTile(t, g[i], ev[i]));
+      });
+      paintKeys();
+    }
+
+    function renderCurrent() {
+      const r = state.guesses.length;
+      if (r >= MAX_GUESSES) return;
+      [...rows[r].children].forEach((t, i) => {
+        const ch = current[i] || '';
+        if (t.textContent !== ch) paintTile(t, ch);
+      });
+    }
+
+    // ── Toasts ───────────────────────────────────────────────────────────
+    function toast(msg, ms = 1000) {
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.textContent = msg;
+      document.getElementById('toasts').prepend(el);
+      if (ms > 0) {
+        setTimeout(() => el.classList.add('fade'), ms);
+        setTimeout(() => el.remove(), ms + 300);
+      }
+    }
+
+    function shakeRow() {
+      const row = rows[state.guesses.length];
+      row.classList.remove('shake');
+      void row.offsetWidth;
+      row.classList.add('shake');
+      setTimeout(() => row.classList.remove('shake'), 600);
+    }
+
+    // ── Input ────────────────────────────────────────────────────────────
+    function onKey(key) {
+      if (state.status !== 'playing') return;
+      // While the last guess is flipping, keep accepting letters into the next row;
+      // only submitting has to wait for the reveal to finish.
+      if (key === 'enter') return busy ? undefined : submit();
+      if (key === 'backspace') { current = current.slice(0, -1); return renderCurrent(); }
+      if (/^[a-z]$/.test(key) && current.length < WORD_LEN) {
+        current += key;
+        renderCurrent();
+      }
+    }
+
+    function submit() {
+      if (current.length < WORD_LEN) { shakeRow(); return toast('Not enough letters'); }
+      if (!VALID.has(current))      { shakeRow(); return toast('Not in word list'); }
+      if (state.hard) {
+        const err = hardModeError(current);
+        if (err) { shakeRow(); return toast(err); }
+      }
+
+      const guess = current;
+      const r = state.guesses.length;
+      const ev = evaluate(guess, solution);
+      state.guesses.push(guess);
+      current = '';
+      const won = guess === solution;
+      const lost = !won && state.guesses.length === MAX_GUESSES;
+      if (won || lost) {
+        state.status = won ? 'won' : 'lost';
+        recordResult(won, state.guesses.length);
+      }
+      save(KEY_STATE, state);           // save before animating so a refresh can't replay
+      syncHardSwitch();
+
+      busy = true;
+      const tiles = [...rows[r].children];
+      tiles.forEach((t, i) => {
+        setTimeout(() => {
+          t.classList.add('flip-in');
+          setTimeout(() => {
+            t.classList.remove('flip-in');
+            paintTile(t, guess[i], ev[i]);
+            t.classList.add('flip-out');
+            setTimeout(() => t.classList.remove('flip-out'), FLIP_MS);
+          }, FLIP_MS);
+        }, i * FLIP_MS * 1.2);
+      });
+
+      const revealDone = (WORD_LEN - 1) * FLIP_MS * 1.2 + FLIP_MS * 2;
+      setTimeout(() => {
+        paintKeys();
+        busy = false;
+        if (won) {
+          rows[r].classList.add('win');
+          toast(PRAISE[r], 2000);
+          setTimeout(() => openStats(), 2200);
+        } else if (lost) {
+          toast(solution.toUpperCase(), 0);
+          setTimeout(() => openStats(), 2200);
+        }
+      }, revealDone);
+    }
+
+    function recordResult(won, tries) {
+      stats.played++;
+      if (won) {
+        stats.wins++;
+        stats.dist[tries - 1]++;
+        stats.streak = stats.lastWinDay === today - 1 ? stats.streak + 1 : 1;
+        stats.maxStreak = Math.max(stats.maxStreak, stats.streak);
+        stats.lastWinDay = today;
+      } else {
+        stats.streak = 0;
+      }
+      save(KEY_STATS, stats);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (document.querySelector('.overlay.open')) {
+        if (e.key === 'Escape') closeModals();
+        return;
+      }
+      const k = e.key.toLowerCase();
+      if (k === 'enter' || k === 'backspace' || /^[a-z]$/.test(k)) {
+        e.preventDefault();
+        onKey(k);
+      }
+    });
+    document.getElementById('keyboard').addEventListener('click', e => {
+      const btn = e.target.closest('.key');
+      if (!btn) return;
+      btn.blur();
+      onKey(btn.dataset.key);
+    });
+
+    // ── Modals ───────────────────────────────────────────────────────────
+    function openModal(id) { closeModals(); document.getElementById(id).classList.add('open'); }
+    function closeModals() { document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open')); }
+    document.querySelectorAll('.overlay').forEach(o => {
+      o.addEventListener('click', e => {
+        if (e.target === o || e.target.classList.contains('close')) closeModals();
+      });
+    });
+    document.getElementById('btn-help').onclick = () => openModal('help-modal');
+    document.getElementById('btn-settings').onclick = () => openModal('settings-modal');
+    document.getElementById('btn-stats').onclick = () => openStats();
+
+    function openStats() {
+      // A streak only survives if yesterday (or today) was won.
+      const liveStreak = stats.lastWinDay !== null && stats.lastWinDay >= today - 1 ? stats.streak : 0;
+      document.getElementById('st-played').textContent = stats.played;
+      document.getElementById('st-win').textContent = stats.played ? Math.round(100 * stats.wins / stats.played) : 0;
+      document.getElementById('st-streak').textContent = liveStreak;
+      document.getElementById('st-max').textContent = stats.maxStreak;
+
+      const max = Math.max(1, ...stats.dist);
+      const hi = state.status === 'won' ? state.guesses.length - 1 : -1;
+      document.getElementById('dist').innerHTML = stats.dist.map((v, i) =>
+        `<div class="dist-row"><span class="n">${i + 1}</span>` +
+        `<div class="bar${i === hi ? ' hi' : ''}" style="width:${Math.max(7, (v / max) * 100)}%">${v}</div></div>`
+      ).join('');
+
+      const done = state.status !== 'playing';
+      document.getElementById('stats-footer').hidden = !done;
+      const rw = document.getElementById('result-word');
+      rw.hidden = !done;
+      if (done) {
+        rw.innerHTML = state.status === 'won'
+          ? `You solved today's Wordle in <b>${state.guesses.length}</b>/6. Come back tomorrow!`
+          : `Today's word was <b>${solution.toUpperCase()}</b>. Come back tomorrow!`;
+      }
+      openModal('stats-modal');
+    }
+
+    // ── Countdown to the next puzzle ─────────────────────────────────────
+    function tick() {
+      const now = new Date();
+      if (dayIndex(now) !== today) { location.reload(); return; }
+      const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const s = Math.floor((next - now) / 1000);
+      const pad = x => String(x).padStart(2, '0');
+      document.getElementById('countdown').textContent =
+        `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`;
+    }
+    tick();
+    setInterval(tick, 1000);
+
+    // ── Share ────────────────────────────────────────────────────────────
+    document.getElementById('btn-share').onclick = async () => {
+      const sq = prefs.contrast
+        ? { correct: '🟧', present: '🟦', absent: prefs.dark ? '⬛' : '⬜' }
+        : { correct: '🟩', present: '🟨', absent: prefs.dark ? '⬛' : '⬜' };
+      const score = state.status === 'won' ? state.guesses.length : 'X';
+      const grid = state.guesses.map(g => evaluate(g, solution).map(c => sq[c]).join('')).join('\n');
+      const text = `Wordle ${puzzleNo.toLocaleString()} ${score}/6${state.hard ? '*' : ''}\n\n${grid}\n\nhttps://oicrusher.me/game/wordle.html`;
+      try {
+        if (navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+          await navigator.share({ text });
+        } else {
+          await navigator.clipboard.writeText(text);
+          toast('Copied results to clipboard');
+        }
+      } catch (e) {
+        if (e && e.name !== 'AbortError') toast('Could not share results');
+      }
+    };
+
+    // ── Settings ─────────────────────────────────────────────────────────
+    const swHard = document.getElementById('sw-hard');
+    const swDark = document.getElementById('sw-dark');
+    const swContrast = document.getElementById('sw-contrast');
+
+    function applyPrefs() {
+      document.body.classList.toggle('dark', !!prefs.dark);
+      document.body.classList.toggle('contrast', !!prefs.contrast);
+      swDark.classList.toggle('on', !!prefs.dark);
+      swContrast.classList.toggle('on', !!prefs.contrast);
+    }
+    function syncHardSwitch() {
+      swHard.classList.toggle('on', !!state.hard);
+      // Like NYT: hard mode can only be changed before the first guess.
+      swHard.disabled = state.guesses.length > 0 && state.status === 'playing';
+    }
+    swHard.onclick = () => {
+      if (state.guesses.length > 0 && state.status === 'playing')
+        return toast('Hard mode can only be enabled at the start of a round');
+      state.hard = !state.hard;
+      save(KEY_STATE, state);
+      syncHardSwitch();
+    };
+    swDark.onclick = () => { prefs.dark = !prefs.dark; save(KEY_PREFS, prefs); applyPrefs(); };
+    swContrast.onclick = () => { prefs.contrast = !prefs.contrast; save(KEY_PREFS, prefs); applyPrefs(); };
+
+    // ── Boot ─────────────────────────────────────────────────────────────
+    applyPrefs();
+    syncHardSwitch();
+    restoreBoard();
+    save(KEY_STATE, state);
+
+    if (state.status !== 'playing') {
+      setTimeout(openStats, 400);
+    } else if (!load('wordle_seen_help', false)) {
+      save('wordle_seen_help', true);
+      openModal('help-modal');
+    }
+  })();
+  </script>
+</body>
+</html>

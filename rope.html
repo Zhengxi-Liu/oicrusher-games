@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-L8GMZRR0GY');
+</script>
+<title>超简化版“切绳子”概念演示</title>
+<style>
+  body { margin: 0; overflow: hidden; background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+  canvas { border: 1px solid black; background-color: #fff; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="600" height="400"></canvas>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  // --- 游戏元素 ---
+  let ropeAnchor = { x: canvas.width / 2, y: 50 };
+  let candy = { x: canvas.width / 2, y: 150, radius: 15, color: 'red' };
+  let target = { x: canvas.width / 2, y: 350, radius: 25, color: 'green' }; // Om Nom 的简化代表
+  let isRopeCut = false;
+  let gravity = 0.5; // 非常简化的重力
+  let candyVelocityY = 0; // 糖果垂直速度
+
+  // --- 绘制函数 ---
+  function draw() {
+    // 清除画布
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 绘制目标 (Om Nom)
+    ctx.beginPath();
+    ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
+    ctx.fillStyle = target.color;
+    ctx.fill();
+    ctx.closePath();
+     ctx.fillStyle = 'white';
+     ctx.textAlign = 'center';
+     ctx.textBaseline = 'middle';
+     ctx.font = 'bold 18px Arial';
+     ctx.fillText('目标', target.x, target.y);
+
+
+    // 如果绳子没断，绘制绳子
+    if (!isRopeCut) {
+      ctx.beginPath();
+      ctx.moveTo(ropeAnchor.x, ropeAnchor.y);
+      ctx.lineTo(candy.x, candy.y);
+      ctx.strokeStyle = 'brown';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.closePath();
+    } else {
+        // 简单的模拟掉落 (无物理碰撞)
+        candyVelocityY += gravity;
+        candy.y += candyVelocityY;
+
+        // 停止在底部或目标附近（非常粗略）
+         if (candy.y + candy.radius > canvas.height) {
+            candy.y = canvas.height - candy.radius;
+            candyVelocityY = 0; // 停止运动
+         }
+          // 简单的触碰到目标判定
+         let distToTarget = Math.sqrt(Math.pow(candy.x - target.x, 2) + Math.pow(candy.y - target.y, 2));
+         if (distToTarget < candy.radius + target.radius) {
+            console.log("吃到糖果了! (简化版)");
+            // 可以在这里加一些成功的视觉提示
+            // 为了演示，我们让糖果停在目标上
+            candy.y = target.y - target.radius - candy.radius; // 放在目标上方一点
+             candyVelocityY = 0;
+         }
+    }
+
+    // 绘制糖果
+    ctx.beginPath();
+    ctx.arc(candy.x, candy.y, candy.radius, 0, Math.PI * 2);
+    ctx.fillStyle = candy.color;
+    ctx.fill();
+    ctx.closePath();
+
+     // 提示文字
+     ctx.fillStyle = 'black';
+     ctx.font = '16px Arial';
+     ctx.textAlign = 'center';
+     ctx.fillText(isRopeCut ? '糖果掉落中...' : '点击绳子区域来“切割”', canvas.width / 2, 20);
+
+  }
+
+  // --- 更新与动画 ---
+  function gameLoop() {
+    draw();
+    requestAnimationFrame(gameLoop); // 创建动画循环
+  }
+
+  // --- 交互：点击切割绳子 ---
+  canvas.addEventListener('click', function(event) {
+    if (isRopeCut) return; // 如果已经切断，不再响应
+
+    const rect = canvas.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const clickY = event.clientY - rect.top;
+
+    // 非常简化的判定：点击是否在绳子所在的垂直区域，且在糖果上方
+    const ropeSegmentTop = Math.min(ropeAnchor.y, candy.y);
+    const ropeSegmentBottom = Math.max(ropeAnchor.y, candy.y);
+    const ropeX = ropeAnchor.x; // 假设绳子是直的
+
+    // 在绳子 x 坐标附近的一个小范围内点击，且 y 坐标在绳子段内
+    if (Math.abs(clickX - ropeX) < 15 && clickY > ropeSegmentTop && clickY < ropeSegmentBottom) {
+      console.log('Rope Cut!');
+      isRopeCut = true;
+      candyVelocityY = 0; // 开始掉落前速度为0
+    }
+  });
+
+  // --- 启动游戏 ---
+  gameLoop();
+
+</script>
+
+</body>
+</html>

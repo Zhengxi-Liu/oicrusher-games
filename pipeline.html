@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pipeline &amp; Traffic Flow</title>
+  <meta name="description" content="A grid strategy game about routing packets: pipes, rate limiters, load balancers and buffer queues. Don't get OOM-killed.">
+  <link rel="canonical" href="https://oicrusher.me/game/pipeline.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #04070a;
+      --panel: #0a1210;
+      --panel2: #0d1915;
+      --line: #17352a;
+      --green: #39ff14;
+      --green-dim: #1f8f3a;
+      --text: #c6f6d2;
+      --muted: #6f9a80;
+      --blue: #4fc3f7;
+      --red: #ff4040;
+      --amber: #ffb000;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--bg); }
+    body {
+      font-family: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+      color: var(--text);
+      min-height: 100vh;
+      padding: 12px 16px 24px;
+      background:
+        radial-gradient(ellipse at top, rgba(57,255,20,0.06), transparent 60%),
+        var(--bg);
+      -webkit-tap-highlight-color: transparent;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    button { font-family: inherit; }
+    .wrap { max-width: 1040px; margin: 0 auto; }
+
+    /* ---------- top bar ---------- */
+    .topbar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+      padding: 8px 12px; margin-bottom: 10px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 260px; }
+    .back { font-size: 12px; color: var(--muted); border: 1px solid var(--line); padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
+    .back:hover { color: var(--green); border-color: var(--green-dim); }
+    .lvl { min-width: 0; }
+    .lvl .tag { font-size: 10px; color: var(--muted); letter-spacing: .12em; }
+    .lvl .name { font-size: 14px; font-weight: 800; color: var(--green); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 8px rgba(57,255,20,.4); }
+    .stats { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+    .stat { font-size: 11px; color: var(--muted); line-height: 1.25; }
+    .stat b { display: block; font-size: 15px; color: var(--text); font-weight: 600; }
+    .stat b.ok { color: var(--green); }
+    .stat b.warn { color: var(--amber); }
+    .stat b.bad { color: var(--red); }
+    .pips { display: flex; gap: 3px; margin-top: 3px; }
+    .pip { width: 9px; height: 11px; background: var(--green); box-shadow: 0 0 6px rgba(57,255,20,.6); }
+    .pip.off { background: #2a1414; box-shadow: none; outline: 1px solid #5a2020; }
+    .cpu { width: 140px; }
+    .cpu span { display: block; color: var(--text); font-size: 12px; }
+    .cpubar { height: 8px; background: #0f1f19; border: 1px solid var(--line); margin-top: 4px; position: relative; overflow: hidden; }
+    .cpubar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--green); transition: width .15s linear, background .3s; }
+    .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn {
+      background: #0f1f19; color: var(--text); border: 1px solid var(--line);
+      border-radius: 6px; padding: 7px 10px; font-size: 12px; cursor: pointer; white-space: nowrap;
+    }
+    .btn:hover { border-color: var(--green-dim); color: var(--green); }
+    .btn.primary { background: var(--green); color: #031005; border-color: var(--green); font-weight: 800; }
+    .btn.primary:hover { color: #031005; filter: brightness(1.1); }
+    .btn.danger:hover { border-color: var(--red); color: var(--red); }
+
+    /* ---------- board ---------- */
+    .board {
+      position: relative; border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+      background: #050b09; box-shadow: 0 0 40px rgba(57,255,20,.05) inset;
+    }
+    .board.shake { animation: shake .45s linear; }
+    @keyframes shake {
+      0%,100% { transform: translate(0,0); }
+      10% { transform: translate(-8px,3px); } 20% { transform: translate(7px,-4px); }
+      30% { transform: translate(-6px,-2px); } 40% { transform: translate(6px,4px); }
+      50% { transform: translate(-4px,2px); } 60% { transform: translate(4px,-3px); }
+      70% { transform: translate(-3px,1px); } 80% { transform: translate(2px,-1px); }
+    }
+    canvas#game { display: block; width: 100%; height: auto; touch-action: none; cursor: crosshair; }
+    .scan { pointer-events: none; position: absolute; inset: 0;
+      background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0 2px, rgba(0,0,0,.18) 2px 3px); }
+
+    /* ---------- toolbar ---------- */
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px;
+    }
+    .tool {
+      display: flex; align-items: center; gap: 6px; background: var(--panel2);
+      border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px 4px 4px; cursor: pointer;
+      color: var(--text); font-size: 12px; position: relative;
+    }
+    .tool canvas { width: 36px; height: 36px; display: block; }
+    .tool .k { position: absolute; top: 2px; left: 4px; font-size: 9px; color: var(--muted); }
+    .tool .cost { display: block; font-size: 10px; color: var(--amber); }
+    .tool.sel { border-color: var(--green); box-shadow: 0 0 0 1px var(--green), 0 0 14px rgba(57,255,20,.25); }
+    .tool.poor .cost { color: var(--red); }
+    .help {
+      display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 10px; margin-top: 10px;
+    }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 12px; line-height: 1.55; }
+    .panel h3 { font-size: 11px; color: var(--muted); letter-spacing: .12em; margin-bottom: 4px; font-weight: 600; }
+    #desc b { color: var(--green); }
+    .keys { color: var(--muted); margin-top: 6px; font-size: 11px; }
+    .keys kbd { border: 1px solid var(--line); border-bottom-width: 2px; padding: 0 4px; border-radius: 3px; color: var(--text); font-family: inherit; }
+    #console { height: 110px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
+    #console div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .l-info { color: var(--muted); } .l-ok { color: var(--green); } .l-warn { color: var(--amber); } .l-err { color: var(--red); }
+
+    /* ---------- overlays ---------- */
+    .overlay {
+      position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center;
+      background: rgba(2,5,4,.82); backdrop-filter: blur(3px); padding: 16px;
+    }
+    .overlay.show { display: flex; }
+    .dialog {
+      width: min(640px, 100%); max-height: calc(100vh - 32px); overflow: auto;
+      background: #07100c; border: 1px solid var(--green-dim); border-radius: 10px;
+      box-shadow: 0 0 60px rgba(57,255,20,.15); padding: 18px 20px;
+    }
+    .dialog h1 { font-size: 22px; color: var(--green); text-shadow: 0 0 12px rgba(57,255,20,.5); margin-bottom: 4px; }
+    .dialog h2 { font-size: 16px; color: var(--green); margin-bottom: 8px; }
+    .dialog p { font-size: 13px; line-height: 1.6; color: var(--text); margin-bottom: 8px; }
+    .dialog .sub { color: var(--muted); font-size: 12px; margin-bottom: 14px; }
+    .prompt::before { content: '$ '; color: var(--green); }
+    .levels { display: flex; flex-direction: column; gap: 6px; margin: 10px 0 4px; }
+    .lvbtn {
+      text-align: left; background: var(--panel2); border: 1px solid var(--line); color: var(--text);
+      border-radius: 8px; padding: 10px 12px; cursor: pointer; font-size: 13px; display: flex; gap: 10px; align-items: center;
+    }
+    .lvbtn:hover:not(:disabled) { border-color: var(--green); }
+    .lvbtn:disabled { opacity: .45; cursor: not-allowed; }
+    .lvbtn .num { color: var(--green); font-weight: 800; }
+    .lvbtn .t { flex: 1; min-width: 0; }
+    .lvbtn .t small { display: block; color: var(--muted); font-size: 11px; }
+    .lvbtn .stars { color: var(--amber); letter-spacing: 2px; white-space: nowrap; }
+    .brief { background: #040a07; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin: 10px 0; font-size: 12.5px; line-height: 1.6; }
+    .brief li { margin-left: 18px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+    /* crash screens */
+    .bsod { background: #0b5cd6; color: #fff; border: none; font-family: 'Segoe UI', system-ui, sans-serif; box-shadow: 0 0 80px rgba(11,92,214,.5); }
+    .bsod .face { font-size: 72px; line-height: 1; margin-bottom: 12px; }
+    .bsod p { color: #fff; font-size: 15px; }
+    .bsod .code { font-size: 12px; opacity: .9; margin-top: 14px; font-family: inherit; }
+    .bsod .btn { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.4); color: #fff; }
+    .panic { background: #0a0000; border-color: #ff2a2a; box-shadow: 0 0 60px rgba(255,40,40,.25); }
+    .panic pre { color: #ff5a5a; font-size: 11.5px; line-height: 1.5; white-space: pre-wrap; font-family: inherit; }
+    .panic h1 { color: #ff3b3b; text-shadow: 0 0 12px rgba(255,59,59,.6); }
+    .nginx { background: #fff; color: #000; border: none; font-family: Times, serif; text-align: center; }
+    .nginx h1 { color: #000; text-shadow: none; font-size: 30px; font-family: Times, serif; margin: 10px 0; }
+    .nginx hr { border: none; border-top: 1px solid #aaa; margin: 10px 0; }
+    .nginx p { color: #000; font-family: Times, serif; }
+    .nginx .btn { background: #eee; color: #000; border-color: #999; font-family: 'JetBrains Mono', monospace; }
+    .win h1 { font-size: 26px; }
+    .win .bigstars { font-size: 34px; color: var(--amber); letter-spacing: 6px; text-shadow: 0 0 14px rgba(255,176,0,.5); margin: 6px 0 10px; }
+
+    @media (max-width: 720px) {
+      body { padding: 8px 16px 20px; }
+      .help { grid-template-columns: minmax(0,1fr); }
+      .stat b { font-size: 13px; }
+      .cpu { width: 80px; }
+      .tool { padding-right: 6px; font-size: 11px; }
+      .tool canvas { width: 30px; height: 30px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <a class="back" href="./">← games</a>
+      <div class="lvl">
+        <div class="tag" id="lvlTag">PIPELINE &amp; TRAFFIC FLOW</div>
+        <div class="name" id="lvlName">booting…</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat">200 OK<b id="sDelivered">0 / 0</b></div>
+      <div class="stat">deadline<b id="sTime">--</b></div>
+      <div class="stat">error budget<div class="pips" id="sBudget"></div></div>
+      <div class="stat">cloud $<b id="sCredits">0</b></div>
+      <div class="stat cpu">load avg <span id="sLoad">0.00 0.00 0.00</span><div class="cpubar"><i id="sCpu"></i></div></div>
+    </div>
+    <div class="btns">
+      <button class="btn primary" id="bPlay">▶ Deploy</button>
+      <button class="btn" id="bSpeed" title="Speed (F)">⏩ 1x</button>
+      <button class="btn" id="bRestart" title="Restart run, keep layout">↻ Restart</button>
+      <button class="btn danger" id="bClear" title="Remove every component">git reset --hard</button>
+      <button class="btn" id="bLevels">☰ Levels</button>
+    </div>
+  </div>
+
+  <div class="board" id="board">
+    <canvas id="game"></canvas>
+    <div class="scan"></div>
+  </div>
+
+  <div class="toolbar" id="toolbar"></div>
+
+  <div class="help">
+    <div class="panel">
+      <h3>// SELECTED</h3>
+      <div id="desc"></div>
+      <div class="keys">
+        <kbd>click</kbd> place / rotate · <kbd>drag</kbd> draw pipes · <kbd>right-click</kbd> delete ·
+        <kbd>1-7</kbd> tools · <kbd>R</kbd> rotate · <kbd>T</kbd> tune · <kbd>Space</kbd> deploy/pause · <kbd>F</kbd> speed
+      </div>
+    </div>
+    <div class="panel">
+      <h3>// journalctl -f</h3>
+      <div id="console"></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovMenu"><div class="dialog" id="menuBox"></div></div>
+<div class="overlay" id="ovBrief"><div class="dialog" id="briefBox"></div></div>
+<div class="overlay" id="ovEnd"><div class="dialog" id="endBox"></div></div>
+
+<!-- ================= SIMULATION CORE (no DOM) ================= -->
+<script id="core">
+'use strict';
+const COLS = 12, ROWS = 8, CELL = 64;
+const DX = [1, 0, -1, 0], DY = [0, 1, 0, -1];           // 0=E 1=S 2=W 3=N
+const opp = d => (d + 2) & 3, leftOf = d => (d + 3) & 3, rightOf = d => (d + 1) & 3;
+
+const PTYPES = {
+  GET:  { label: 'GET',  color: '#39ff14', speed: 4.0 },
+  POST: { label: 'POST', color: '#22d3ff', speed: 4.4 },
+  GRPC: { label: 'gRPC', color: '#ff4fd8', speed: 4.8 },
+};
+const LIMITER_RATES = [1, 2, 3, 4];
+const BUFFER_CAPS = [8, 16, 32];
+const BUFFER_UPGRADE_COST = [0, 5, 10];
+const COMPONENTS = ['pipe', 'limiter', 'balancer', 'router', 'buffer'];
+const TOOL_INFO = {
+  pipe:     { name: 'Pipe', cost: 1, desc: '<b>Pipe</b>: moves packets one way. It bends and merges by itself, so anything pointing into it joins the flow. Drag to draw a line.' },
+  limiter:  { name: 'Rate Limiter', cost: 5, desc: '<b>Rate Limiter</b>: a token bucket. Lets N packets/sec through and makes the rest wait upstream (HTTP 429). Use <b>Tune</b> to change N (1-4/s).' },
+  balancer: { name: 'Load Balancer', cost: 6, desc: '<b>Load Balancer</b>: takes input from the back and sends packets round-robin to its connected outputs (left / forward / right).' },
+  router:   { name: 'Router', cost: 6, desc: '<b>Router</b>: the matching packet type goes forward, everything else goes out the sides. Click the tool again or use <b>Tune</b> to pick the type.' },
+  buffer:   { name: 'Buffer Queue', cost: 8, desc: '<b>Buffer Queue</b>: holds bursts and serves P0 packets first. Overfill it and you get OOM-killed. <b>Tune</b> adds RAM (8 → 16 → 32, costs $).' },
+  tune:     { name: 'Tune', cost: 0, desc: '<b>Tune</b>: click a limiter to change its rate, a router to change its type, or a buffer to add RAM.' },
+  erase:    { name: 'rm -rf', cost: 0, desc: '<b>rm -rf</b>: delete a component for a full refund. Packets inside it are killed, and that counts against your error budget. Right-click also deletes.' },
+};
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+// periodic traffic spike: `base` req/s, `peak` req/s for `len` seconds every `period`, starting at `start`
+const burst = (base, peak, start, len, period) => t => (t >= start && (t - start) % period < len) ? peak : base;
+
+const LEVELS = [
+  {
+    id: 'l1', name: 'Newbie Village Concurrency Crisis',
+    subtitle: 'Hello, World! Now route it.',
+    brief: [
+      'Day one at the startup. The CTO, who is also the intern, wired two services straight into the legacy monolith. Nothing routes.',
+      'Draw <b>pipes</b> from each ingress to the sink of the same type. <span style="color:#39ff14">GET</span> goes to <i>read-api</i> and <span style="color:#22d3ff">POST</span> goes to <i>write-api</i>.',
+      'Gray blocks are <i>legacy code</i>. Nobody knows what they do, so don\'t touch them. Pipes can\'t cross, so plan your lanes.',
+    ],
+    hint: 'Drag across cells to draw a pipe line. Click a pipe to rotate it. Press Deploy when ready.',
+    map: [
+      '....#.......',
+      '....#.......',
+      '....#.......',
+      '....#...#...',
+      '....#...#...',
+      '........#...',
+      '........#...',
+      '........#...',
+    ],
+    sources: [
+      { x: 0, y: 1, dir: 0, mix: { GET: 1 }, rate: () => 1.0, backlog: 6, label: 'ingress-a' },
+      { x: 0, y: 6, dir: 0, mix: { POST: 1 }, rate: () => 0.8, backlog: 6, label: 'ingress-b' },
+    ],
+    sinks: [
+      { x: 11, y: 1, type: 'GET', rate: 3, cap: 4, label: 'read-api' },
+      { x: 11, y: 6, type: 'POST', rate: 3, cap: 4, label: 'write-api' },
+    ],
+    tools: ['pipe'], credits: 60, target: 60, time: 75, budget: 5, seed: 11,
+  },
+  {
+    id: 'l2', name: 'Sudden Traffic Spike (DDoS Attack)',
+    subtitle: 'Someone posted our API on Hacker News.',
+    brief: [
+      'Traffic comes in waves: a calm <b>1 req/s</b>, then a <b>4 req/s</b> spike for 5 seconds out of every 16.',
+      'The backend handles <b>2 req/s</b> and can queue 3 more. Any more than that and it melts into a <i>502 Bad Gateway</i>.',
+      'A <b>Rate Limiter</b> protects the backend, but packets back up behind it until ingress starts dropping them (503). Put a <b>Buffer Queue</b> in front to absorb the spike, but don\'t let it overflow.',
+    ],
+    hint: 'Ingress → Buffer → Rate Limiter (2/s) → backend. Watch the buffer\'s fill level. Tune adds RAM.',
+    map: [
+      '............',
+      '...##.......',
+      '...##...#...',
+      '........#...',
+      '........#...',
+      '...##.......',
+      '...##.......',
+      '............',
+    ],
+    sources: [
+      { x: 0, y: 3, dir: 0, mix: { GET: 1 }, rate: burst(1.0, 4.0, 6, 5, 16), backlog: 4, label: 'internet' },
+    ],
+    sinks: [
+      { x: 11, y: 4, type: 'GET', rate: 2, cap: 3, label: 'backend' },
+    ],
+    tools: ['pipe', 'limiter', 'buffer'], credits: 45, target: 110, time: 90, budget: 5, seed: 22,
+  },
+  {
+    id: 'l3', name: 'Microservice Avalanche',
+    subtitle: 'We split the monolith into 40 services. Now everything is down.',
+    brief: [
+      'One gateway sends <span style="color:#39ff14">GET</span> and <span style="color:#22d3ff">POST</span> together. Use a <b>Router</b> to split them by type.',
+      'Each read replica serves only <b>1 req/s</b>, and GET traffic is heavier than that. Spread it across both replicas with a <b>Load Balancer</b> (round-robin).',
+      'Sending a request to the wrong service is a <i>400 Bad Request</i> and costs error budget.',
+    ],
+    hint: 'Router (type GET) → forward to a Load Balancer, sides to the POST line. The LB alternates between every connected output.',
+    map: [
+      '............',
+      '.......#....',
+      '.......#....',
+      '............',
+      '............',
+      '.....##.....',
+      '............',
+      '............',
+    ],
+    sources: [
+      { x: 0, y: 4, dir: 0, mix: { GET: 0.6, POST: 0.4 }, rate: burst(2.0, 3.2, 10, 3, 18), backlog: 6, label: 'api-gateway' },
+    ],
+    sinks: [
+      { x: 11, y: 1, type: 'GET', rate: 1.05, cap: 4, label: 'read-replica-1' },
+      { x: 11, y: 3, type: 'GET', rate: 1.05, cap: 4, label: 'read-replica-2' },
+      { x: 11, y: 6, type: 'POST', rate: 1.6, cap: 5, label: 'primary-db' },
+    ],
+    tools: ['pipe', 'router', 'balancer', 'limiter', 'buffer'], credits: 75, target: 150, time: 100, budget: 5, seed: 33,
+  },
+  {
+    id: 'l4', name: 'Thundering Herd: Black Friday',
+    subtitle: 'Marketing launched a flash sale. Nobody told SRE.',
+    brief: [
+      'Two ingresses, three packet types, and spikes that arrive at different times.',
+      '<b style="color:#ffb000">P0</b> packets (gold ring) are worth 2 points but time out after <b>8s</b> in flight (504). Buffers serve P0 first.',
+      'The GET service is fast (<b>2 req/s</b>), but GET arrives from both ingresses. Merge the two GET lines, then buffer and rate-limit them.',
+    ],
+    hint: 'Split each ingress with a router, merge both GET lines into one buffer, then limit to 2/s before the GET sink.',
+    map: [
+      '............',
+      '............',
+      '.....#......',
+      '.....#......',
+      '.....#......',
+      '.....#......',
+      '............',
+      '............',
+    ],
+    sources: [
+      { x: 0, y: 1, dir: 0, mix: { GET: 0.55, POST: 0.45 }, rate: burst(1.1, 3.6, 8, 4, 18), p0: 0.12, backlog: 6, label: 'web' },
+      { x: 0, y: 6, dir: 0, mix: { GET: 0.5, GRPC: 0.5 }, rate: burst(1.1, 3.6, 17, 4, 18), p0: 0.12, backlog: 6, label: 'mobile' },
+    ],
+    sinks: [
+      { x: 11, y: 0, type: 'POST', rate: 1.8, cap: 6, label: 'checkout' },
+      { x: 11, y: 4, type: 'GET', rate: 2, cap: 3, label: 'catalog' },
+      { x: 11, y: 7, type: 'GRPC', rate: 1.8, cap: 6, label: 'recsys' },
+    ],
+    tools: ['pipe', 'router', 'balancer', 'limiter', 'buffer'], credits: 110, target: 240, time: 110, budget: 6, p0Deadline: 8, seed: 44,
+  },
+  {
+    id: 'endless', name: 'Chaos Monkey (Endless)',
+    subtitle: 'Traffic grows forever. Like your AWS bill.',
+    endless: true,
+    brief: [
+      'Endless mode. Traffic ramps up over time and every delivered point earns <b>$0.5</b> of cloud credit.',
+      'No deadline and no target. How long can you stay up before something pages you at 3 AM?',
+    ],
+    hint: 'Reinvest your credits: more replicas through load balancers, bigger buffers.',
+    map: [
+      '............',
+      '............',
+      '......#.....',
+      '......#.....',
+      '............',
+      '...#........',
+      '............',
+      '............',
+    ],
+    sources: [
+      { x: 0, y: 2, dir: 0, mix: { GET: 0.5, POST: 0.3, GRPC: 0.2 }, rate: t => 0.9 + t / 90 + (t % 25 < 4 ? 1.5 : 0), p0: 0.1, backlog: 6, label: 'edge-1' },
+      { x: 0, y: 5, dir: 0, mix: { GET: 0.5, POST: 0.2, GRPC: 0.3 }, rate: t => 0.9 + t / 90 + ((t + 12) % 25 < 4 ? 1.5 : 0), p0: 0.1, backlog: 6, label: 'edge-2' },
+    ],
+    sinks: [
+      { x: 11, y: 0, type: 'GET', rate: 1.5, cap: 4, label: 'get-1' },
+      { x: 11, y: 2, type: 'GET', rate: 1.5, cap: 4, label: 'get-2' },
+      { x: 11, y: 4, type: 'POST', rate: 1.5, cap: 4, label: 'post-1' },
+      { x: 11, y: 7, type: 'GRPC', rate: 1.5, cap: 4, label: 'grpc-1' },
+      { x: 9, y: 7, type: 'GET', rate: 1.5, cap: 4, label: 'get-3' },
+    ],
+    tools: ['pipe', 'router', 'balancer', 'limiter', 'buffer'], credits: 110, budget: 8, p0Deadline: 9, income: 0.5, seed: 55,
+  },
+];
+
+function levelTypes(L) {
+  const s = new Set();
+  L.sources.forEach(src => Object.keys(src.mix).forEach(k => s.add(k)));
+  L.sinks.forEach(k => s.add(k.type));
+  return Object.keys(PTYPES).filter(k => s.has(k));
+}
+function outputsOf(c) {
+  if (!c) return [];
+  switch (c.kind) {
+    case 'pipe': case 'limiter': case 'buffer': case 'source': return [c.dir];
+    case 'balancer': case 'router': return [leftOf(c.dir), c.dir, rightOf(c.dir)];
+    default: return [];
+  }
+}
+// can a packet enter cell `c` through its `side`?
+function accepts(c, side) {
+  if (!c) return false;
+  switch (c.kind) {
+    case 'pipe': case 'limiter': case 'buffer': return side !== c.dir;
+    case 'balancer': case 'router': return side === opp(c.dir);
+    case 'sink': return true;
+    default: return false;
+  }
+}
+
+class Sim {
+  constructor(level, emit) {
+    this.L = level;
+    this.emit = emit || (() => {});
+    this.types = levelTypes(level);
+    this.grid = null;
+    this.reset(true);
+  }
+  at(x, y) { return (x < 0 || y < 0 || x >= COLS || y >= ROWS) ? undefined : this.grid[y * COLS + x]; }
+  set(x, y, c) { this.grid[y * COLS + x] = c; }
+  cells() { return this.grid.filter(Boolean); }
+
+  reset(clear) {
+    const L = this.L;
+    if (clear || !this.grid) {
+      this.grid = new Array(COLS * ROWS).fill(null);
+      L.map.forEach((row, y) => { for (let x = 0; x < COLS; x++) if (row[x] === '#') this.set(x, y, { kind: 'wall', x, y, seed: (x * 7 + y * 13) % 6 }); });
+      L.sources.forEach(s => this.set(s.x, s.y, { kind: 'source', x: s.x, y: s.y, dir: s.dir, def: s }));
+      L.sinks.forEach(s => this.set(s.x, s.y, { kind: 'sink', x: s.x, y: s.y, def: s }));
+    }
+    let spent = 0;
+    for (const c of this.cells()) {
+      c.occ = 0; c.flash = 0; c.warn = false;
+      if (c.spent) spent += c.spent;
+      if (c.kind === 'source') { c.acc = 0; c.backlog = 0; c.pulse = 0; }
+      if (c.kind === 'sink') { c.queue = []; c.proc = 0; c.served = 0; }
+      if (c.kind === 'limiter') { c.tokens = 1; c.blocked = 0; c.pass = 0; }
+      if (c.kind === 'balancer' || c.kind === 'router') c.rr = 0;
+      if (c.kind === 'buffer') c.queue = [];
+    }
+    this.credits = L.credits - spent;
+    this.packets = [];
+    this.time = 0; this.delivered = 0; this.errors = 0; this.budget = L.budget;
+    this.state = 'build';
+    this.rng = mulberry32(L.seed || 7);
+    this.load = [0, 0, 0]; this.cpu = 0; this.nid = 1; this.crash = null; this.last429 = -9;
+  }
+
+  /* ---------- editing ---------- */
+  place(x, y, kind, dir, opts) {
+    if (this.at(x, y) !== null || !COMPONENTS.includes(kind)) return false;
+    const cost = TOOL_INFO[kind].cost;
+    if (this.credits < cost) { this.emit('float', { x, y, text: '402 Payment Required', color: '#ff4040' }); return false; }
+    const c = { kind, x, y, dir, spent: cost, occ: 0, flash: 0 };
+    if (kind === 'limiter') { c.rateIdx = 1; c.tokens = 1; c.blocked = 0; c.pass = 0; }
+    if (kind === 'balancer' || kind === 'router') c.rr = 0;
+    if (kind === 'router') c.color = (opts && opts.color) || this.types[0];
+    if (kind === 'buffer') { c.capLvl = 0; c.queue = []; }
+    this.credits -= cost;
+    this.set(x, y, c);
+    return true;
+  }
+  isComponent(c) { return !!c && COMPONENTS.includes(c.kind); }
+  remove(x, y) {
+    const c = this.at(x, y);
+    if (!this.isComponent(c)) return false;
+    const running = this.state === 'run' || this.state === 'paused';
+    for (const p of this.packets) if (!p.dead && p.x === x && p.y === y) this.kill(p, running, 'SIGKILL', 'In-flight request killed by rm -rf');
+    if (c.kind === 'buffer') for (const p of c.queue) if (running && this.state !== 'crashed') this.fail('SIGKILL', 'Queued request killed by rm -rf', x, y);
+    this.credits += c.spent;
+    this.set(x, y, null);
+    return true;
+  }
+  rotate(x, y) {
+    const c = this.at(x, y);
+    if (!this.isComponent(c)) return false;
+    this.setDir(x, y, (c.dir + 1) & 3);
+    return true;
+  }
+  setDir(x, y, d) {
+    const c = this.at(x, y);
+    if (!this.isComponent(c) || c.dir === d) return;
+    c.dir = d;
+    for (const p of this.packets) if (!p.dead && !p.entering && p.x === x && p.y === y) this.route(p, c);
+  }
+  tune(x, y) {
+    const c = this.at(x, y);
+    if (!c) return false;
+    if (c.kind === 'limiter') {
+      c.rateIdx = (c.rateIdx + 1) % LIMITER_RATES.length;
+      this.emit('float', { x, y, text: LIMITER_RATES[c.rateIdx] + ' req/s', color: '#ffb000' });
+      return true;
+    }
+    if (c.kind === 'router') {
+      c.color = this.types[(this.types.indexOf(c.color) + 1) % this.types.length];
+      this.emit('float', { x, y, text: 'match ' + PTYPES[c.color].label, color: PTYPES[c.color].color });
+      return true;
+    }
+    if (c.kind === 'buffer') {
+      if (c.capLvl >= BUFFER_CAPS.length - 1) { this.emit('float', { x, y, text: 'MAX RAM', color: '#ffb000' }); return false; }
+      const cost = BUFFER_UPGRADE_COST[c.capLvl + 1];
+      if (this.credits < cost) { this.emit('float', { x, y, text: '402 Payment Required', color: '#ff4040' }); return false; }
+      this.credits -= cost; c.spent += cost; c.capLvl++;
+      this.emit('float', { x, y, text: 'RAM ' + BUFFER_CAPS[c.capLvl], color: '#ffb000' });
+      return true;
+    }
+    return false;
+  }
+
+  /* ---------- run control ---------- */
+  start() { if (this.state === 'build') { this.state = 'run'; this.emit('log', { lvl: 'ok', msg: 'kubectl apply -f pipeline.yaml: deployed, traffic incoming' }); } }
+  togglePause() {
+    if (this.state === 'build') return this.start();
+    if (this.state === 'run') this.state = 'paused';
+    else if (this.state === 'paused') this.state = 'run';
+  }
+
+  /* ---------- failure ---------- */
+  fail(code, msg, x, y) {
+    if (this.state === 'crashed' || this.state === 'won') return;
+    this.errors++; this.budget--;
+    this.emit('error', { x, y, code, msg });
+    if (this.budget <= 0) this.doCrash('budget', 'ERROR_BUDGET_EXHAUSTED', msg, x, y);
+  }
+  doCrash(kind, code, detail, x, y) {
+    if (this.state === 'crashed' || this.state === 'won') return;
+    this.state = 'crashed';
+    this.crash = { kind, code, detail, x, y };
+    this.emit('crash', this.crash);
+  }
+  kill(p, isErr, code, msg) {
+    if (p.dead) return;
+    p.dead = true;
+    const c = this.at(p.x, p.y);
+    if (!p.entering && c) c.occ--;
+    if (isErr) this.fail(code, msg, p.x, p.y);
+  }
+
+  hasRoom(n) {
+    if (n.kind === 'sink' || n.kind === 'buffer') return true;   // they never push back (that's the danger)
+    return n.occ < 1;
+  }
+  route(p, c) {
+    switch (c.kind) {
+      case 'pipe': case 'limiter': p.outS = c.dir; break;
+      case 'buffer': p.outS = p.entering ? opp(p.inS) : c.dir; break;
+      case 'sink': p.outS = opp(p.inS); break;
+      case 'balancer': {
+        const cands = [leftOf(c.dir), c.dir, rightOf(c.dir)];
+        p.outS = c.dir;
+        for (let k = 0; k < 3; k++) {
+          const i = (c.rr + k) % 3, s = cands[i];
+          if (accepts(this.at(c.x + DX[s], c.y + DY[s]), opp(s))) { p.outS = s; c.rr = (i + 1) % 3; break; }
+        }
+        break;
+      }
+      case 'router': {
+        if (p.type === c.color) { p.outS = c.dir; break; }
+        const sides = [leftOf(c.dir), rightOf(c.dir)];
+        const ok = sides.filter(s => accepts(this.at(c.x + DX[s], c.y + DY[s]), opp(s)));
+        if (!ok.length) p.outS = sides[0];
+        else { p.outS = ok[c.rr % ok.length]; c.rr = (c.rr + 1) % 2; }
+        break;
+      }
+    }
+    if (p.inS === p.outS) p.inS = opp(p.outS);
+  }
+  absorb(p, c) {
+    p.dead = true;
+    if (c.kind === 'buffer') {
+      c.queue.push(p); c.flash = 0.15;
+      const cap = BUFFER_CAPS[c.capLvl];
+      if (c.queue.length > cap) this.doCrash('oom', 'OUT_OF_MEMORY', `Buffer @(${c.x},${c.y}) tried to hold ${c.queue.length} packets with RAM for ${cap}. The OOM killer chose violence.`, c.x, c.y);
+      return;
+    }
+    if (p.type !== c.def.type) {
+      this.fail('400', `${PTYPES[p.type].label} request routed to ${c.def.label}, which expects ${PTYPES[c.def.type].label}`, c.x, c.y);
+      return;
+    }
+    c.queue.push(p);
+    if (c.queue.length > c.def.cap) this.doCrash('meltdown', '502', `${c.def.label} received ${c.queue.length} concurrent requests (capacity ${c.def.cap} at ${c.def.rate} req/s) and melted.`, c.x, c.y);
+  }
+  pickType(mix) {
+    const keys = Object.keys(mix);
+    let tot = 0; for (const k of keys) tot += mix[k];
+    let r = this.rng() * tot;
+    for (const k of keys) { r -= mix[k]; if (r < 0) return k; }
+    return keys[keys.length - 1];
+  }
+
+  /* ---------- tick ---------- */
+  step(dt) {
+    if (this.state !== 'run') return;
+    const L = this.L;
+    this.time += dt;
+    const cells = this.cells();
+
+    for (const c of cells) {
+      if (c.flash > 0) c.flash -= dt;
+      if (c.kind === 'source') {
+        if (c.pulse > 0) c.pulse -= dt;
+        c.acc += c.def.rate(this.time) * dt;
+        while (c.acc >= 1) {
+          c.acc -= 1; c.backlog++;
+          if (c.backlog > (c.def.backlog || 6)) { c.backlog--; this.fail('503', `${c.def.label}: connection backlog full, request dropped`, c.x, c.y); }
+        }
+        if (c.backlog > 0 && c.occ === 0 && this.state === 'run') {
+          c.backlog--;
+          const type = this.pickType(c.def.mix);
+          const p0 = !!c.def.p0 && this.rng() < c.def.p0;
+          this.packets.push({ id: this.nid++, x: c.x, y: c.y, inS: -1, outS: c.dir, t: 0.5,
+            speed: PTYPES[type].speed * (p0 ? 1.15 : 1), type, p0, born: this.time, passed: true, entering: false, trail: [] });
+          c.occ++; c.pulse = 0.2;
+        }
+      } else if (c.kind === 'limiter') {
+        c.tokens = Math.min(1, c.tokens + LIMITER_RATES[c.rateIdx] * dt);
+        if (c.blocked > 0) c.blocked -= dt;
+        if (c.pass > 0) c.pass -= dt;
+      } else if (c.kind === 'buffer') {
+        if (L.p0Deadline) {
+          for (let i = c.queue.length - 1; i >= 0; i--) {
+            const q = c.queue[i];
+            if (q.p0 && this.time - q.born > L.p0Deadline) { c.queue.splice(i, 1); this.fail('504', 'P0 request timed out waiting in buffer', c.x, c.y); }
+          }
+        }
+        if (c.queue.length && c.occ === 0) {
+          let i = c.queue.findIndex(q => q.p0); if (i < 0) i = 0;
+          const p = c.queue.splice(i, 1)[0];
+          Object.assign(p, { dead: false, x: c.x, y: c.y, inS: -1, outS: c.dir, t: 0.5, entering: false, passed: true, trail: [] });
+          c.occ++;
+          this.packets.push(p);
+        }
+      }
+    }
+    if (this.state !== 'run') return;
+
+    for (const p of this.packets) {
+      if (p.dead) continue;
+      if (p.p0 && L.p0Deadline && this.time - p.born > L.p0Deadline) {
+        this.kill(p, true, '504', 'P0 request timed out in flight');
+        if (this.state !== 'run') return; else continue;
+      }
+      const c = this.at(p.x, p.y);
+      let nt = p.t + p.speed * dt;
+      p.waiting = false;
+      if (c.kind === 'limiter' && !p.passed && nt >= 0.5) {
+        if (c.tokens >= 1) { c.tokens -= 1; p.passed = true; c.pass = 0.2; }
+        else {
+          nt = 0.5; c.blocked = 0.2; p.waiting = true;
+          if (this.time - this.last429 > 2.5) { this.last429 = this.time; this.emit('float', { x: c.x, y: c.y, text: '429', color: '#ffb000' }); }
+        }
+      }
+      if (p.entering && nt >= 0.5) {
+        this.absorb(p, c);
+        if (this.state !== 'run') return; else continue;
+      }
+      if (nt >= 1) {
+        const nx = p.x + DX[p.outS], ny = p.y + DY[p.outS], n = this.at(nx, ny), side = opp(p.outS);
+        if (!accepts(n, side)) {
+          this.kill(p, true, '404', n === undefined ? 'Packet fell off the edge of the cluster' : 'No route to host');
+          if (this.state !== 'run') return; else continue;
+        }
+        if (!this.hasRoom(n)) { p.t = 1; p.waiting = true; continue; }
+        c.occ--;
+        p.x = nx; p.y = ny; p.inS = side; p.t = Math.min(nt - 1, 0.3); p.passed = false;
+        p.entering = n.kind === 'sink' || n.kind === 'buffer';
+        if (!p.entering) n.occ++;
+        this.route(p, n);
+      } else p.t = nt;
+    }
+    this.packets = this.packets.filter(p => !p.dead);
+
+    let sum = 0, mx = 0;
+    for (const c of cells) {
+      let u = -1;
+      if (c.kind === 'sink') {
+        if (c.queue.length) {
+          c.proc += dt * c.def.rate;
+          while (c.proc >= 1 && c.queue.length) {
+            c.proc -= 1;
+            const p = c.queue.shift();
+            const pts = p.p0 ? 2 : 1;
+            this.delivered += pts; c.served++; c.flash = 0.25;
+            if (L.income) this.credits += pts * L.income;
+            this.emit('deliver', { x: c.x, y: c.y, pts, color: PTYPES[p.type].color });
+          }
+        }
+        if (!c.queue.length) c.proc = 0;
+        u = c.queue.length / c.def.cap;
+      } else if (c.kind === 'buffer') u = c.queue.length / BUFFER_CAPS[c.capLvl];
+      if (u >= 0) {
+        sum += u; mx = Math.max(mx, u);
+        if (u >= 0.75 && !c.warn) {
+          c.warn = true;
+          this.emit('log', { lvl: 'warn', msg: c.kind === 'buffer' ? `WARN buffer@(${c.x},${c.y}) memory at ${Math.round(u * 100)}%` : `WARN ${c.def.label} CPU at ${Math.round(u * 100)}%, queue backing up` });
+        } else if (u < 0.4) c.warn = false;
+      }
+    }
+    [1, 5, 15].forEach((tau, i) => { this.load[i] += (sum - this.load[i]) * (1 - Math.exp(-dt / tau)); });
+    this.cpu += (mx - this.cpu) * (1 - Math.exp(-dt / 0.25));
+
+    if (L.target && this.delivered >= L.target) {
+      this.state = 'won';
+      this.emit('win', {});
+    } else if (L.time && this.time >= L.time) {
+      this.doCrash('deadline', 'DEADLINE_EXCEEDED', `Sprint ended with ${this.delivered}/${L.target} requests served.`, -1, -1);
+    }
+  }
+}
+</script>
+
+<!-- ================= UI / RENDERING ================= -->
+<script src="identity.js?v=2"></script>
+<script src="leaderboard.js?v=2"></script>
+<script>
+'use strict';
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = COLS * CELL, H = ROWS * CELL;
+const $ = id => document.getElementById(id);
+const FONT = '"JetBrains Mono", ui-monospace, Menlo, monospace';
+
+let DPR = 1;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = W * DPR; canvas.height = H * DPR;
+}
+resize();
+window.addEventListener('resize', resize);
+
+/* ---------- persistent progress ---------- */
+const STORE = 'pipeline_flow_progress_v1';
+function loadProgress() {
+  try { return Object.assign({ unlocked: 1, stars: {}, best: 0 }, JSON.parse(localStorage.getItem(STORE) || '{}')); }
+  catch (e) { return { unlocked: 1, stars: {}, best: 0 }; }
+}
+function saveProgress() { try { localStorage.setItem(STORE, JSON.stringify(progress)); } catch (e) {} }
+let progress = loadProgress();
+
+/* ---------- state ---------- */
+let levelIndex = 0, sim = null;
+let tool = 'pipe', placeDir = 0, routerColor = 'GET';
+let speed = 1, hover = null;
+let floats = [], particles = [], shake = 0, redFlash = 0, endTimer = null;
+const logs = [];
+
+function emit(type, d) {
+  if (type === 'float') floats.push({ x: d.x, y: d.y, text: d.text, color: d.color, life: 1.2 });
+  else if (type === 'log') log(d.lvl, d.msg);
+  else if (type === 'error') {
+    floats.push({ x: d.x, y: d.y, text: d.code, color: '#ff4040', life: 1.4, big: true });
+    sparks(d.x, d.y, '#ff4040', 14);
+    log('err', `ERR ${d.code} ${d.msg}`);
+    shake = Math.max(shake, 5); redFlash = Math.max(redFlash, 0.25);
+  } else if (type === 'deliver') {
+    floats.push({ x: d.x, y: d.y, text: '+' + d.pts, color: d.color, life: 0.9 });
+    sparks(d.x, d.y, d.color, 6);
+  } else if (type === 'crash') onCrash(d);
+  else if (type === 'win') onWin();
+}
+function log(lvl, msg) {
+  const t = sim ? sim.time.toFixed(1).padStart(5, ' ') : '  0.0';
+  logs.push({ lvl, msg: `[${t}s] ${msg}` });
+  while (logs.length > 7) logs.shift();
+  $('console').innerHTML = logs.map(l => `<div class="l-${l.lvl}">${escapeHtml(l.msg)}</div>`).join('');
+}
+function escapeHtml(s) { return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+function sparks(x, y, color, n) {
+  const cx = x * CELL + CELL / 2, cy = y * CELL + CELL / 2;
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = 40 + Math.random() * 120;
+    particles.push({ x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.5 + Math.random() * 0.4, color });
+  }
+}
+
+/* ---------- level flow ---------- */
+function loadLevel(i) {
+  levelIndex = i;
+  const L = LEVELS[i];
+  sim = new Sim(L, emit);
+  routerColor = sim.types[0];
+  if (!L.tools.includes(tool)) tool = L.tools[0];
+  floats = []; particles = []; logs.length = 0; clearTimeout(endTimer);
+  $('lvlTag').textContent = L.endless ? 'ENDLESS MODE' : `LEVEL ${i + 1} / ${LEVELS.length - 1}`;
+  $('lvlName').textContent = L.name;
+  buildToolbar();
+  log('info', `git checkout level-${i + 1}: "${L.subtitle}"`);
+  log('info', L.hint);
+  hideOverlays();
+}
+function restartRun() {
+  clearTimeout(endTimer);
+  sim.reset(false);
+  floats = []; particles = [];
+  log('info', 'Rolled back. Fix the layout, then deploy again.');
+  hideOverlays();
+}
+
+/* ---------- overlays ---------- */
+function hideOverlays() { ['ovMenu', 'ovBrief', 'ovEnd'].forEach(id => $(id).classList.remove('show')); }
+function starStr(n) { return '★'.repeat(n) + '☆'.repeat(3 - n); }
+function showMenu() {
+  if (sim && sim.state === 'run') sim.state = 'paused';
+  const items = LEVELS.map((L, i) => {
+    const locked = i >= progress.unlocked && !(L.endless && progress.unlocked >= 3);
+    const stars = L.endless ? (progress.best ? `best ${progress.best}` : '') : (progress.stars[L.id] ? starStr(progress.stars[L.id]) : '');
+    return `<button class="lvbtn" data-i="${i}" ${locked ? 'disabled' : ''}>
+      <span class="num">${L.endless ? '∞' : String(i + 1).padStart(2, '0')}</span>
+      <span class="t">${L.name}<small>${locked ? (L.endless ? 'Permission denied (publickey). Unlocks after level 2.' : 'Permission denied (publickey). Clear the previous level first.') : L.subtitle}</small></span>
+      <span class="stars">${stars}</span></button>`;
+  }).join('');
+  $('menuBox').innerHTML = `
+    <h1>Pipeline &amp; Traffic Flow</h1>
+    <div class="sub">An automaton-scheduling game for people who have been paged at 3 AM.</div>
+    <p class="prompt">ls ./levels</p>
+    <div class="levels">${items}</div>
+    <div class="row"><button class="btn" id="menuLb">🏆 Endless Top 20</button></div>
+    <p class="sub" style="margin-top:10px">Route each packet type to its own service. Rate-limit, load-balance and buffer the traffic.
+    Don't let a buffer overflow (OOM), don't melt the backends, and stay inside your error budget.</p>`;
+  $('menuBox').querySelectorAll('.lvbtn').forEach(b => b.onclick = () => { loadLevel(+b.dataset.i); showBrief(); });
+  $('menuLb').onclick = () => leaderboard.open();
+  $('ovMenu').classList.add('show');
+}
+function showBrief() {
+  const L = sim.L;
+  const goal = L.endless
+    ? 'Survive as long as possible. Score = requests served.'
+    : `Serve <b>${L.target}</b> requests within <b>${L.time}s</b>. Error budget: <b>${L.budget}</b>. Budget: <b>$${L.credits}</b>.`;
+  $('briefBox').innerHTML = `
+    <h2>${L.endless ? '∞' : 'Level ' + (levelIndex + 1)}: ${L.name}</h2>
+    <div class="sub">${L.subtitle}</div>
+    ${L.brief.map(b => `<p>${b}</p>`).join('')}
+    <div class="brief">
+      <div>🎯 ${goal}</div>
+      <div>🧰 Tools: ${L.tools.map(t => TOOL_INFO[t].name).join(', ')}</div>
+      <div>💡 ${L.hint}</div>
+    </div>
+    <div class="row"><button class="btn primary" id="briefGo">Start building</button><button class="btn" id="briefMenu">☰ Levels</button></div>`;
+  $('briefGo').onclick = hideOverlays;
+  $('briefMenu').onclick = showMenu;
+  $('ovBrief').classList.add('show');
+}
+function onCrash(cr) {
+  redFlash = 1; shake = 16;
+  if (cr.x >= 0) sparks(cr.x, cr.y, cr.kind === 'oom' ? '#ff4040' : '#ffb000', 40);
+  $('board').classList.remove('shake'); void $('board').offsetWidth; $('board').classList.add('shake');
+  log('err', `FATAL ${cr.code}: ${cr.detail}`);
+  if (sim.L.endless && sim.delivered > (progress.best || 0)) { progress.best = sim.delivered; saveProgress(); }
+  endTimer = setTimeout(() => showCrash(cr), 1100);
+}
+function showCrash(cr) {
+  const box = $('endBox');
+  box.className = 'dialog';
+  const score = sim.L.endless ? `<p>Score: <b>${sim.delivered}</b> served in ${Math.floor(sim.time)}s. Best: ${progress.best}.</p>` : '';
+  const lbBtn = sim.L.endless ? '<button class="btn" data-a="lb">🏆 Top 20</button>' : '';
+  const buttons = `<div class="row"><button class="btn primary" data-a="retry">↻ Hotfix &amp; redeploy</button><button class="btn" data-a="menu">☰ Levels</button>${lbBtn}</div>`;
+  if (cr.kind === 'oom') {
+    box.classList.add('bsod');
+    box.innerHTML = `<div class="face">:(</div>
+      <p>Your pipeline ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.</p>
+      <p><b id="bsodPct">0</b>% complete</p>${score}
+      <div class="code">Stop code: OUT_OF_MEMORY_EXCEPTION<br>What failed: buffer_queue.sys<br>${escapeHtml(cr.detail)}</div>${buttons}`;
+    let pct = 0; const iv = setInterval(() => { pct = Math.min(100, pct + Math.ceil(Math.random() * 17)); const el = $('bsodPct'); if (!el) return clearInterval(iv); el.textContent = pct; if (pct >= 100) clearInterval(iv); }, 160);
+  } else if (cr.kind === 'meltdown') {
+    box.classList.add('nginx');
+    box.innerHTML = `<h1>502 Bad Gateway</h1><hr><p>nginx/1.18.0 (Ubuntu)</p>
+      <p style="margin-top:16px;font-size:13px">${escapeHtml(cr.detail)}</p>
+      <p style="font-size:12px;color:#555">Tip: a Rate Limiter in front of the backend caps its load. A Load Balancer spreads it over replicas.</p>${score}${buttons}`;
+  } else if (cr.kind === 'deadline') {
+    box.classList.add('panic');
+    box.innerHTML = `<h1>DEADLINE_EXCEEDED</h1>
+      <pre>JIRA-4096 moved to "Next Sprint" (again).
+${escapeHtml(cr.detail)}
+Standup tomorrow is going to be awkward.
+
+hint: more throughput = parallel lanes, faster limiters, fewer stalls.</pre>${buttons}`;
+  } else {
+    box.classList.add('panic');
+    box.innerHTML = `<h1>Kernel panic - not syncing</h1>
+      <pre>error budget exhausted: ${sim.errors} errors (budget ${sim.L.budget})
+last error: ${escapeHtml(cr.detail)}
+CPU: 0 PID: 1 Comm: pipelined Tainted: G   O   6.6.6-prod
+Call Trace:
+ &lt;TASK&gt;
+ route_packet+0x1f/0x404 [lb]
+ deliver_or_die+0x2a/0x400 [ingress]
+ on_call_engineer_wake_up+0x3am/0x0
+ ? coffee_not_found+0x0/0x418
+ &lt;/TASK&gt;
+---[ end Kernel panic - not syncing: Attempted to kill SLO ]---</pre>${score}${buttons}`;
+  }
+  box.querySelector('[data-a=retry]').onclick = restartRun;
+  box.querySelector('[data-a=menu]').onclick = showMenu;
+  if (sim.L.endless) box.querySelector('[data-a=lb]').onclick = () => leaderboard.open();
+  $('ovEnd').classList.add('show');
+  if (sim.L.endless) leaderboard.gameOver(sim.delivered);
+}
+const leaderboard = GameLeaderboard({ game: 'pipeline', title: '🏆 Endless Mode Top 20', format: s => s.toLocaleString() + ' served' });
+function onWin() {
+  const L = sim.L;
+  const stars = sim.errors === 0 ? 3 : sim.errors <= Math.floor(L.budget / 2) ? 2 : 1;
+  progress.stars[L.id] = Math.max(progress.stars[L.id] || 0, stars);
+  progress.unlocked = Math.max(progress.unlocked, levelIndex + 2);
+  saveProgress();
+  log('ok', `200 OK: ${sim.delivered} requests served. Merged to main with no reviews.`);
+  for (let i = 0; i < 6; i++) setTimeout(() => sparks(Math.random() * COLS, Math.random() * ROWS, '#39ff14', 20), i * 120);
+  endTimer = setTimeout(() => {
+    const box = $('endBox');
+    box.className = 'dialog win';
+    const next = levelIndex + 1 < LEVELS.length;
+    const quips = ['Ship it! 🚀', 'Works on my machine. And now on prod.', 'Zero downtime (citation needed).', 'The pager stayed silent.'];
+    box.innerHTML = `<h1>✔ 200 OK: Deployed to prod</h1>
+      <div class="bigstars">${starStr(stars)}</div>
+      <p>${quips[levelIndex % quips.length]}</p>
+      <div class="brief">
+        served: <b>${sim.delivered}</b> / ${L.target}<br>
+        time: <b>${sim.time.toFixed(1)}s</b> / ${L.time}s<br>
+        errors: <b>${sim.errors}</b> / ${L.budget} budget<br>
+        cloud bill: <b>$${L.credits - Math.floor(sim.credits)}</b> of $${L.credits}
+      </div>
+      <p class="sub">${stars < 3 ? '★★★ needs a run with zero errors.' : 'Flawless. Somebody give this engineer a promo.'}</p>
+      <div class="row">
+        ${next ? `<button class="btn primary" data-a="next">${LEVELS[levelIndex + 1].endless ? 'Endless mode ∞' : 'Next level →'}</button>` : ''}
+        <button class="btn" data-a="retry">↻ Replay</button><button class="btn" data-a="menu">☰ Levels</button></div>`;
+    if (next) box.querySelector('[data-a=next]').onclick = () => { loadLevel(levelIndex + 1); showBrief(); };
+    box.querySelector('[data-a=retry]').onclick = restartRun;
+    box.querySelector('[data-a=menu]').onclick = showMenu;
+    $('ovEnd').classList.add('show');
+  }, 900);
+}
+
+/* ---------- toolbar ---------- */
+function buildToolbar() {
+  const tb = $('toolbar');
+  const list = [...sim.L.tools, 'tune', 'erase'];
+  tb.innerHTML = '';
+  list.forEach((t, i) => {
+    const b = document.createElement('button');
+    b.className = 'tool'; b.dataset.tool = t;
+    const cv = document.createElement('canvas');
+    cv.width = 72; cv.height = 72;
+    b.innerHTML = `<span class="k">${i + 1}</span>`;
+    b.appendChild(cv);
+    const lab = document.createElement('span');
+    b.appendChild(lab);
+    b.onclick = () => selectTool(t, true);
+    tb.appendChild(b);
+  });
+  refreshToolbar();
+}
+function selectTool(t, fromClick) {
+  if (t === 'router' && tool === 'router' && fromClick) {
+    routerColor = sim.types[(sim.types.indexOf(routerColor) + 1) % sim.types.length];
+  }
+  tool = t;
+  refreshToolbar();
+}
+function refreshToolbar() {
+  document.querySelectorAll('.tool').forEach(b => {
+    const t = b.dataset.tool, info = TOOL_INFO[t];
+    b.classList.toggle('sel', t === tool);
+    b.classList.toggle('poor', info.cost > sim.credits);
+    const lab = b.querySelector('span:last-child');
+    lab.innerHTML = `${info.name}${info.cost ? `<span class="cost">$${info.cost}</span>` : ''}`;
+    const c = b.querySelector('canvas').getContext('2d');
+    c.setTransform(72 / CELL, 0, 0, 72 / CELL, 0, 0);
+    c.clearRect(0, 0, CELL, CELL);
+    drawToolIcon(c, t);
+  });
+  let d = TOOL_INFO[tool].desc;
+  if (tool === 'router') d += ` Currently matches <b style="color:${PTYPES[routerColor].color}">${PTYPES[routerColor].label}</b>.`;
+  $('desc').innerHTML = d;
+}
+function drawToolIcon(c, t) {
+  if (COMPONENTS.includes(t)) {
+    const fake = { kind: t, x: 0, y: 0, dir: 0, rateIdx: 1, tokens: 1, blocked: 0, pass: 0, rr: 0, color: routerColor, capLvl: 0, queue: [], occ: 0, flash: 0 };
+    drawComponent(c, fake, 0, 0, true);
+  } else if (t === 'tune') {
+    c.strokeStyle = '#ffb000'; c.lineWidth = 5; c.beginPath(); c.arc(32, 32, 12, 0, Math.PI * 2); c.stroke();
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; c.beginPath(); c.moveTo(32 + Math.cos(a) * 14, 32 + Math.sin(a) * 14); c.lineTo(32 + Math.cos(a) * 21, 32 + Math.sin(a) * 21); c.stroke(); }
+  } else {
+    c.strokeStyle = '#ff4040'; c.lineWidth = 6; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(18, 18); c.lineTo(46, 46); c.moveTo(46, 18); c.lineTo(18, 46); c.stroke();
+  }
+}
+
+/* ---------- input ---------- */
+function cellFromEvent(e) {
+  const r = canvas.getBoundingClientRect();
+  const x = Math.floor((e.clientX - r.left) / r.width * COLS), y = Math.floor((e.clientY - r.top) / r.height * ROWS);
+  return (x >= 0 && y >= 0 && x < COLS && y < ROWS) ? { x, y } : null;
+}
+let drag = null;
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('pointerdown', e => {
+  if (!sim || sim.state === 'crashed' || sim.state === 'won') return;
+  const p = cellFromEvent(e); if (!p) return;
+  canvas.setPointerCapture(e.pointerId);
+  hover = p;
+  if (e.button === 2 || tool === 'erase') { sim.remove(p.x, p.y); drag = { mode: 'erase', last: p }; refreshToolbar(); return; }
+  if (tool === 'tune') { sim.tune(p.x, p.y); refreshToolbar(); return; }
+  const c = sim.at(p.x, p.y);
+  if (c === null) {
+    if (sim.place(p.x, p.y, tool, placeDir, { color: routerColor })) drag = { mode: 'paint', last: p, placed: true };
+  } else if (sim.isComponent(c)) {
+    drag = { mode: 'rotate', last: p, start: p };
+  }
+  refreshToolbar();
+});
+canvas.addEventListener('pointermove', e => {
+  const p = cellFromEvent(e);
+  hover = p;
+  if (!drag || !p || (p.x === drag.last.x && p.y === drag.last.y)) return;
+  if (drag.mode === 'erase') { sim.remove(p.x, p.y); drag.last = p; refreshToolbar(); return; }
+  if (tool !== 'pipe') return;
+  const dx = p.x - drag.last.x, dy = p.y - drag.last.y;
+  if (Math.abs(dx) + Math.abs(dy) !== 1) { drag.last = p; return; }
+  const d = dx === 1 ? 0 : dy === 1 ? 1 : dx === -1 ? 2 : 3;
+  sim.setDir(drag.last.x, drag.last.y, d);   // point the previous segment at the new cell
+  placeDir = d;
+  drag.mode = 'paint';
+  if (sim.at(p.x, p.y) === null) sim.place(p.x, p.y, 'pipe', d);
+  drag.last = p;
+  refreshToolbar();
+});
+const endDrag = e => {
+  if (drag && drag.mode === 'rotate') { const p = cellFromEvent(e); if (p && p.x === drag.start.x && p.y === drag.start.y) sim.rotate(p.x, p.y); }
+  drag = null;
+};
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', () => { drag = null; });
+canvas.addEventListener('pointerleave', () => { if (!drag) hover = null; });
+
+window.addEventListener('keydown', e => {
+  if (!sim || e.target.tagName === 'INPUT') return;
+  if ($('ovMenu').classList.contains('show') || $('ovBrief').classList.contains('show') || $('ovEnd').classList.contains('show')) {
+    if (e.key === 'Enter' && $('ovBrief').classList.contains('show')) hideOverlays();
+    return;
+  }
+  const list = [...sim.L.tools, 'tune', 'erase'];
+  const n = parseInt(e.key, 10);
+  if (n >= 1 && n <= list.length) { selectTool(list[n - 1], true); return; }
+  const k = e.key.toLowerCase();
+  if (k === ' ') { e.preventDefault(); togglePlay(); }
+  else if (k === 'f') cycleSpeed();
+  else if (k === 'r') { if (hover && sim.isComponent(sim.at(hover.x, hover.y))) sim.rotate(hover.x, hover.y); else placeDir = (placeDir + 1) & 3; }
+  else if (k === 't' || k === 'u') { if (hover) { sim.tune(hover.x, hover.y); refreshToolbar(); } }
+  else if (k === 'x' || k === 'delete' || k === 'backspace') { if (hover) { sim.remove(hover.x, hover.y); refreshToolbar(); } }
+});
+
+function togglePlay() {
+  if (sim.state === 'crashed' || sim.state === 'won') return;
+  sim.togglePause();
+}
+function cycleSpeed() { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; $('bSpeed').textContent = `⏩ ${speed}x`; }
+$('bPlay').onclick = togglePlay;
+$('bSpeed').onclick = cycleSpeed;
+$('bRestart').onclick = restartRun;
+$('bClear').onclick = () => { if (confirm('git reset --hard: delete every component on the board?')) { sim.reset(true); log('warn', 'HEAD is now at 0000000 Initial commit'); refreshToolbar(); } };
+$('bLevels').onclick = showMenu;
+
+/* ---------- HUD ---------- */
+let lastHud = '';
+function updateHud() {
+  const L = sim.L;
+  const del = L.endless ? `${sim.delivered}` : `${sim.delivered} / ${L.target}`;
+  const tleft = L.endless ? `${Math.floor(sim.time)}s up` : `${Math.max(0, Math.ceil(L.time - sim.time))}s`;
+  const key = [del, tleft, sim.budget, Math.floor(sim.credits), sim.state, sim.load.map(v => v.toFixed(2)).join(' '), Math.round(sim.cpu * 100)].join('|');
+  if (key === lastHud) return;
+  lastHud = key;
+  $('sDelivered').textContent = del;
+  $('sDelivered').className = !L.endless && sim.delivered >= L.target ? 'ok' : '';
+  const te = $('sTime'); te.textContent = tleft;
+  te.className = !L.endless && L.time - sim.time < 15 && sim.state === 'run' ? 'bad' : '';
+  $('sBudget').innerHTML = Array.from({ length: L.budget }, (_, i) => `<span class="pip ${i < sim.budget ? '' : 'off'}"></span>`).join('');
+  $('sCredits').textContent = Math.floor(sim.credits);
+  $('sLoad').textContent = sim.load.map(v => v.toFixed(2)).join(' ');
+  const cpu = Math.min(1, sim.cpu), bar = $('sCpu');
+  bar.style.width = (cpu * 100).toFixed(0) + '%';
+  bar.style.background = cpu > 0.8 ? 'var(--red)' : cpu > 0.55 ? 'var(--amber)' : 'var(--green)';
+  const pb = $('bPlay');
+  pb.textContent = sim.state === 'build' ? '▶ Deploy' : sim.state === 'run' ? '⏸ Pause' : sim.state === 'paused' ? '▶ Resume' : sim.state === 'won' ? '✔ Shipped' : '✖ Crashed';
+  if (Math.floor(sim.credits) !== refreshToolbar.lastCredits) { refreshToolbar.lastCredits = Math.floor(sim.credits); refreshToolbar(); }
+}
+
+/* ================= RENDERING ================= */
+let animT = 0;
+function center(x, y) { return [x * CELL + CELL / 2, y * CELL + CELL / 2]; }
+function rr(c, x, y, w, h, r) { c.beginPath(); c.roundRect ? c.roundRect(x, y, w, h, r) : c.rect(x, y, w, h); }
+
+// which sides of cell (x,y) have a neighbour feeding into it
+function inputSides(x, y, s) {
+  const res = [];
+  for (let d = 0; d < 4; d++) {
+    const n = s.at(x + DX[d], y + DY[d]);
+    if (n && outputsOf(n).includes(opp(d))) res.push(d);
+  }
+  return res;
+}
+
+function drawArm(c, cx, cy, side, w, fill, edge) {
+  const half = CELL / 2;
+  c.fillStyle = fill;
+  if (side === 0) c.fillRect(cx, cy - w / 2, half, w);
+  if (side === 2) c.fillRect(cx - half, cy - w / 2, half, w);
+  if (side === 1) c.fillRect(cx - w / 2, cy, w, half);
+  if (side === 3) c.fillRect(cx - w / 2, cy - half, w, half);
+  if (edge) {
+    c.strokeStyle = edge; c.lineWidth = 1.5; c.beginPath();
+    const a = side === 0 || side === 2, sgn = side === 0 || side === 1 ? 1 : -1;
+    if (a) { c.moveTo(cx, cy - w / 2); c.lineTo(cx + sgn * half, cy - w / 2); c.moveTo(cx, cy + w / 2); c.lineTo(cx + sgn * half, cy + w / 2); }
+    else { c.moveTo(cx - w / 2, cy); c.lineTo(cx - w / 2, cy + sgn * half); c.moveTo(cx + w / 2, cy); c.lineTo(cx + w / 2, cy + sgn * half); }
+    c.stroke();
+  }
+}
+function drawPipeBase(c, cx, cy, ins, outs, accent) {
+  const sides = new Set([...ins, ...outs]);
+  for (const s of sides) drawArm(c, cx, cy, s, 22, '#0c2219', '#1f5a3e');
+  c.fillStyle = '#0c2219'; c.fillRect(cx - 11, cy - 11, 22, 22);
+  // flowing chevrons along each in → out path
+  c.save();
+  c.strokeStyle = accent || 'rgba(57,255,20,0.35)'; c.lineWidth = 2; c.setLineDash([4, 8]);
+  c.lineDashOffset = -animT * 24;
+  for (const o of outs) for (const i of ins.length ? ins : [opp(o)]) {
+    if (i === o) continue;
+    c.beginPath();
+    c.moveTo(cx + DX[i] * CELL / 2, cy + DY[i] * CELL / 2);
+    c.lineTo(cx, cy);
+    c.lineTo(cx + DX[o] * CELL / 2, cy + DY[o] * CELL / 2);
+    c.stroke();
+  }
+  c.restore();
+}
+function arrowHead(c, cx, cy, d, dist, size, color) {
+  const x = cx + DX[d] * dist, y = cy + DY[d] * dist;
+  const px = -DY[d], py = DX[d];
+  c.fillStyle = color; c.beginPath();
+  c.moveTo(x + DX[d] * size, y + DY[d] * size);
+  c.lineTo(x + px * size * 0.8, y + py * size * 0.8);
+  c.lineTo(x - px * size * 0.8, y - py * size * 0.8);
+  c.closePath(); c.fill();
+}
+
+function drawComponent(c, comp, ox, oy, icon) {
+  const cx = ox + CELL / 2, cy = oy + CELL / 2;
+  const s = icon ? null : sim;
+  const ins = s ? inputSides(comp.x, comp.y, s).filter(d => d !== comp.dir) : [];
+  const back = opp(comp.dir);
+  switch (comp.kind) {
+    case 'pipe': {
+      drawPipeBase(c, cx, cy, ins.length ? ins : [back], [comp.dir]);
+      arrowHead(c, cx, cy, comp.dir, 6, 6, '#39ff14');
+      break;
+    }
+    case 'limiter': {
+      drawPipeBase(c, cx, cy, ins.length ? ins : [back], [comp.dir], 'rgba(255,176,0,0.35)');
+      const blocked = comp.blocked > 0;
+      c.fillStyle = '#1a1405'; rr(c, cx - 18, cy - 18, 36, 36, 6); c.fill();
+      c.strokeStyle = blocked ? '#ff4040' : '#ffb000'; c.lineWidth = 2; c.stroke();
+      // token refill ring
+      c.strokeStyle = 'rgba(255,176,0,0.25)'; c.lineWidth = 3;
+      c.beginPath(); c.arc(cx, cy, 12, 0, Math.PI * 2); c.stroke();
+      c.strokeStyle = comp.pass > 0 ? '#ffffff' : '#ffb000';
+      c.beginPath(); c.arc(cx, cy, 12, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, comp.tokens)); c.stroke();
+      c.fillStyle = '#ffd36b'; c.font = `bold 11px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(LIMITER_RATES[comp.rateIdx], cx, cy - 1);
+      c.font = `7px ${FONT}`; c.fillText('/s', cx + 9, cy + 9);
+      arrowHead(c, cx, cy, comp.dir, 22, 5, '#ffb000');
+      if (blocked) {   // the gate slams shut
+        c.fillStyle = Math.floor(animT * 16) % 2 ? '#ff4040' : '#ff8080';
+        for (const i of (ins.length ? ins : [back])) {
+          const gx = cx + DX[i] * 22, gy = cy + DY[i] * 22;
+          if (DX[i]) { c.fillRect(gx - 2, gy - 12, 4, 24); } else { c.fillRect(gx - 12, gy - 2, 24, 4); }
+        }
+      }
+      break;
+    }
+    case 'balancer': {
+      const outs = [leftOf(comp.dir), comp.dir, rightOf(comp.dir)];
+      const conn = outs.map(o => !s || accepts(s.at(comp.x + DX[o], comp.y + DY[o]), opp(o)));
+      drawPipeBase(c, cx, cy, [back], outs.filter((o, i) => conn[i]), 'rgba(79,195,247,0.4)');
+      if (s) outs.forEach((o, i) => { if (!conn[i]) drawArm(c, cx, cy, o, 10, 'rgba(79,195,247,0.12)'); });
+      c.fillStyle = '#06141c';
+      c.beginPath();
+      for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; c.lineTo(cx + Math.cos(a) * 19, cy + Math.sin(a) * 19); }
+      c.closePath(); c.fill(); c.strokeStyle = '#4fc3f7'; c.lineWidth = 2; c.stroke();
+      c.fillStyle = '#9be3ff'; c.font = `bold 11px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('LB', cx, cy);
+      outs.forEach((o, i) => { if (conn[i]) arrowHead(c, cx, cy, o, 22, 5, i === comp.rr ? '#ffffff' : '#4fc3f7'); });
+      break;
+    }
+    case 'router': {
+      const outs = [leftOf(comp.dir), comp.dir, rightOf(comp.dir)];
+      const conn = outs.map(o => !s || accepts(s.at(comp.x + DX[o], comp.y + DY[o]), opp(o)));
+      const col = PTYPES[comp.color].color;
+      drawPipeBase(c, cx, cy, [back], outs.filter((o, i) => conn[i]), 'rgba(200,200,255,0.3)');
+      c.fillStyle = '#100a18';
+      c.beginPath(); c.moveTo(cx, cy - 20); c.lineTo(cx + 20, cy); c.lineTo(cx, cy + 20); c.lineTo(cx - 20, cy); c.closePath(); c.fill();
+      c.strokeStyle = col; c.lineWidth = 2; c.stroke();
+      c.fillStyle = col; c.font = `bold 8px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(PTYPES[comp.color].label, cx, cy);
+      arrowHead(c, cx, cy, comp.dir, 22, 6, col);
+      [outs[0], outs[2]].forEach((o, i) => { if (conn[i * 2]) arrowHead(c, cx, cy, o, 22, 4, '#8a8aa8'); });
+      break;
+    }
+    case 'buffer': {
+      drawPipeBase(c, cx, cy, ins.length ? ins : [back], [comp.dir], 'rgba(57,255,20,0.25)');
+      const cap = BUFFER_CAPS[comp.capLvl], n = comp.queue.length, u = n / cap;
+      const danger = u >= 0.75;
+      c.fillStyle = '#07120c'; rr(c, cx - 25, cy - 25, 50, 50, 5); c.fill();
+      c.strokeStyle = danger ? (Math.floor(animT * 6) % 2 ? '#ff4040' : '#5a1010') : comp.flash > 0 ? '#ffffff' : '#39ff14';
+      c.lineWidth = 2; c.stroke();
+      const cols = cap === 8 ? 4 : cap === 16 ? 4 : 8, rows = cap / cols;
+      const gw = 40 / cols, gh = 30 / rows;
+      for (let i = 0; i < cap; i++) {
+        const gx = cx - 20 + (i % cols) * gw, gy = cy - 19 + Math.floor(i / cols) * gh;
+        const q = comp.queue[i];
+        c.fillStyle = q ? (q.p0 ? '#ffd000' : PTYPES[q.type].color) : '#10261b';
+        c.fillRect(gx + 0.8, gy + 0.8, gw - 1.6, gh - 1.6);
+      }
+      c.fillStyle = '#10261b'; c.fillRect(cx - 20, cy + 14, 40, 5);
+      c.fillStyle = u > 0.75 ? '#ff4040' : u > 0.5 ? '#ffb000' : '#39ff14';
+      c.fillRect(cx - 20, cy + 14, 40 * Math.min(1, u), 5);
+      arrowHead(c, cx, cy, comp.dir, 28, 4, '#39ff14');
+      if (!icon && danger) {
+        c.fillStyle = '#ff4040'; c.font = `bold 9px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(n > cap - 2 ? 'OOM!' : n + '/' + cap, cx, cy - 31 < 4 ? cy + 31 : cy - 31);
+      }
+      break;
+    }
+  }
+}
+
+function drawWall(c, w) {
+  const x = w.x * CELL, y = w.y * CELL;
+  c.fillStyle = '#121816'; c.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+  c.save(); c.beginPath(); c.rect(x + 1, y + 1, CELL - 2, CELL - 2); c.clip();
+  c.strokeStyle = '#1b2421'; c.lineWidth = 6;
+  for (let k = -CELL; k < CELL * 2; k += 14) { c.beginPath(); c.moveTo(x + k, y); c.lineTo(x + k - CELL, y + CELL); c.stroke(); }
+  c.restore();
+  const words = ['TODO', 'legacy', 'COBOL', 'PHP4', 'v0.0.1', 'XXX'];
+  c.fillStyle = '#3c4a44'; c.font = `9px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(words[w.seed], x + CELL / 2, y + CELL / 2);
+}
+function drawSource(c, s) {
+  const [cx, cy] = center(s.x, s.y);
+  drawArm(c, cx, cy, s.dir, 22, '#0c2219', '#1f5a3e');
+  const pulse = s.pulse > 0 ? s.pulse / 0.2 : 0;
+  c.fillStyle = '#071a10'; rr(c, cx - 24, cy - 24, 48, 48, 8); c.fill();
+  c.strokeStyle = `rgba(57,255,20,${0.5 + pulse * 0.5})`; c.lineWidth = 2 + pulse * 2; c.stroke();
+  const types = Object.keys(s.def.mix);
+  types.forEach((t, i) => {
+    c.fillStyle = PTYPES[t].color;
+    c.fillRect(cx - 18 + i * 13, cy - 18, 10, 6);
+  });
+  c.fillStyle = '#c6f6d2'; c.font = `bold 8px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(s.def.label.slice(0, 10), cx, cy - 2);
+  // backlog meter
+  const cap = s.def.backlog || 6;
+  for (let i = 0; i < cap; i++) {
+    c.fillStyle = i < s.backlog ? (s.backlog >= cap - 1 ? '#ff4040' : '#ffb000') : '#10261b';
+    c.fillRect(cx - 18 + i * (36 / cap), cy + 12, 36 / cap - 2, 5);
+  }
+  if (s.def.p0) { c.fillStyle = '#ffd000'; c.font = `bold 7px ${FONT}`; c.fillText('P0', cx + 15, cy + 5); }
+  arrowHead(c, cx, cy, s.dir, 26, 6, '#39ff14');
+}
+function drawSink(c, k) {
+  const [cx, cy] = center(k.x, k.y);
+  const col = PTYPES[k.def.type].color;
+  const u = k.queue.length / k.def.cap;
+  c.fillStyle = '#0a0f12'; rr(c, cx - 25, cy - 26, 50, 52, 5); c.fill();
+  c.strokeStyle = u >= 0.99 ? '#ff4040' : col; c.lineWidth = k.flash > 0 ? 3 : 1.6; c.stroke();
+  for (let i = 0; i < 3; i++) {   // rack units with blinking LEDs
+    const y = cy - 19 + i * 9;
+    c.fillStyle = '#141c22'; c.fillRect(cx - 20, y, 40, 6);
+    const on = k.flash > 0 ? Math.random() > 0.3 : (Math.floor(animT * 3 + i + k.x) % 4 === 0);
+    c.fillStyle = on ? col : '#26323a'; c.fillRect(cx + 13, y + 1.5, 3, 3);
+    c.fillStyle = '#26323a'; c.fillRect(cx - 17, y + 2, 20, 2);
+  }
+  c.fillStyle = col; c.font = `bold 8px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(PTYPES[k.def.type].label + ' ' + k.def.rate + '/s', cx, cy + 10);
+  c.fillStyle = '#10261b'; c.fillRect(cx - 20, cy + 17, 40, 5);
+  c.fillStyle = u > 0.66 ? '#ff4040' : u > 0.34 ? '#ffb000' : col;
+  c.fillRect(cx - 20, cy + 17, 40 * Math.min(1, u), 5);
+  c.fillStyle = '#6f9a80'; c.font = `7px ${FONT}`;
+  const ly = k.y === ROWS - 1 ? cy - 30 : cy + 30;
+  if (k.y !== 0 || ly > cy) c.fillText(k.def.label, cx, ly);
+}
+
+function packetPos(p) {
+  const [cx, cy] = center(p.x, p.y);
+  if (p.t < 0.5 && p.inS >= 0) { const k = (0.5 - p.t) * CELL; return [cx + DX[p.inS] * k, cy + DY[p.inS] * k]; }
+  const k = Math.max(0, p.t - 0.5) * CELL;
+  return [cx + DX[p.outS] * k, cy + DY[p.outS] * k];
+}
+function drawPackets(c) {
+  c.save();
+  c.globalCompositeOperation = 'lighter';
+  for (const p of sim.packets) {
+    const [x, y] = packetPos(p);
+    if (sim.state === 'run') { p.trail.push(x, y); if (p.trail.length > 12) p.trail.splice(0, 2); }
+    const col = PTYPES[p.type].color;
+    for (let i = 0; i < p.trail.length; i += 2) {   // motion trail
+      const a = (i / p.trail.length) * 0.35;
+      c.globalAlpha = a; c.fillStyle = col;
+      c.fillRect(p.trail[i] - 4, p.trail[i + 1] - 4, 8, 8);
+    }
+    c.globalAlpha = 1;
+    c.shadowColor = col; c.shadowBlur = 12;
+    c.fillStyle = col;
+    const sz = p.p0 ? 13 : 11;
+    c.fillRect(x - sz / 2, y - sz / 2, sz, sz);
+    c.shadowBlur = 0;
+    c.fillStyle = 'rgba(255,255,255,0.7)'; c.fillRect(x - sz / 2 + 2, y - sz / 2 + 2, 3, 3);
+    if (p.p0) {
+      c.strokeStyle = '#ffd000'; c.lineWidth = 2;
+      const left = sim.L.p0Deadline ? 1 - (sim.time - p.born) / sim.L.p0Deadline : 1;
+      c.beginPath(); c.arc(x, y, 11, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0, left)); c.stroke();
+    }
+    if (p.waiting && Math.floor(animT * 8) % 2) {
+      c.strokeStyle = 'rgba(255,64,64,0.8)'; c.lineWidth = 1; c.strokeRect(x - sz / 2 - 2, y - sz / 2 - 2, sz + 4, sz + 4);
+    }
+  }
+  c.restore();
+}
+
+function drawGhost(c) {
+  if (!hover || !sim || sim.state === 'crashed' || sim.state === 'won') return;
+  const cell = sim.at(hover.x, hover.y), x = hover.x * CELL, y = hover.y * CELL;
+  if (COMPONENTS.includes(tool) && cell === null) {
+    const afford = sim.credits >= TOOL_INFO[tool].cost;
+    c.save(); c.globalAlpha = 0.45;
+    drawComponent(c, { kind: tool, x: hover.x, y: hover.y, dir: placeDir, rateIdx: 1, tokens: 1, blocked: 0, pass: 0, rr: 0, color: routerColor, capLvl: 0, queue: [], occ: 0, flash: 0 }, x, y, true);
+    c.restore();
+    c.strokeStyle = afford ? 'rgba(57,255,20,0.8)' : 'rgba(255,64,64,0.9)';
+  } else if (tool === 'erase' && sim.isComponent(cell)) c.strokeStyle = 'rgba(255,64,64,0.9)';
+  else if (tool === 'tune' && cell && ['limiter', 'router', 'buffer'].includes(cell.kind)) c.strokeStyle = 'rgba(255,176,0,0.9)';
+  else if (sim.isComponent(cell)) c.strokeStyle = 'rgba(79,195,247,0.7)';
+  else c.strokeStyle = 'rgba(255,255,255,0.12)';
+  c.lineWidth = 2; c.setLineDash([6, 4]); c.strokeRect(x + 2, y + 2, CELL - 4, CELL - 4); c.setLineDash([]);
+}
+
+function render(dt) {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = '#050b09'; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  if (shake > 0) ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+
+  // grid
+  const alarm = redFlash > 0.05;
+  ctx.strokeStyle = alarm ? `rgba(255,40,40,${0.15 + redFlash * 0.6})` : 'rgba(57,255,20,0.07)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = 0; x <= COLS; x++) { ctx.moveTo(x * CELL + 0.5, 0); ctx.lineTo(x * CELL + 0.5, H); }
+  for (let y = 0; y <= ROWS; y++) { ctx.moveTo(0, y * CELL + 0.5); ctx.lineTo(W, y * CELL + 0.5); }
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(57,255,20,0.12)';
+  for (let x = 0; x <= COLS; x++) for (let y = 0; y <= ROWS; y++) ctx.fillRect(x * CELL - 1, y * CELL - 1, 2, 2);
+
+  if (sim) {
+    for (const c of sim.cells()) {
+      if (c.kind === 'wall') drawWall(ctx, c);
+      else if (c.kind === 'source') drawSource(ctx, c);
+      else if (c.kind === 'sink') drawSink(ctx, c);
+      else drawComponent(ctx, c, c.x * CELL, c.y * CELL, false);
+    }
+    drawPackets(ctx);
+    drawGhost(ctx);
+  }
+
+  // particles & floating text
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (const p of particles) {
+    p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.94; p.vy *= 0.94; p.life -= dt;
+    ctx.globalAlpha = Math.max(0, p.life * 1.6); ctx.fillStyle = p.color; ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
+  }
+  ctx.restore();
+  particles = particles.filter(p => p.life > 0);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const f of floats) {
+    f.life -= dt;
+    const [cx, cy] = center(f.x, f.y);
+    ctx.globalAlpha = Math.max(0, Math.min(1, f.life * 1.5));
+    ctx.font = `bold ${f.big ? 15 : 11}px ${FONT}`;
+    ctx.fillStyle = '#000'; ctx.fillText(f.text, cx + 1, cy - 20 - (1.4 - f.life) * 26 + 1);
+    ctx.fillStyle = f.color; ctx.fillText(f.text, cx, cy - 20 - (1.4 - f.life) * 26);
+  }
+  ctx.globalAlpha = 1;
+  floats = floats.filter(f => f.life > 0);
+  ctx.restore();
+
+  if (redFlash > 0) {
+    ctx.fillStyle = `rgba(255,0,0,${redFlash * 0.28})`; ctx.fillRect(0, 0, W, H);
+    redFlash = Math.max(0, redFlash - dt * (sim && sim.state === 'crashed' ? 0.6 : 2.2));
+  }
+  shake = Math.max(0, shake - dt * 30);
+
+  if (sim && sim.state === 'build') {
+    ctx.fillStyle = 'rgba(57,255,20,0.6)'; ctx.font = `bold 11px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('BUILD MODE: traffic paused, press ▶ Deploy (Space)', 8, H - 18);
+  } else if (sim && sim.state === 'paused') {
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#ffb000'; ctx.font = `bold 22px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('⏸ SIGSTOP', W / 2, H / 2);
+  }
+}
+
+/* ---------- main loop ---------- */
+let lastT = performance.now(), acc = 0;
+const STEP = 1 / 60;
+function frame(now) {
+  let dt = Math.min(0.1, (now - lastT) / 1000);
+  lastT = now; animT += dt;
+  if (sim) {
+    acc += dt * speed;
+    let n = 0;
+    while (acc >= STEP && n < 20) { sim.step(STEP); acc -= STEP; n++; }
+    if (n === 20) acc = 0;
+    updateHud();
+  }
+  render(dt);
+  requestAnimationFrame(frame);
+}
+
+loadLevel(0);
+showMenu();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

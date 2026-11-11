@@ -1,0 +1,2589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GMZRR0GY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L8GMZRR0GY');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Oxygen Colony - Asteroid Colony Survival Sim | Free Online</title>
+  <meta name="description" content="Oxygen Colony: a miniature colony survival simulation inspired by Oxygen Not Included. Dig, build oxygen diffusers, wire up power and keep your Duplicants breathing, fed and sane. Gas, liquid and heat simulation in your browser.">
+  <meta name="keywords" content="oxygen colony, colony sim, oxygen not included, survival game, simulation game, browser game, duplicants, gas simulation">
+  <meta name="author" content="OICrusher Games">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://oicrusher.me/game/oxygen_colony.html">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://oicrusher.me/game/oxygen_colony.html">
+  <meta property="og:title" content="Oxygen Colony - Asteroid Colony Survival Sim">
+  <meta property="og:description" content="Dig, build and breathe. A miniature colony sim with gas, liquid and heat simulation.">
+  <style>
+    /* ================= Dark sci-fi theme ================= */
+    :root {
+      --bg: #070b12;
+      --panel: #0f1724;
+      --panel2: #142033;
+      --line: #24364f;
+      --line2: #34507a;
+      --text: #d7e4f5;
+      --dim: #7d93b2;
+      --accent: #4fc3f7;
+      --accent2: #7ef0d0;
+      --warn: #ffb74d;
+      --bad: #ff5c5c;
+      --good: #66d17a;
+      --stress: #b388ff;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: "Segoe UI", system-ui, -apple-system, sans-serif; font-size: 13px; overflow: hidden; }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+
+    /* ---------- top HUD ---------- */
+    #hud { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: linear-gradient(180deg, #121d2e, #0c1420); border-bottom: 1px solid var(--line2); flex-wrap: wrap; }
+    .back { color: var(--dim); text-decoration: none; font-size: 18px; padding: 0 6px; }
+    .back:hover { color: var(--accent); }
+    .brand { font-weight: 800; letter-spacing: 2px; font-size: 15px; color: var(--accent); margin-right: 8px; white-space: nowrap; }
+    .brand span { color: var(--accent2); margin-left: 4px; }
+    .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; min-width: 78px; }
+    .stat label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+    .stat b { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; font-weight: 600; }
+    .cyclebar { height: 3px; background: #1d2a3e; margin-top: 2px; border-radius: 2px; overflow: hidden; }
+    .cyclebar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+    .spacer { flex: 1; }
+    .speed { display: flex; border: 1px solid var(--line2); border-radius: 4px; overflow: hidden; }
+    .speed button { background: var(--panel); border: none; padding: 6px 12px; border-right: 1px solid var(--line); font-weight: 700; }
+    .speed button:last-child { border-right: none; }
+    .speed button.on { background: var(--accent); color: #04121c; }
+    .iconbtn { background: var(--panel); border: 1px solid var(--line2); border-radius: 4px; padding: 5px 10px; font-weight: 700; }
+    .iconbtn:hover { border-color: var(--accent); }
+
+    /* ---------- duplicant cards ---------- */
+    #dupeBar { display: flex; gap: 6px; padding: 5px 10px; background: #0a111c; border-bottom: 1px solid var(--line); overflow-x: auto; min-height: 66px; }
+    .dupe { background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 4px 8px; min-width: 190px; cursor: pointer; flex-shrink: 0; }
+    .dupe.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+    .dupe.dead { opacity: 0.45; filter: grayscale(1); }
+    .dupe .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+    .dupe .name { font-weight: 700; }
+    .dupe .name i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: 0; }
+    .dupe .state { font-size: 10px; letter-spacing: 1px; padding: 1px 5px; border-radius: 3px; background: #1b2a40; color: var(--accent); font-family: ui-monospace, Menlo, monospace; }
+    .bars { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; }
+    .bar { font-size: 9px; color: var(--dim); }
+    .bar div { height: 4px; background: #1b263a; border-radius: 2px; overflow: hidden; margin-top: 1px; }
+    .bar div i { display: block; height: 100%; }
+
+    /* ---------- stage ---------- */
+    #stage { flex: 1; min-height: 0; position: relative; background: radial-gradient(ellipse at center, #0b1422 0%, #05080d 80%); }
+    #canvasWrap { position: absolute; border: 1px solid var(--line2); box-shadow: 0 0 30px rgba(79,195,247,0.08); }
+    #cv { display: block; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+    #overlays { position: absolute; top: 6px; right: 6px; display: flex; gap: 3px; }
+    #overlays button { background: rgba(10,17,28,0.85); border: 1px solid var(--line2); border-radius: 3px; padding: 3px 8px; font-size: 11px; }
+    #overlays button.on { background: var(--accent); color: #04121c; border-color: var(--accent); font-weight: 700; }
+    #hover { position: absolute; top: 6px; left: 6px; background: rgba(8,14,23,0.88); border: 1px solid var(--line2); border-radius: 4px; padding: 5px 8px; font-size: 11px; line-height: 1.45; pointer-events: none; max-width: 260px; display: none; }
+    #hover b { color: var(--accent); }
+    #hover .w { color: var(--warn); }
+
+    /* ---------- bottom: toolbar + stock + log ---------- */
+    #bottom { flex-shrink: 0; display: flex; gap: 8px; padding: 6px 10px; background: linear-gradient(0deg, #121d2e, #0c1420); border-top: 1px solid var(--line2); height: 150px; }
+    #toolWrap { display: flex; flex-direction: column; gap: 4px; flex: 0 1 560px; min-width: 0; }
+    #toolbar { display: flex; flex-wrap: wrap; gap: 4px; }
+    .tool { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; width: 62px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 2px; }
+    .tool:hover { border-color: var(--line2); background: var(--panel2); }
+    .tool.on { border-color: var(--accent); background: #13314a; box-shadow: 0 0 8px rgba(79,195,247,0.35); }
+    .tool .ic { font-size: 18px; line-height: 1; }
+    .tool .lb { font-size: 9px; margin-top: 3px; text-align: center; line-height: 1.05; color: var(--text); }
+    .tool .k { position: absolute; top: 1px; left: 3px; font-size: 8px; color: var(--dim); font-family: ui-monospace, monospace; }
+    #toolInfo { font-size: 11px; color: var(--dim); min-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #toolInfo b { color: var(--accent2); }
+    #stock { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 5px 8px; width: 160px; flex-shrink: 0; font-size: 11px; overflow-y: auto; }
+    #stock h4, #logWrap h4 { font-size: 10px; letter-spacing: 1px; color: var(--dim); text-transform: uppercase; margin-bottom: 3px; }
+    #stock .row { display: flex; justify-content: space-between; font-family: ui-monospace, Menlo, monospace; }
+    #stock .row i { display: inline-block; width: 8px; height: 8px; margin-right: 4px; border-radius: 2px; }
+    #logWrap { flex: 1; min-width: 180px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 5px 8px; display: flex; flex-direction: column; }
+    #log { flex: 1; overflow-y: auto; font-size: 11px; font-family: ui-monospace, Menlo, Consolas, monospace; line-height: 1.45; }
+    #log .e { color: var(--text); }
+    #log .e span { color: var(--dim); margin-right: 6px; }
+    #log .warn { color: var(--warn); }
+    #log .bad { color: var(--bad); }
+    #log .good { color: var(--good); }
+
+    /* ---------- modal ---------- */
+    #modal { position: fixed; inset: 0; background: rgba(2,5,10,0.78); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+    #modal .box { background: var(--panel); border: 1px solid var(--accent); border-radius: 8px; max-width: 560px; width: 100%; padding: 20px 24px; box-shadow: 0 0 40px rgba(79,195,247,0.25); max-height: 90vh; overflow-y: auto; }
+    #modal h2 { color: var(--accent); letter-spacing: 2px; margin-bottom: 10px; }
+    #modal p, #modal li { line-height: 1.55; margin-bottom: 6px; color: var(--text); }
+    #modal ul { padding-left: 18px; margin-bottom: 10px; }
+    #modal kbd { background: #1c2a40; border: 1px solid var(--line2); border-radius: 3px; padding: 0 4px; font-size: 11px; }
+    #modal .go { margin-top: 10px; background: var(--accent); color: #04121c; border: none; border-radius: 4px; padding: 8px 20px; font-weight: 800; letter-spacing: 1px; }
+
+    @media (max-width: 820px) {
+      #hud { gap: 4px; padding: 4px 6px; }
+      .brand { font-size: 12px; }
+      .stat { min-width: 0; padding: 2px 5px; }
+      .stat label { font-size: 8px; }
+      .stat b { font-size: 11px; }
+      #dupeBar { min-height: 0; padding: 4px 6px; }
+      .dupe { min-width: 150px; }
+      #stage { min-height: 220px; }
+      #bottom { height: auto; max-height: 34vh; overflow-y: auto; flex-wrap: wrap; padding: 4px 6px; }
+      .tool { width: 48px; height: 42px; }
+      .tool .ic { font-size: 15px; }
+      .tool .lb { font-size: 8px; }
+      #toolInfo { white-space: normal; }
+      #stock { width: auto; flex: 1; max-height: 96px; }
+      #logWrap { flex-basis: 100%; height: 90px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header id="hud">
+    <a class="back" href="index.html" title="Back to games">&larr;</a>
+    <div class="brand">OXYGEN<span>COLONY</span></div>
+    <div class="stat"><label>Cycle</label><b id="sCycle">1</b><div class="cyclebar"><i id="sCycleBar"></i></div></div>
+    <div class="stat"><label>Breathable O₂</label><b id="sO2">-</b></div>
+    <div class="stat"><label>CO₂</label><b id="sCO2">-</b></div>
+    <div class="stat"><label>Food</label><b id="sFood">-</b></div>
+    <div class="stat"><label>Avg Stress</label><b id="sStress">-</b></div>
+    <div class="stat"><label>Power</label><b id="sPower">-</b></div>
+    <div class="stat"><label>Storage</label><b id="sStore">-</b></div>
+    <div class="spacer"></div>
+    <div class="speed" id="speed">
+      <button data-speed="0" title="Pause (Space)">❚❚</button>
+      <button data-speed="1" title="Normal speed">1x</button>
+      <button data-speed="3" title="Fast forward">3x</button>
+    </div>
+    <button class="iconbtn" id="lbBtn" title="Top 20 colonies">🏆</button>
+    <button class="iconbtn" id="helpBtn" title="How to play">?</button>
+  </header>
+
+  <div id="dupeBar"></div>
+
+  <main id="stage">
+    <div id="canvasWrap">
+      <canvas id="cv"></canvas>
+      <div id="overlays">
+        <button data-ov="materials" class="on" title="Materials view (V)">Materials</button>
+        <button data-ov="oxygen" title="Oxygen overlay (O)">Oxygen</button>
+        <button data-ov="temperature" title="Temperature overlay (T)">Temp</button>
+        <button data-ov="power" title="Power overlay (P)">Power</button>
+      </div>
+      <div id="hover"></div>
+    </div>
+  </main>
+
+  <footer id="bottom">
+    <div id="toolWrap">
+      <div id="toolbar"></div>
+      <div id="toolInfo"></div>
+    </div>
+    <div id="stock"><h4>Storage</h4><div id="stockRows"></div></div>
+    <div id="logWrap"><h4>Event Log</h4><div id="log"></div></div>
+  </footer>
+</div>
+
+<div id="modal"><div class="box" id="modalBox"></div></div>
+
+<script src="identity.js?v=2"></script>
+<script src="leaderboard.js?v=2"></script>
+<script>
+'use strict';
+/* =====================================================================
+ *  OXYGEN COLONY - a miniature colony survival simulation
+ *  inspired by Oxygen Not Included.
+ *
+ *  Architecture overview
+ *  ---------------------
+ *   World        : 60x40 grid of Cell objects + building / wire layers,
+ *                  runs the gas, liquid and heat simulation.
+ *   Pathfinder   : BFS over "standable" cells (walk, step up, drop, ladders).
+ *   TaskManager  : the errand board (dig / build / deconstruct / operate).
+ *   Building     : base class, one subclass per building type.
+ *   PowerGrid    : wire networks, generators, batteries and consumers.
+ *   Duplicant    : needs (HP, stress, calories, breath) + AI state machine.
+ *   Renderer     : canvas drawing incl. overlays.
+ *   UI           : DOM HUD, toolbar, event log, input handling.
+ *   Game         : owns everything, fixed-timestep main loop.
+ * ===================================================================== */
+
+// ------------------------------------------------------------------ constants
+const COLS = 60, ROWS = 40, CS = 16;      // grid size and cell size in logical px
+const N_CELLS = COLS * ROWS;
+const SIM_DT = 0.1;                         // game seconds per simulation tick
+const CYCLE_LEN = 200;                      // game seconds per cycle (day)
+const O2_USE = 0.1;                         // kg/s of oxygen a duplicant breathes
+const CO2_RATIO = 0.2;                      // kg CO2 exhaled per kg O2 breathed
+const KCAL_RATE = 1000 / CYCLE_LEN;         // kcal burned per second (1000 per cycle)
+const MAX_KCAL = 4000;
+const DIG_POWER = 12;                       // hp removed per second while digging
+const BIN_CAP = 3000;                       // kg per storage bin
+const HEAT_SCALE = 800;                     // conduction tuning factor
+const MAX_DUPES = 4;
+
+// element phases
+const PH = { VAC: 0, GAS: 1, LIQ: 2, SOL: 3 };
+const PHASE_NAME = ['vacuum', 'gas', 'liquid', 'solid'];
+const DIRS4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+// element table. k = thermal conductivity (W/mK), shc = specific heat (J/gK)
+const ELEMENTS = {
+  vacuum:     { name: 'Vacuum',           phase: PH.VAC, color: '#04060a', k: 0,     shc: 0 },
+  oxygen:     { name: 'Oxygen',           phase: PH.GAS, color: '#3fa9f5', k: 0.024, shc: 1.005, molar: 32 },
+  co2:        { name: 'Carbon Dioxide',   phase: PH.GAS, color: '#8a8a5c', k: 0.015, shc: 0.846, molar: 44 },
+  water:      { name: 'Water',            phase: PH.LIQ, color: '#2f74d8', k: 0.609, shc: 4.179, maxMass: 1000 },
+  dirt:       { name: 'Dirt',             phase: PH.SOL, color: '#7b5536', k: 2.0,  shc: 1.48,  hp: 20, res: 'dirt' },
+  sandstone:  { name: 'Sandstone',        phase: PH.SOL, color: '#b98f55', k: 2.9,  shc: 0.8,   hp: 35, res: 'sandstone' },
+  granite:    { name: 'Granite',          phase: PH.SOL, color: '#857a8c', k: 3.39, shc: 0.79,  hp: 65, res: 'granite' },
+  igneous:    { name: 'Igneous Rock',     phase: PH.SOL, color: '#6a4242', k: 2.0,  shc: 1.0,   hp: 85, res: 'igneous' },
+  algae:      { name: 'Algae',            phase: PH.SOL, color: '#3c8f47', k: 2.0,  shc: 0.2,   hp: 15, res: 'algae' },
+  copper:     { name: 'Copper Ore',       phase: PH.SOL, color: '#a8653d', k: 4.5,  shc: 0.386, hp: 50, res: 'copper' },
+  tile:       { name: 'Constructed Tile', phase: PH.SOL, color: '#4b5b70', k: 2.9,  shc: 0.8,   hp: 20, res: 'sandstone', constructed: true },
+  neutronium: { name: 'Neutronium',       phase: PH.SOL, color: '#1d1529', k: 0,    shc: 0,     hp: 0,  indestructible: true },
+};
+const RESOURCES = {
+  sandstone: { name: 'Sandstone', color: '#b98f55' },
+  granite:   { name: 'Granite',   color: '#857a8c' },
+  igneous:   { name: 'Igneous',   color: '#6a4242' },
+  dirt:      { name: 'Dirt',      color: '#7b5536' },
+  algae:     { name: 'Algae',     color: '#3c8f47' },
+  copper:    { name: 'Copper Ore', color: '#c27646' },
+};
+const ROCKS = ['sandstone', 'granite', 'igneous'];   // "raw mineral" for construction costs
+
+// building definitions. use = watts consumed, gen = watts generated
+const BUILDINGS = {
+  tile:         { name: 'Tile',             icon: '🧱', w: 1, h: 1, cost: { rock: 25 }, time: 2.5, desc: 'Solid tile. Walls, floors and airlocks.' },
+  ladder:       { name: 'Ladder',           icon: '🪜', w: 1, h: 1, cost: { rock: 15 }, time: 2, desc: 'Lets Duplicants climb vertically.' },
+  wire:         { name: 'Wire',             icon: '〰️', w: 1, h: 1, cost: { copper: 5 }, time: 0.8, desc: 'Connects generators, batteries and consumers.' },
+  diffuser:     { name: 'Oxygen Diffuser',  icon: '🌿', w: 2, h: 2, cost: { rock: 120 }, time: 8, floor: true, desc: 'Converts Algae into Oxygen and scrubs a little CO₂. No power needed.' },
+  electrolyzer: { name: 'Electrolyzer',     icon: '💧', w: 2, h: 2, cost: { rock: 100, copper: 40 }, time: 10, floor: true, electric: true, use: 120, desc: 'Splits nearby Water into Oxygen. Needs 120 W and water within 4 tiles.' },
+  storage:      { name: 'Storage Bin',      icon: '📦', w: 1, h: 2, cost: { rock: 80 }, time: 6, floor: true, desc: 'Adds ' + BIN_CAP + ' kg of storage for dug materials.' },
+  ration:       { name: 'Ration Box',       icon: '🍱', w: 1, h: 1, cost: { rock: 40 }, time: 4, floor: true, desc: 'Duplicants go here to eat.' },
+  generator:    { name: 'Manual Generator', icon: '⚙️', w: 2, h: 2, cost: { rock: 150 }, time: 10, floor: true, electric: true, gen: 400, desc: 'A Duplicant runs the wheel to make 400 W.' },
+  battery:      { name: 'Battery',          icon: '🔋', w: 1, h: 2, cost: { copper: 60 }, time: 6, floor: true, electric: true, desc: 'Stores 20 kJ of power.' },
+  musher:       { name: 'Microbe Musher',   icon: '🍲', w: 2, h: 2, cost: { rock: 150, copper: 20 }, time: 10, floor: true, electric: true, use: 240, desc: 'Turns 50 kg Dirt + 50 kg nearby Water into an 800 kcal Mush Bar. 240 W.' },
+  pod:          { name: 'Printing Pod',     icon: '🛸', w: 3, h: 3, cost: {}, time: 1, floor: true, desc: 'The heart of the colony. Prints a new Duplicant every 3 cycles if food allows.' },
+};
+
+// toolbar definition
+const TOOLS = [
+  { id: 'dig',          key: '1', label: 'Dig',          icon: '⛏️', mode: 'rect', desc: 'Drag to mark tiles for excavation. Mined material goes to storage.' },
+  { id: 'tile',         key: '2', label: 'Build Tile',   icon: '🧱', mode: 'rect', build: 'tile' },
+  { id: 'ladder',       key: '3', label: 'Ladder',       icon: '🪜', mode: 'line', build: 'ladder' },
+  { id: 'diffuser',     key: '4', label: 'O₂ Diffuser',  icon: '🌿', mode: 'place', build: 'diffuser' },
+  { id: 'electrolyzer', key: '5', label: 'Electrolyzer', icon: '💧', mode: 'place', build: 'electrolyzer' },
+  { id: 'storage',      key: '6', label: 'Storage Bin',  icon: '📦', mode: 'place', build: 'storage' },
+  { id: 'ration',       key: '7', label: 'Ration Box',   icon: '🍱', mode: 'place', build: 'ration' },
+  { id: 'generator',    key: '8', label: 'Generator',    icon: '⚙️', mode: 'place', build: 'generator' },
+  { id: 'battery',      key: '9', label: 'Battery',      icon: '🔋', mode: 'place', build: 'battery' },
+  { id: 'wire',         key: '0', label: 'Wire',         icon: '〰️', mode: 'line', build: 'wire' },
+  { id: 'musher',       key: 'M', label: 'Musher',       icon: '🍲', mode: 'place', build: 'musher' },
+  { id: 'decon',        key: 'X', label: 'Deconstruct',  icon: '🔧', mode: 'rect', desc: 'Drag to deconstruct buildings, wires and tiles (full refund).' },
+  { id: 'cancel',       key: 'C', label: 'Cancel',       icon: '✖️', mode: 'rect', desc: 'Drag to cancel pending orders.' },
+];
+
+const DUPE_NAMES = ['Pip', 'Nova', 'Bix', 'Marlo', 'Juno', 'Tess', 'Ozzy', 'Remy'];
+const DUPE_PALETTES = [
+  { suit: '#e8664f', dark: '#a7402f', hair: '#4a2a14', skin: '#f6cfa6' },
+  { suit: '#53b7e8', dark: '#2c7aa8', hair: '#e3b04b', skin: '#eec09a' },
+  { suit: '#9b7bea', dark: '#6649b3', hair: '#2b2b2b', skin: '#d9a77c' },
+  { suit: '#6cd18a', dark: '#3a9257', hair: '#c4572e', skin: '#f3d2b3' },
+  { suit: '#f2c14e', dark: '#b88a1f', hair: '#6b3d1f', skin: '#c99068' },
+];
+
+// ------------------------------------------------------------------ utilities
+const withArticle = s => (/^[AEIOU]/i.test(s) ? 'an ' : 'a ') + s;
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const K2C = k => k - 273.15;
+function fmtMass(kg) {
+  if (kg >= 1000) return (kg / 1000).toFixed(2) + ' t';
+  if (kg >= 1) return kg.toFixed(kg >= 100 ? 0 : 1) + ' kg';
+  return Math.round(kg * 1000) + ' g';
+}
+function fmtCost(cost) {
+  const parts = [];
+  for (const k in cost) parts.push(cost[k] + ' kg ' + (k === 'rock' ? 'Raw Mineral' : RESOURCES[k].name));
+  return parts.join(', ') || 'free';
+}
+// small seeded RNG (mulberry32)
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+// smooth value noise used for world generation
+class ValueNoise {
+  constructor(rng, size = 64) {
+    this.size = size;
+    this.v = new Float32Array(size * size);
+    for (let i = 0; i < this.v.length; i++) this.v[i] = rng();
+  }
+  at(i, j) { const s = this.size; i = ((i % s) + s) % s; j = ((j % s) + s) % s; return this.v[j * s + i]; }
+  sample(x, y) {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = this.at(xi, yi), b = this.at(xi + 1, yi), c = this.at(xi, yi + 1), d = this.at(xi + 1, yi + 1);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  }
+  fbm(x, y) { return this.sample(x, y) * 0.65 + this.sample(x * 2.1 + 17, y * 2.1 + 9) * 0.35; }
+}
+function hexToRgb(hex) { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+function shade(hex, f) { const [r, g, b] = hexToRgb(hex); return `rgb(${clamp(r * f | 0, 0, 255)},${clamp(g * f | 0, 0, 255)},${clamp(b * f | 0, 0, 255)})`; }
+function rr(ctx, x, y, w, h, r) {   // rounded rect path (no reliance on ctx.roundRect)
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
+}
+
+/* =====================================================================
+ *  Cell - one grid square. Holds a single element (ONI style).
+ * ===================================================================== */
+class Cell {
+  constructor(element = 'vacuum', mass = 0, temperature = 293) {
+    this.noise = Math.random();   // visual variation only
+    this.temperature = temperature;
+    this.set(element, mass, temperature);
+  }
+  /** Replace the contents of this cell. */
+  set(element, mass, temperature) {
+    const d = ELEMENTS[element];
+    this.element = element;
+    this.phase = d.phase;
+    this.type = PHASE_NAME[d.phase];     // 'vacuum' | 'gas' | 'liquid' | 'solid'
+    this.mass = d.phase === PH.VAC ? 0 : mass;
+    if (temperature !== undefined) this.temperature = temperature;
+    this.hp = d.hp || 0;                  // dig durability
+    this.maxHp = this.hp;
+  }
+  clear() { this.set('vacuum', 0); }
+  get def() { return ELEMENTS[this.element]; }
+  get heatCap() { return this.mass * this.def.shc * 1000; }   // J/K
+}
+
+/* =====================================================================
+ *  World - grid, layers and the physics simulation
+ * ===================================================================== */
+class World {
+  constructor(w, h) {
+    this.w = w; this.h = h;
+    this.cells = new Array(w * h);
+    this.buildings = new Array(w * h).fill(null);   // building layer
+    this.wires = new Uint8Array(w * h);             // power wire layer
+    this.plan = new Array(w * h).fill(null);        // build reservations (main layer)
+    this.wirePlan = new Array(w * h).fill(null);    // build reservations (wire layer)
+    this.lmoved = new Uint32Array(w * h);           // per-tick "already moved" flags
+    this.gmoved = new Uint32Array(w * h);
+    this.tick = 0;
+  }
+  idx(x, y) { return y * this.w + x; }
+  inB(x, y) { return x >= 0 && y >= 0 && x < this.w && y < this.h; }
+  cell(x, y) { return this.inB(x, y) ? this.cells[y * this.w + x] : null; }
+  isSolid(x, y) { return !this.inB(x, y) || this.cells[y * this.w + x].phase === PH.SOL; }
+  isPassable(x, y) { return !this.isSolid(x, y); }
+  isGasLike(x, y) { const c = this.cell(x, y); return !!c && c.phase <= PH.GAS; }
+  building(x, y) { return this.inB(x, y) ? this.buildings[y * this.w + x] : null; }
+  hasLadder(x, y) { const b = this.building(x, y); return !!b && b.type === 'ladder'; }
+
+  /** Can a duplicant stand with its feet in (x,y)? Body is 2 cells tall. */
+  canStand(x, y) {
+    if (x < 1 || x >= this.w - 1 || y < 1 || y >= this.h - 1) return false;
+    const i = y * this.w + x, c = this.cells;
+    if (c[i].phase === PH.SOL || c[i - this.w].phase === PH.SOL) return false;
+    if (c[i + this.w].phase === PH.SOL) return true;
+    const b = this.buildings[i];
+    if (b && b.type === 'ladder') return true;
+    const b2 = this.buildings[i + this.w];
+    return !!(b2 && b2.type === 'ladder');
+  }
+
+  swap(i, j) { const t = this.cells[i]; this.cells[i] = this.cells[j]; this.cells[j] = t; }
+
+  /** Merge mass of the same element into a cell, mixing temperature. */
+  addMassTo(c, el, mass, temp) {
+    if (c.phase === PH.VAC) { c.set(el, mass, temp); return; }
+    const tot = c.mass + mass;
+    if (tot > 0) c.temperature = (c.temperature * c.mass + temp * mass) / tot;
+    c.mass = tot;
+  }
+
+  /** Push a fluid's mass out of (x,y) into a neighbour (used when a cell is displaced). */
+  pushMass(x, y, el, mass, temp) {
+    if (el === 'vacuum' || mass <= 0) return;
+    const ph = ELEMENTS[el].phase;
+    const order = ph === PH.LIQ ? [[0, -1], [1, 0], [-1, 0], [0, 1]] : [[0, -1], [1, 0], [-1, 0], [0, 1]];
+    // first try a neighbour of the same element, then an empty/gas cell
+    for (const [dx, dy] of order) {
+      const n = this.cell(x + dx, y + dy);
+      if (n && n.element === el) { this.addMassTo(n, el, mass, temp); return; }
+    }
+    for (const [dx, dy] of order) {
+      const n = this.cell(x + dx, y + dy);
+      if (n && n.phase === PH.VAC) { n.set(el, mass, temp); return; }
+    }
+    if (ph === PH.LIQ) {   // liquids may overwrite a gas cell
+      for (const [dx, dy] of order) {
+        const n = this.cell(x + dx, y + dy);
+        if (n && n.phase === PH.GAS) { n.set(el, mass, temp); return; }
+      }
+    }
+    // nowhere to go: mass is lost (acceptable simplification)
+  }
+
+  /** Empty a cell before something solid is built in it. */
+  displace(x, y) {
+    const c = this.cell(x, y);
+    if (!c || c.phase === PH.SOL || c.phase === PH.VAC) return;
+    const el = c.element, m = c.mass, t = c.temperature;
+    c.clear();
+    this.pushMass(x, y, el, m, t);
+  }
+
+  /** Release gas near (x,y): finds a nearby cell of the same gas or vacuum. */
+  emitGas(x, y, el, mass, temp) {
+    if (mass <= 0) return true;
+    let best = null, bd = 1e9;
+    for (let dy = -2; dy <= 2; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        const c = this.cell(x + dx, y + dy);
+        if (!c || c.phase > PH.GAS) continue;
+        if (c.element !== el && c.phase !== PH.VAC) continue;
+        const d = Math.abs(dx) + Math.abs(dy) + (dy > 0 && el === 'oxygen' ? 0.5 : 0);
+        if (d < bd) { bd = d; best = c; }
+      }
+    }
+    if (best) { this.addMassTo(best, el, mass, temp); return true; }
+    // no room: displace the gas in the origin cell into its neighbours
+    const c = this.cell(x, y);
+    if (!c || c.phase !== PH.GAS) return false;
+    const oe = c.element, om = c.mass, ot = c.temperature;
+    c.set(el, mass, temp);
+    this.pushMass(x, y, oe, om, ot);
+    return true;
+  }
+
+  /** Remove up to `mass` of an element from a cell; returns how much was taken. */
+  takeMass(c, mass) {
+    const t = Math.min(mass, c.mass);
+    c.mass -= t;
+    if (c.mass < (c.phase === PH.LIQ ? 0.5 : 0.001)) c.clear();
+    return t;
+  }
+
+  addHeat(x, y, joules) {
+    const c = this.cell(x, y);
+    if (!c || c.phase === PH.VAC) return;
+    const C = c.heatCap;
+    if (C < 1) return;
+    c.temperature = clamp(c.temperature + clamp(joules / C, -5, 5), 1, 2000);
+  }
+
+  findLiquidNear(x0, y0, x1, y1, r, minMass) {
+    let best = null;
+    for (let y = y0 - r; y <= y1 + r; y++) {
+      for (let x = x0 - r; x <= x1 + r; x++) {
+        const c = this.cell(x, y);
+        if (c && c.element === 'water' && c.mass >= minMass && (!best || c.mass > best.mass)) best = c;
+      }
+    }
+    return best;
+  }
+
+  // ---------------------------------------------------------- liquid sim
+  /** Water falls, fills cells below, and spreads sideways. Bottom-up sweep. */
+  updateLiquids() {
+    const t = ++this.tick;
+    const dir = (t & 1) ? 1 : -1;
+    const W = this.w, cells = this.cells;
+    for (let y = this.h - 2; y >= 1; y--) {
+      for (let k = 0; k < W; k++) {
+        const x = dir > 0 ? k : W - 1 - k;
+        const i = y * W + x;
+        const c = cells[i];
+        if (c.phase !== PH.LIQ || this.lmoved[i] === t) continue;
+        const max = c.def.maxMass;
+        // 1) fall into gas / vacuum below (gas bubbles up)
+        const bi = i + W, b = cells[bi];
+        if (b.phase <= PH.GAS) { this.swap(i, bi); this.lmoved[bi] = t; continue; }
+        // 2) top up partially filled liquid below
+        if (b.element === c.element && b.mass < max) {
+          const m = Math.min(c.mass, max - b.mass);
+          this.addMassTo(b, c.element, m, c.temperature);
+          c.mass -= m;
+          if (c.mass < 0.5) { c.clear(); continue; }
+        }
+        // 3) lateral spreading / equalisation
+        for (let s = 0; s < 2; s++) {
+          const sd = s === 0 ? dir : -dir;
+          const nx = x + sd;
+          if (nx < 0 || nx >= W) continue;
+          const ni = i + sd, n = cells[ni];
+          if (n.phase <= PH.GAS) {
+            if (c.mass > 20) {
+              const m = c.mass * 0.5;
+              if (n.phase === PH.GAS) { const ge = n.element, gm = n.mass, gt = n.temperature; n.clear(); this.pushMass(nx, y, ge, gm, gt); }
+              n.set(c.element, m, c.temperature);
+              c.mass -= m;
+              this.lmoved[ni] = t;
+            }
+          } else if (n.element === c.element) {
+            const diff = c.mass - n.mass;
+            if (diff > 1) {
+              const m = diff * 0.25;
+              this.addMassTo(n, c.element, m, c.temperature);
+              c.mass -= m;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // ---------------------------------------------------------- gas sim
+  /** Pairwise diffusion between neighbouring gas cells, with buoyancy. */
+  updateGases() {
+    const t = this.tick, W = this.w, H = this.h;
+    const flip = (t & 2) !== 0;
+    for (let y = 0; y < H; y++) {
+      for (let k = 0; k < W; k++) {
+        const x = flip ? W - 1 - k : k;
+        const i = y * W + x;
+        if (flip) { if (x > 0) this.gasPair(i - 1, i, false); }
+        else if (x + 1 < W) this.gasPair(i, i + 1, false);
+        if (y + 1 < H) this.gasPair(i, i + W, true);
+      }
+    }
+  }
+  /** a = left/top cell index, b = right/bottom cell index */
+  gasPair(ia, ib, vertical) {
+    const cells = this.cells, a = cells[ia], b = cells[ib];
+    if (a.phase > PH.GAS || b.phase > PH.GAS) return;
+    const av = a.phase === PH.VAC, bv = b.phase === PH.VAC;
+    if (av && bv) return;
+    const t = this.tick;
+    if (av || bv) {
+      // expand into vacuum
+      const src = av ? b : a, dst = av ? a : b;
+      if (src.mass < 0.004) return;
+      let frac = 0.5;
+      if (vertical) {
+        const heavy = src.def.molar > 36;
+        const goingDown = dst === b;
+        frac = (heavy === goingDown) ? 0.6 : 0.4;
+      }
+      const m = src.mass * frac;
+      dst.set(src.element, m, src.temperature);
+      src.mass -= m;
+      return;
+    }
+    if (a.element === b.element) {
+      // same gas: pressure equalisation with a small buoyancy bias
+      let m = (a.mass - b.mass) * 0.25;
+      if (vertical) m += (a.def.molar > 36 ? 1 : -1) * (a.mass + b.mass) * 0.015;
+      m = clamp(m, -b.mass * 0.5, a.mass * 0.5);
+      if (m > 0) { this.addMassTo(b, b.element, m, a.temperature); a.mass -= m; }
+      else if (m < 0) { this.addMassTo(a, a.element, -m, b.temperature); b.mass += m; }
+      if (a.mass < 0.001) a.clear();
+      if (b.mass < 0.001) b.clear();
+      return;
+    }
+    // different gases: they never mix inside a cell, they swap places
+    if (this.gmoved[ia] === t || this.gmoved[ib] === t) return;
+    let doSwap = false;
+    if (vertical) doSwap = a.def.molar > b.def.molar && Math.random() < 0.6;   // heavy gas sinks
+    else {
+      const hi = Math.max(a.mass, b.mass), lo = Math.min(a.mass, b.mass);
+      doSwap = (hi > lo * 1.6 && Math.random() < 0.2) || Math.random() < 0.02;
+    }
+    if (doSwap) { this.swap(ia, ib); this.gmoved[ia] = t; this.gmoved[ib] = t; }
+  }
+
+  // ---------------------------------------------------------- heat sim
+  /** Conduction between neighbours, clamped so it never overshoots equilibrium. */
+  updateHeat(dt) {
+    const W = this.w, H = this.h, cells = this.cells;
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x, a = cells[i];
+        if (a.phase === PH.VAC) continue;
+        const ka = a.def.k; if (!ka) continue;
+        const Ca = a.heatCap; if (Ca <= 0) continue;
+        if (x + 1 < W) this.conduct(a, cells[i + 1], ka, Ca, dt);
+        if (y + 1 < H) this.conduct(a, cells[i + W], ka, Ca, dt);
+      }
+    }
+  }
+  conduct(a, b, ka, Ca, dt) {
+    if (b.phase === PH.VAC) return;
+    const kb = b.def.k; if (!kb) return;
+    const dT = a.temperature - b.temperature;
+    if (dT > -0.01 && dT < 0.01) return;
+    const Cb = b.heatCap; if (Cb <= 0) return;
+    let q = Math.min(ka, kb) * HEAT_SCALE * dT * dt;
+    const qmax = dT * Ca * Cb / (Ca + Cb) * 0.5;
+    if (Math.abs(q) > Math.abs(qmax)) q = qmax;
+    a.temperature -= q / Ca;
+    b.temperature += q / Cb;
+  }
+
+  // ---------------------------------------------------------- generation
+  generate(seed) {
+    const rng = mulberry32(seed);
+    const nCave = new ValueNoise(rng), nMat = new ValueNoise(rng), nOre = new ValueNoise(rng);
+    const cave = new Uint8Array(N_CELLS);
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        const i = this.idx(x, y), depth = y / ROWS;
+        const T = 288 + depth * 40;    // deeper is warmer
+        if (x === 0 || y === 0 || x === COLS - 1 || y === ROWS - 1) { this.cells[i] = new Cell('neutronium', 10000, T); continue; }
+        const m = nMat.fbm(x / 8, y / 6);
+        let el;
+        if (depth < 0.35) el = m < 0.55 ? 'sandstone' : 'dirt';
+        else if (depth < 0.68) el = m < 0.35 ? 'granite' : (m < 0.7 ? 'dirt' : 'sandstone');
+        else el = m < 0.55 ? 'granite' : 'igneous';
+        const o = nOre.sample(x / 3.5 + 40, y / 3.5 + 40);
+        if (o > 0.8) el = 'copper';
+        else if (o < 0.16 && depth < 0.8) el = 'algae';
+        const mass = (el === 'dirt' ? 180 : el === 'algae' ? 160 : 220) * (0.85 + rng() * 0.3);
+        this.cells[i] = new Cell(el, mass, T);
+        if (y > 2 && y < ROWS - 3 && nCave.fbm(x / 6, y / 4.5) > 0.64) cave[i] = 1;
+      }
+    }
+    // fill each connected cave region with one kind of content
+    const seen = new Uint8Array(N_CELLS);
+    for (let s = 0; s < N_CELLS; s++) {
+      if (!cave[s] || seen[s]) continue;
+      const region = [s]; seen[s] = 1;
+      for (let q = 0; q < region.length; q++) {
+        const c = region[q], cx = c % COLS, cy = (c / COLS) | 0;
+        for (const [dx, dy] of DIRS4) {
+          const ni = (cy + dy) * COLS + cx + dx;
+          if (this.inB(cx + dx, cy + dy) && cave[ni] && !seen[ni]) { seen[ni] = 1; region.push(ni); }
+        }
+      }
+      let sumY = 0, maxY = 0;
+      for (const c of region) { const cy = (c / COLS) | 0; sumY += cy; maxY = Math.max(maxY, cy); }
+      const avg = sumY / region.length / ROWS, r = rng();
+      let kind = 'oxygen';
+      if (avg > 0.55 && r < 0.55) kind = 'water';
+      else if (avg > 0.42 && r < 0.75) kind = 'co2';
+      else if (r > 0.9) kind = 'vacuum';
+      for (const c of region) {
+        const cell = this.cells[c], cy = (c / COLS) | 0;
+        if (kind === 'water') {
+          if (cy >= maxY - 1) cell.set('water', 900, cell.temperature);
+          else cell.set('co2', 1.2, cell.temperature);
+        } else if (kind === 'co2') cell.set('co2', 1.5, cell.temperature);
+        else if (kind === 'oxygen') cell.set('oxygen', 1.1, cell.temperature);
+        else cell.clear();
+      }
+    }
+    // ---- hand-made starting area ----
+    const fill = (x0, y0, x1, y1, el, mass, T) => {
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+        const c = this.cell(x, y); if (c) c.set(el, mass * (ELEMENTS[el].phase === PH.SOL ? 0.9 + Math.random() * 0.2 : 1), T);
+      }
+    };
+    fill(20, 14, 39, 14, 'sandstone', 220, 294);   // ceiling
+    fill(21, 15, 38, 22, 'oxygen', 1.8, 295);      // living space
+    fill(20, 15, 20, 22, 'sandstone', 220, 294);   // walls
+    fill(39, 15, 39, 22, 'sandstone', 220, 294);
+    fill(20, 23, 39, 23, 'sandstone', 220, 296);   // floor
+    fill(20, 24, 39, 25, 'dirt', 180, 297);
+    fill(16, 17, 19, 22, 'algae', 160, 295);       // nearby algae deposit
+    fill(40, 16, 42, 21, 'copper', 220, 295);      // nearby copper vein
+    fill(22, 26, 36, 31, 'granite', 220, 298);     // water cave shell
+    fill(23, 26, 35, 27, 'oxygen', 0.7, 298);
+    fill(23, 28, 35, 30, 'water', 1000, 298);
+  }
+}
+
+/* =====================================================================
+ *  Pathfinder - BFS over standable cells.
+ *  Moves: walk sideways, step up 1, drop down up to 4, climb ladders.
+ * ===================================================================== */
+class Pathfinder {
+  constructor(world) {
+    this.world = world;
+    this.queue = new Int32Array(N_CELLS);
+    this.nb = new Int32Array(8);
+  }
+  neighbors(x, y, out) {
+    const W = this.world;
+    let n = 0;
+    for (let s = -1; s <= 1; s += 2) {
+      const nx = x + s;
+      if (nx < 1 || nx >= COLS - 1) continue;
+      if (W.canStand(nx, y)) { out[n++] = y * COLS + nx; continue; }
+      if (W.canStand(nx, y - 1) && W.isPassable(x, y - 2)) out[n++] = (y - 1) * COLS + nx;   // step up
+      if (W.isPassable(nx, y) && W.isPassable(nx, y - 1)) {                                    // drop down
+        for (let k = 1; k <= 4; k++) {
+          if (W.isSolid(nx, y + k)) break;
+          if (W.canStand(nx, y + k)) { out[n++] = (y + k) * COLS + nx; break; }
+        }
+      }
+    }
+    if ((W.hasLadder(x, y) || W.hasLadder(x, y - 1)) && W.canStand(x, y - 1)) out[n++] = (y - 1) * COLS + x;
+    if (W.hasLadder(x, y + 1) && W.canStand(x, y + 1)) out[n++] = (y + 1) * COLS + x;
+    return n;
+  }
+  /** Fills dist (steps, -1 = unreachable) and prev from the start cell. */
+  bfs(sx, sy, dist, prev) {
+    dist.fill(-1);
+    if (!this.world.canStand(sx, sy)) return false;
+    const q = this.queue, nb = this.nb;
+    let h = 0, t = 0;
+    const s = sy * COLS + sx;
+    dist[s] = 0; prev[s] = -1; q[t++] = s;
+    while (h < t) {
+      const cur = q[h++];
+      const cnt = this.neighbors(cur % COLS, (cur / COLS) | 0, nb);
+      const nd = dist[cur] + 1;
+      for (let k = 0; k < cnt; k++) {
+        const ni = nb[k];
+        if (dist[ni] < 0) { dist[ni] = nd; prev[ni] = cur; q[t++] = ni; }
+      }
+    }
+    return true;
+  }
+  /** Reconstructs the path (excluding the start cell) to target index. */
+  buildPath(prev, dist, target) {
+    if (dist[target] < 0) return null;
+    const path = [];
+    let c = target;
+    while (c >= 0 && dist[c] > 0) { path.push([c % COLS, (c / COLS) | 0]); c = prev[c]; }
+    return path.reverse();
+  }
+}
+
+/* =====================================================================
+ *  Stockpile - colony-wide pooled storage (fed by Storage Bins)
+ * ===================================================================== */
+class Stockpile {
+  constructor() { this.items = { sandstone: 0, granite: 0, igneous: 0, dirt: 0, algae: 0, copper: 0 }; }
+  total() { let s = 0; for (const k in this.items) s += this.items[k]; return s; }
+  rockTotal() { return ROCKS.reduce((s, r) => s + this.items[r], 0); }
+  /** Adds up to `kg`, limited by free capacity. Returns amount actually stored. */
+  add(res, kg, cap) {
+    const a = Math.min(Math.max(0, cap - this.total()), kg);
+    this.items[res] += a;
+    return a;
+  }
+  canAfford(cost) {
+    for (const k in cost) {
+      if (k === 'rock') { if (this.rockTotal() < cost.rock) return false; }
+      else if ((this.items[k] || 0) < cost[k]) return false;
+    }
+    return true;
+  }
+  /** Deducts a cost; returns the exact materials used (for refunds) or null. */
+  pay(cost) {
+    if (!this.canAfford(cost)) return null;
+    const paid = {};
+    for (const k in cost) {
+      if (k === 'rock') {
+        let need = cost.rock;
+        for (const r of ROCKS) {
+          const t = Math.min(need, this.items[r]);
+          if (t > 0) { this.items[r] -= t; paid[r] = (paid[r] || 0) + t; need -= t; }
+        }
+      } else { this.items[k] -= cost[k]; paid[k] = (paid[k] || 0) + cost[k]; }
+    }
+    return paid;
+  }
+  refund(paid) { if (paid) for (const k in paid) this.items[k] += paid[k]; }
+}
+
+/* =====================================================================
+ *  Tasks / errand board
+ * ===================================================================== */
+let TASK_ID = 0;
+class Task {
+  constructor(kind, x, y, opts = {}) {
+    this.id = ++TASK_ID;
+    this.kind = kind;                 // 'dig' | 'build' | 'decon' | 'operate'
+    this.x = x; this.y = y;
+    this.w = opts.w || 1; this.h = opts.h || 1;
+    this.buildType = opts.buildType || null;
+    this.building = opts.building || null;
+    this.workTime = opts.workTime || 1;
+    this.claimedBy = null;
+    this.progress = 0;
+    this.payment = null;              // materials already deducted
+    this.done = false;
+    this.cancelled = false;
+    this.blockedUntil = 0;
+    this.unreachable = false;         // no duplicant can currently reach it
+  }
+  get active() { return !this.done && !this.cancelled; }
+  get cost() { return this.buildType ? BUILDINGS[this.buildType].cost : null; }
+  covers(x, y) { return x >= this.x && x < this.x + this.w && y >= this.y && y < this.y + this.h; }
+  get label() {
+    if (this.kind === 'dig') return 'Dig';
+    if (this.kind === 'build') return 'Build ' + BUILDINGS[this.buildType].name;
+    if (this.kind === 'decon') return 'Deconstruct ' + this.building.def.name;
+    return 'Operate ' + this.building.def.name;
+  }
+}
+
+class TaskManager {
+  constructor(game) { this.game = game; this.list = []; this.digMap = new Map(); }
+
+  addDig(x, y) {
+    const W = this.game.world, c = W.cell(x, y);
+    if (!c || c.phase !== PH.SOL || c.def.indestructible) return null;
+    const key = W.idx(x, y);
+    if (this.digMap.has(key)) return null;
+    const t = new Task('dig', x, y);
+    this.digMap.set(key, t);
+    this.list.push(t);
+    return t;
+  }
+  addBuild(type, x, y) {
+    const g = this.game, W = g.world, d = BUILDINGS[type];
+    if (!g.canPlace(type, x, y)) return null;
+    const t = new Task('build', x, y, { buildType: type, w: d.w, h: d.h, workTime: d.time });
+    const layer = type === 'wire' ? W.wirePlan : W.plan;
+    for (let yy = y; yy < y + d.h; yy++) for (let xx = x; xx < x + d.w; xx++) layer[W.idx(xx, yy)] = t;
+    this.list.push(t);
+    return t;
+  }
+  addDecon(b) {
+    if (b.task || b.type === 'pod') return null;
+    const t = new Task('decon', b.x, b.y, { building: b, w: b.w, h: b.h, workTime: Math.max(1.5, b.def.time * 0.5) });
+    b.task = t;
+    this.list.push(t);
+    return t;
+  }
+  addOperate(b) {
+    const t = new Task('operate', b.x, b.y, { building: b, w: b.w, h: b.h });
+    b.task = t;
+    this.list.push(t);
+    return t;
+  }
+  /** Remove a task from the board, releasing reservations (and refunding if asked). */
+  remove(t, refund = true) {
+    if (!this.list.includes(t)) return;
+    const W = this.game.world;
+    if (!t.done) t.cancelled = true;
+    this.list.splice(this.list.indexOf(t), 1);
+    if (t.kind === 'dig') this.digMap.delete(W.idx(t.x, t.y));
+    if (t.kind === 'build') {
+      const layer = t.buildType === 'wire' ? W.wirePlan : W.plan;
+      for (let y = t.y; y < t.y + t.h; y++) for (let x = t.x; x < t.x + t.w; x++) {
+        const i = W.idx(x, y); if (layer[i] === t) layer[i] = null;
+      }
+      if (refund && t.payment) { this.game.stock.refund(t.payment); t.payment = null; }
+    }
+    if ((t.kind === 'decon' || t.kind === 'operate') && t.building.task === t) t.building.task = null;
+    if (t.kind === 'operate' && t.building.operator) t.building.operator = null;
+  }
+  tasksAt(x, y) { return this.list.filter(t => t.covers(x, y)); }
+
+  /** Flag orders no duplicant can reach (uses each duplicant's latest BFS). */
+  updateReachability() {
+    const dupes = this.game.dupes.filter(d => d.alive);
+    for (const t of this.list) {
+      if (t.claimedBy || t.kind === 'operate') { t.unreachable = false; continue; }
+      const spots = this.workSpots(t);
+      t.unreachable = !spots.some(i => dupes.some(d => d.dist[i] >= 0));
+    }
+  }
+
+  /** Cells (as indices) where a duplicant can stand to work on a task. */
+  workSpots(t) {
+    const W = this.game.world, out = [];
+    if (t.kind === 'operate') {
+      const b = t.building, yy = b.y + b.h - 1;
+      for (let x = b.x; x < b.x + b.w; x++) if (W.canStand(x, yy)) out.push(yy * COLS + x);
+      return out;
+    }
+    const tileLike = t.kind === 'build' && t.buildType === 'tile';
+    for (let cy = t.y; cy < t.y + t.h; cy++) {
+      for (let cx = t.x; cx < t.x + t.w; cx++) {
+        for (let sy = cy - 1; sy <= cy + 3; sy++) {
+          for (let sx = cx - 1; sx <= cx + 1; sx++) {
+            if (!W.canStand(sx, sy)) continue;
+            if (tileLike && sx === cx && (sy === cy || sy - 1 === cy)) continue;   // don't build a tile inside yourself
+            // only dig out the floor you stand on if a ladder holds you, or the
+            // drop is a single tile you can climb back out of
+            if (t.kind === 'dig' && sx === cx && sy === cy - 1 && !W.hasLadder(sx, sy) &&
+                !(W.isSolid(cx, cy + 1) && (W.canStand(cx - 1, cy - 1) || W.canStand(cx + 1, cy - 1)))) continue;
+            const i = sy * COLS + sx;
+            if (!out.includes(i)) out.push(i);
+          }
+        }
+      }
+    }
+    return out;
+  }
+}
+
+/* =====================================================================
+ *  Buildings
+ * ===================================================================== */
+class Building {
+  constructor(game, type, x, y) {
+    this.game = game; this.type = type; this.def = BUILDINGS[type];
+    this.x = x; this.y = y; this.w = this.def.w; this.h = this.def.h;
+    this.netId = -1;
+    this.powered = false;
+    this.wantsPower = false;
+    this.status = 'Idle';
+    this.active = false;
+    this.payment = null;
+    this.task = null;       // pending deconstruct/operate task
+    this.anim = Math.random() * 10;
+  }
+  get world() { return this.game.world; }
+  contains(x, y) { return x >= this.x && x < this.x + this.w && y >= this.y && y < this.y + this.h; }
+  forCells(fn) { for (let y = this.y; y < this.y + this.h; y++) for (let x = this.x; x < this.x + this.w; x++) fn(x, y); }
+  /** Decide whether we want power this tick (before PowerGrid runs). */
+  preUpdate(dt) {}
+  /** Act on the result of the power step. */
+  update(dt) { this.anim += dt; }
+  /** Is the building's top output cell over-pressurised with oxygen? */
+  overPressure() {
+    let m = 0;
+    for (let x = this.x; x < this.x + this.w; x++) {
+      const c = this.world.cell(x, this.y);
+      if (c && c.element === 'oxygen') m = Math.max(m, c.mass);
+    }
+    return m > 3;
+  }
+  get px() { return this.x * CS; }
+  get py() { return this.y * CS; }
+  drawFrame(ctx, fill, stroke) {
+    rr(ctx, this.px + 1, this.py + 1, this.w * CS - 2, this.h * CS - 1, 3);
+    ctx.fillStyle = fill; ctx.fill();
+    ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke();
+  }
+  draw(ctx, t) { this.drawFrame(ctx, '#334', '#556'); }
+  /** Small warning marker for buildings that can't work. */
+  drawWarn(ctx, t) {
+    if (Math.floor(t * 2) % 2) return;
+    const x = this.px + this.w * CS - 5, y = this.py + 4;
+    ctx.fillStyle = '#ff5c5c'; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.fillRect(x - 0.5, y - 2, 1, 2.5); ctx.fillRect(x - 0.5, y + 1.2, 1, 1);
+  }
+}
+
+class Ladder extends Building {
+  draw(ctx) {
+    const x = this.px, y = this.py;
+    ctx.fillStyle = '#9a7a4e';
+    ctx.fillRect(x + 3, y, 2, CS); ctx.fillRect(x + CS - 5, y, 2, CS);
+    ctx.fillStyle = '#c9a46b';
+    for (let r = 2; r < CS; r += 5) ctx.fillRect(x + 3, y + r, CS - 6, 2);
+  }
+}
+
+class AlgaeDiffuser extends Building {
+  update(dt) {
+    super.update(dt);
+    const g = this.game, W = this.world;
+    const algaeUse = 0.28 * dt, o2Out = 0.25 * dt;
+    if (this.overPressure()) { this.active = false; this.status = 'Overpressure'; return; }
+    if (g.stock.items.algae < algaeUse) { this.active = false; this.status = 'Needs Algae'; return; }
+    const ox = this.x + ((W.tick >> 2) & 1);
+    if (!W.emitGas(ox, this.y, 'oxygen', o2Out, 300)) { this.active = false; this.status = 'Flooded'; return; }
+    g.stock.items.algae -= algaeUse;
+    // terrarium effect: scrub a bit of nearby CO2
+    let scrub = 0.03 * dt;
+    for (let y = this.y - 1; y <= this.y + this.h && scrub > 0; y++) {
+      for (let x = this.x - 2; x < this.x + this.w + 2 && scrub > 0; x++) {
+        const c = W.cell(x, y);
+        if (c && c.element === 'co2') scrub -= W.takeMass(c, scrub);
+      }
+    }
+    this.active = true; this.status = 'Producing O₂';
+  }
+  draw(ctx, t) {
+    const x = this.px, y = this.py, w = this.w * CS, h = this.h * CS;
+    this.drawFrame(ctx, '#22343a', '#4c7a6a');
+    ctx.fillStyle = '#122024'; rr(ctx, x + 5, y + 4, w - 10, h - 11, 4); ctx.fill();
+    ctx.fillStyle = this.active ? '#3fae5a' : '#2a5c38';
+    rr(ctx, x + 6, y + 10, w - 12, h - 18, 3); ctx.fill();
+    ctx.fillStyle = '#5b6f78'; ctx.fillRect(x + 3, y + h - 6, w - 6, 5);
+    if (this.active) {
+      ctx.fillStyle = 'rgba(180,230,255,0.85)';
+      for (let k = 0; k < 4; k++) {
+        const ph = (t * 0.8 + k * 0.27) % 1;
+        ctx.beginPath(); ctx.arc(x + 9 + k * 4.5, y + h - 9 - ph * 18, 1.3, 0, Math.PI * 2); ctx.fill();
+      }
+    } else this.drawWarn(ctx, t);
+  }
+}
+
+class Electrolyzer extends Building {
+  preUpdate() {
+    this.water = this.world.findLiquidNear(this.x, this.y, this.x + this.w - 1, this.y + this.h - 1, 4, 1);
+    this.over = this.overPressure();
+    this.flooded = !this.world.isGasLike(this.x, this.y) && !this.world.isGasLike(this.x + 1, this.y);
+    this.wantsPower = !!this.water && !this.over && !this.flooded;
+  }
+  update(dt) {
+    super.update(dt);
+    const W = this.world;
+    this.active = false;
+    if (this.netId < 0) { this.status = 'No wire connected'; return; }
+    if (!this.water) { this.status = 'Needs water within 4 tiles'; return; }
+    if (this.over) { this.status = 'Overpressure'; return; }
+    if (this.flooded) { this.status = 'Flooded'; return; }
+    if (!this.powered) { this.status = 'No power'; return; }
+    const take = W.takeMass(this.water, 0.5 * dt);
+    if (W.emitGas(this.x + ((W.tick >> 2) & 1), this.y, 'oxygen', take * 0.9, 308)) {
+      W.addHeat(this.x, this.y + 1, 250 * dt);
+      this.active = true; this.status = 'Producing O₂';
+    } else this.status = 'Flooded';
+  }
+  draw(ctx, t) {
+    const x = this.px, y = this.py, w = this.w * CS, h = this.h * CS;
+    this.drawFrame(ctx, '#1f2c40', '#4d6f9e');
+    ctx.fillStyle = '#132037'; rr(ctx, x + 4, y + 4, w - 8, h - 12, 4); ctx.fill();
+    ctx.fillStyle = this.active ? '#3a8ff0' : '#24466e';
+    ctx.fillRect(x + 6, y + 12, w - 12, h - 20);
+    ctx.fillStyle = '#ffd34d';
+    ctx.beginPath(); ctx.moveTo(x + 17, y + 6); ctx.lineTo(x + 12, y + 15); ctx.lineTo(x + 16, y + 15); ctx.lineTo(x + 14, y + 22); ctx.lineTo(x + 20, y + 12); ctx.lineTo(x + 16, y + 12); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#5b6f78'; ctx.fillRect(x + 3, y + h - 6, w - 6, 5);
+    if (this.active) {
+      ctx.fillStyle = 'rgba(200,240,255,0.9)';
+      for (let k = 0; k < 3; k++) { const ph = (t * 1.1 + k * 0.33) % 1; ctx.beginPath(); ctx.arc(x + 8 + k * 7, y + h - 9 - ph * 14, 1.2, 0, Math.PI * 2); ctx.fill(); }
+    } else this.drawWarn(ctx, t);
+  }
+}
+
+class StorageBin extends Building {
+  draw(ctx) {
+    const x = this.px, y = this.py, h = this.h * CS, g = this.game;
+    const frac = clamp(g.stock.total() / Math.max(1, g.storageCap()), 0, 1);
+    ctx.fillStyle = '#2b3446'; ctx.fillRect(x + 1, y + 6, CS - 2, h - 6);
+    ctx.fillStyle = '#a0794a'; ctx.fillRect(x + 2, y + 6 + (h - 8) * (1 - frac), CS - 4, (h - 8) * frac);
+    ctx.strokeStyle = '#7d93b2'; ctx.lineWidth = 1.2; ctx.strokeRect(x + 1.5, y + 6.5, CS - 3, h - 7);
+    ctx.fillStyle = '#7d93b2'; ctx.fillRect(x, y + 5, CS, 2);
+  }
+}
+
+class RationBox extends Building {
+  draw(ctx) {
+    const x = this.px, y = this.py;
+    ctx.fillStyle = '#3a4a64'; rr(ctx, x + 1, y + 3, CS - 2, CS - 3, 2); ctx.fill();
+    ctx.fillStyle = '#d9e4f2'; ctx.fillRect(x + 3, y + 6, CS - 6, 2);
+    ctx.fillStyle = this.game.food > 0 ? '#ffb347' : '#555';
+    ctx.beginPath(); ctx.arc(x + CS / 2, y + 11, 3, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+class ManualGenerator extends Building {
+  constructor(...a) { super(...a); this.operator = null; this.operatorTick = -10; this.spin = 0; }
+  isGenerating() {
+    return !!this.operator && this.operator.alive && this.operatorTick >= this.world.tick - 1;
+  }
+  preUpdate() {
+    // request a duplicant to run the wheel when the grid needs energy
+    if (this.task || this.netId < 0) return;
+    const st = this.game.power.stats[this.netId];
+    if (!st) return;
+    const need = st.cap > 0 ? st.stored < st.cap * 0.4 : st.demand > 0;
+    if (need) this.game.tasks.addOperate(this);
+  }
+  update(dt) {
+    super.update(dt);
+    this.active = this.isGenerating();
+    if (this.active) { this.spin += dt * 6; this.world.addHeat(this.x, this.y + 1, 150 * dt); }
+    this.status = this.netId < 0 ? 'No wire connected' : this.active ? 'Generating 400 W' : (this.task ? 'Waiting for operator' : 'Standby');
+  }
+  draw(ctx, t) {
+    const x = this.px, y = this.py, w = this.w * CS, h = this.h * CS;
+    const cx = x + w / 2, cy = y + h / 2 - 1, r = 12;
+    ctx.fillStyle = '#5b6f78'; ctx.fillRect(x + 2, y + h - 4, w - 4, 4);
+    ctx.fillStyle = '#3d4a5e'; ctx.fillRect(cx - 2, cy, 4, h / 2);
+    ctx.strokeStyle = this.active ? '#ffd34d' : '#8fa3bf'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = 1;
+    for (let k = 0; k < 6; k++) {
+      const a = this.spin + k * Math.PI / 3;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); ctx.stroke();
+    }
+    if (this.netId < 0) this.drawWarn(ctx, t);
+  }
+}
+
+class Battery extends Building {
+  constructor(...a) { super(...a); this.capacity = 20000; this.charge = 0; }
+  update(dt) { super.update(dt); this.status = 'Charge ' + Math.round(this.charge / 1000 * 10) / 10 + ' / 20 kJ'; }
+  draw(ctx, t) {
+    const x = this.px, y = this.py, h = this.h * CS;
+    const f = this.charge / this.capacity;
+    ctx.fillStyle = '#26324a'; rr(ctx, x + 2, y + 4, CS - 4, h - 4, 2); ctx.fill();
+    ctx.fillStyle = '#8fa3bf'; ctx.fillRect(x + 5, y + 2, CS - 10, 3);
+    ctx.fillStyle = f > 0.25 ? '#66d17a' : '#ffb74d';
+    ctx.fillRect(x + 4, y + 6 + (h - 10) * (1 - f), CS - 8, (h - 10) * f);
+    if (this.netId < 0) this.drawWarn(ctx, t);
+  }
+}
+
+class MicrobeMusher extends Building {
+  constructor(...a) { super(...a); this.busy = false; this.progress = 0; }
+  preUpdate() {
+    const g = this.game;
+    if (!this.busy && g.food < 20000 && g.stock.items.dirt >= 50) {
+      g.stock.items.dirt -= 50;
+      this.busy = true; this.progress = 0;
+    }
+    this.water = this.busy ? this.world.findLiquidNear(this.x, this.y, this.x + this.w - 1, this.y + this.h - 1, 4, 1) : null;
+    this.wantsPower = this.busy && !!this.water;
+  }
+  update(dt) {
+    super.update(dt);
+    const g = this.game, W = this.world;
+    this.active = false;
+    if (!this.busy) { this.status = g.stock.items.dirt < 50 ? 'Needs 50 kg Dirt' : 'Food storage full'; return; }
+    if (this.netId < 0) { this.status = 'No wire connected'; return; }
+    if (!this.water) { this.status = 'Needs water within 4 tiles'; return; }
+    if (!this.powered) { this.status = 'No power'; return; }
+    const need = 50 / 15 * dt;
+    const got = W.takeMass(this.water, need);
+    this.progress += dt / 15 * (got / need);
+    W.addHeat(this.x, this.y + 1, 200 * dt);
+    this.active = true;
+    this.status = 'Cooking ' + Math.round(this.progress * 100) + '%';
+    if (this.progress >= 1) {
+      this.busy = false; this.progress = 0;
+      g.food += 800;
+      g.log.add('Microbe Musher produced a Mush Bar (+800 kcal).', 'good');
+    }
+  }
+  draw(ctx, t) {
+    const x = this.px, y = this.py, w = this.w * CS, h = this.h * CS;
+    this.drawFrame(ctx, '#3a2f2a', '#8a6a4e');
+    ctx.fillStyle = '#1d1714'; rr(ctx, x + 5, y + 5, w - 10, h - 13, 3); ctx.fill();
+    ctx.fillStyle = '#9b7a44';
+    ctx.beginPath(); ctx.arc(x + w / 2, y + h / 2 - 1, 6, 0, Math.PI); ctx.fill();
+    if (this.active) {
+      const a = t * 5;
+      ctx.strokeStyle = '#d6b37a'; ctx.beginPath(); ctx.moveTo(x + w / 2, y + 7); ctx.lineTo(x + w / 2 + Math.cos(a) * 5, y + h / 2); ctx.stroke();
+    }
+    ctx.fillStyle = '#5b6f78'; ctx.fillRect(x + 3, y + h - 6, w - 6, 5);
+    if (this.busy) { ctx.fillStyle = '#ffb347'; ctx.fillRect(x + 4, y + h - 5, (w - 8) * this.progress, 2); }
+    if (this.busy && !this.active) this.drawWarn(ctx, t);
+  }
+}
+
+class PrintingPod extends Building {
+  draw(ctx, t) {
+    const x = this.px, y = this.py, w = this.w * CS, h = this.h * CS;
+    const glow = 0.5 + Math.sin(t * 2) * 0.2;
+    ctx.fillStyle = '#5b6f78'; ctx.fillRect(x + 2, y + h - 6, w - 4, 6);
+    ctx.strokeStyle = '#8fd8ff'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(x + w / 2, y + h - 6, w / 2 - 4, Math.PI, 0); ctx.stroke();
+    ctx.fillStyle = `rgba(79,195,247,${glow * 0.35})`;
+    ctx.beginPath(); ctx.arc(x + w / 2, y + h - 6, w / 2 - 6, Math.PI, 0); ctx.fill();
+    ctx.lineWidth = 1;
+  }
+}
+
+const BUILDING_CLASSES = {
+  ladder: Ladder, diffuser: AlgaeDiffuser, electrolyzer: Electrolyzer, storage: StorageBin,
+  ration: RationBox, generator: ManualGenerator, battery: Battery, musher: MicrobeMusher, pod: PrintingPod,
+};
+function createBuilding(game, type, x, y) {
+  const C = BUILDING_CLASSES[type] || Building;
+  return new C(game, type, x, y);
+}
+
+/* =====================================================================
+ *  PowerGrid - wire networks, generation, storage and consumption
+ * ===================================================================== */
+class PowerGrid {
+  constructor(game) {
+    this.game = game;
+    this.netOf = new Int32Array(N_CELLS).fill(-1);
+    this.count = 0;
+    this.stats = [];
+    this.dirty = true;
+  }
+  rebuild() {
+    const W = this.game.world;
+    this.netOf.fill(-1);
+    let id = 0;
+    for (let i = 0; i < N_CELLS; i++) {
+      if (!W.wires[i] || this.netOf[i] >= 0) continue;
+      const stack = [i]; this.netOf[i] = id;
+      while (stack.length) {
+        const c = stack.pop(), x = c % COLS, y = (c / COLS) | 0;
+        for (const [dx, dy] of DIRS4) {
+          const nx = x + dx, ny = y + dy;
+          if (!W.inB(nx, ny)) continue;
+          const ni = ny * COLS + nx;
+          if (W.wires[ni] && this.netOf[ni] < 0) { this.netOf[ni] = id; stack.push(ni); }
+        }
+      }
+      id++;
+    }
+    this.count = id;
+    for (const b of this.game.buildings) {
+      b.netId = -1;
+      if (!b.def.electric) continue;
+      b.forCells((x, y) => { const n = this.netOf[W.idx(x, y)]; if (n >= 0 && b.netId < 0) b.netId = n; });
+    }
+    this.dirty = false;
+  }
+  update(dt) {
+    if (this.dirty) this.rebuild();
+    const stats = [];
+    for (let k = 0; k < this.count; k++) stats.push({ gen: 0, demand: 0, stored: 0, cap: 0, batteries: [], consumers: [] });
+    for (const b of this.game.buildings) {
+      if (b.netId < 0) { b.powered = false; continue; }
+      const s = stats[b.netId];
+      if (b instanceof Battery) { s.batteries.push(b); s.stored += b.charge; s.cap += b.capacity; }
+      else if (b.def.gen) { if (b.isGenerating()) s.gen += b.def.gen; }
+      else if (b.def.use) { b.powered = false; if (b.wantsPower) { s.consumers.push(b); s.demand += b.def.use; } }
+    }
+    for (const s of stats) {
+      let pool = s.gen * dt + s.stored;
+      for (const c of s.consumers) {
+        const need = c.def.use * dt;
+        if (pool >= need) { pool -= need; c.powered = true; } else c.powered = false;
+      }
+      const newStored = Math.min(s.cap, pool);
+      for (const bt of s.batteries) bt.charge = Math.max(0, newStored * bt.capacity / s.cap - 0.3 * dt);
+      s.stored = newStored;
+    }
+    this.stats = stats;
+  }
+  totals() {
+    let stored = 0, cap = 0, gen = 0, demand = 0;
+    for (const s of this.stats) { stored += s.stored; cap += s.cap; gen += s.gen; demand += s.demand; }
+    return { stored, cap, gen, demand };
+  }
+}
+
+/* =====================================================================
+ *  Duplicant - needs + AI state machine
+ * ===================================================================== */
+const DSTATE = {
+  IDLE: 'IDLE', MOVING: 'MOVING', DIGGING: 'DIGGING', BUILDING: 'BUILDING',
+  BREATHING: 'BREATHING', EATING: 'EATING', OPERATING: 'OPERATING',
+  FALLING: 'FALLING', DEAD: 'DEAD',
+};
+const STATE_ICON = { DIGGING: '⛏️', BUILDING: '🔨', BREATHING: '💨', EATING: '🍴', OPERATING: '⚡' };
+
+class Duplicant {
+  constructor(game, name, x, y, palette) {
+    this.game = game; this.name = name; this.palette = palette;
+    this.x = x; this.y = y;                 // feet position in cell units (float while moving)
+    this.hp = 100; this.stress = 5; this.calories = 3500; this.breath = 100;
+    this.state = DSTATE.IDLE;
+    this.job = null;                        // {kind, task?, target?, sx, sy}
+    this.path = null; this.pathI = 0;
+    this.thinkT = Math.random() * 0.5;
+    this.idleT = 1;
+    this.facing = 1; this.walkAnim = 0;
+    this.breakdownT = 0;
+    this.o2SearchCD = 0;
+    this.alive = true; this.falling = false; this.vy = 0; this.fallTarget = 0;
+    this.dist = new Int32Array(N_CELLS); this.prev = new Int32Array(N_CELLS);
+  }
+  get fx() { return Math.round(this.x); }
+  get fy() { return Math.round(this.y); }
+  get world() { return this.game.world; }
+  headCell() { return this.world.cell(this.fx, this.fy - 1); }
+  headO2() { const c = this.headCell(); return c && c.element === 'oxygen' ? c.mass : 0; }
+  get stateLabel() { return this.breakdownT > 0 && this.alive ? 'BREAKDOWN' : this.state; }
+
+  // ---------------------------------------------------------------- needs
+  updateNeeds(dt) {
+    const g = this.game, W = this.world;
+    const hx = this.fx, hy = this.fy - 1, hc = W.cell(hx, hy);
+    const working = this.state === DSTATE.DIGGING || this.state === DSTATE.BUILDING || this.state === DSTATE.OPERATING;
+    let dStress = working ? -0.02 : -0.08;   // per second
+    let dHp = 0;
+
+    // --- breathing ---
+    const need = O2_USE * dt;
+    if (hc && hc.element === 'oxygen' && hc.mass > 0.02) {
+      const take = W.takeMass(hc, Math.min(need, hc.mass * 0.5));
+      const f = take / need;
+      this.breath = clamp(this.breath + (f > 0.6 ? 22 : -3 * (1 - f)) * dt, 0, 100);
+      W.emitGas(hx, hy + 1, 'co2', take * CO2_RATIO, 310);   // exhale at foot level so the breathing cell stays clean
+      if (hc.phase === PH.GAS && hc.mass < 0.3) dStress += 0.1;   // thin air is unpleasant
+    } else {
+      this.breath = clamp(this.breath - 3 * dt, 0, 100);
+      dStress += 0.8;
+      if (hc && hc.element === 'co2') dStress += 0.2;
+    }
+    if (this.breath <= 0) {
+      dHp -= 2.5;
+      g.log.add(`${this.name} is suffocating!`, 'bad', 'suffo' + this.name, 15);
+    } else if (this.breath < 50) {
+      g.log.add(`${this.name} is holding their breath. Oxygen low!`, 'warn', 'lowo2' + this.name, 25);
+    }
+
+    // --- calories ---
+    this.calories = Math.max(0, this.calories - KCAL_RATE * dt);
+    if (this.calories < 1000) dStress += 0.15;
+    if (this.calories <= 0) {
+      dHp -= 0.4; dStress += 0.35;
+      g.log.add(`${this.name} is starving!`, 'bad', 'starve' + this.name, 30);
+    }
+
+    // --- temperature ---
+    const T = hc && hc.phase !== PH.VAC ? hc.temperature : 300;
+    if (T > 318 || T < 268) {
+      dStress += 0.3;
+      if (T > 333 || T < 258) dHp -= 0.5;
+      g.log.add(`${this.name} is uncomfortable: ${K2C(T).toFixed(0)} °C`, 'warn', 'temp' + this.name, 40);
+    }
+
+    // --- stress & breakdowns ---
+    if (this.breakdownT > 0) { this.breakdownT -= dt; dStress = -1.5; }
+    this.stress = clamp(this.stress + dStress * dt, 0, 100);
+    if (this.stress >= 100 && this.breakdownT <= 0) {
+      this.breakdownT = 20;
+      this.abortJob();
+      g.log.add(`${this.name} is having a stress breakdown and stops working!`, 'bad');
+    }
+
+    // --- health ---
+    if (dHp === 0 && this.breath > 50 && this.calories > 0) dHp = 0.05;
+    this.hp = clamp(this.hp + dHp * dt, 0, 100);
+    if (this.hp <= 0) this.die();
+  }
+
+  die() {
+    this.abortJob();
+    this.alive = false;
+    this.state = DSTATE.DEAD;
+    this.game.log.add(`☠ ${this.name} has died.`, 'bad');
+  }
+
+  // ---------------------------------------------------------------- main update
+  update(dt) {
+    if (!this.alive) return;
+    this.updateNeeds(dt);
+    if (!this.alive) return;
+    if (this.o2SearchCD > 0) this.o2SearchCD -= dt;
+    const W = this.world;
+
+    if (this.falling) { this.doFall(dt); return; }
+    if (this.state !== DSTATE.MOVING) {
+      const fx = this.fx, fy = this.fy;
+      if (W.isSolid(fx, fy) || W.isSolid(fx, fy - 1)) this.unstick();
+      if (!W.canStand(this.fx, this.fy)) { this.doFall(dt); return; }
+    }
+    this.checkInterrupts();
+
+    switch (this.state) {
+      case DSTATE.IDLE:
+        this.thinkT -= dt;
+        if (this.thinkT <= 0) { this.thinkT = 0.5; this.think(); }
+        break;
+      case DSTATE.MOVING: this.followPath(dt); break;
+      case DSTATE.DIGGING: this.workDig(dt); break;
+      case DSTATE.BUILDING: this.workBuild(dt); break;
+      case DSTATE.OPERATING: this.workOperate(dt); break;
+      case DSTATE.BREATHING: this.workBreathe(dt); break;
+      case DSTATE.EATING: this.workEat(dt); break;
+    }
+  }
+
+  /** Survival needs override whatever the duplicant is doing. */
+  checkInterrupts() {
+    const j = this.job, g = this.game;
+    if (j && j.task && !j.task.active) { this.finishJob(); return; }
+    if (this.breakdownT > 0) return;
+    const busyBreathing = (j && j.kind === 'breathe') || this.state === DSTATE.BREATHING;
+    if (this.breath < 35 && !busyBreathing && this.o2SearchCD <= 0 && this.headO2() < 0.3) {
+      if (!this.seekOxygen()) this.o2SearchCD = 4;
+      return;
+    }
+    const busyEating = (j && j.kind === 'eat') || this.state === DSTATE.EATING;
+    if (this.calories < 600 && g.food > 0 && !busyEating && !busyBreathing) this.seekFood();
+  }
+
+  think() {
+    const g = this.game;
+    if (this.breakdownT > 0) { this.wander(); return; }
+    if (this.breath < 70 && this.headO2() < 0.3 && this.o2SearchCD <= 0) {
+      if (this.seekOxygen()) return;
+      this.o2SearchCD = 4;
+    }
+    if (this.calories < 1200 && g.food > 0 && this.seekFood()) return;
+    if (this.findTask()) return;
+    this.idleT -= 0.5;
+    if (this.idleT <= 0) { this.idleT = 2 + Math.random() * 4; this.wander(); }
+  }
+
+  // ---------------------------------------------------------------- job helpers
+  startJob(job, idx) {
+    const pf = this.game.pathfinder;
+    const path = pf.buildPath(this.prev, this.dist, idx);
+    if (!path) return false;
+    job.sx = idx % COLS; job.sy = (idx / COLS) | 0;
+    this.job = job;
+    if (job.task) job.task.claimedBy = this;
+    this.path = path; this.pathI = 0;
+    this.state = DSTATE.MOVING;
+    if (path.length === 0) this.arrive();
+    return true;
+  }
+  /** Release the current job without completing it. */
+  abortJob() {
+    const j = this.job;
+    if (j && j.task) {
+      if (j.task.claimedBy === this) j.task.claimedBy = null;
+      if (j.task.kind === 'operate' && j.task.building.operator === this) j.task.building.operator = null;
+    }
+    this.job = null; this.path = null;
+    if (this.alive && !this.falling) this.state = DSTATE.IDLE;
+    this.thinkT = 0.3;
+  }
+  finishJob() { this.abortJob(); this.thinkT = 0.1; }
+
+  replan() {
+    const j = this.job;
+    if (!j || !this.game.pathfinder.bfs(this.fx, this.fy, this.dist, this.prev)) { this.abortJob(); return; }
+    const path = this.game.pathfinder.buildPath(this.prev, this.dist, j.sy * COLS + j.sx);
+    if (!path) { this.abortJob(); return; }
+    this.path = path; this.pathI = 0;
+    if (path.length === 0) this.arrive();
+  }
+
+  followPath(dt) {
+    if (!this.path) { this.state = DSTATE.IDLE; return; }
+    if (this.pathI >= this.path.length) { this.arrive(); return; }
+    const W = this.world;
+    const [nx, ny] = this.path[this.pathI];
+    const dx = nx - this.x, dy = ny - this.y, d = Math.hypot(dx, dy);
+    const vertical = Math.abs(dx) < 0.01;
+    let speed = vertical ? 2.6 : 3.6;
+    if (this.breakdownT > 0) speed *= 0.7;
+    if (this.calories <= 0) speed *= 0.6;
+    const step = speed * dt;
+    if (Math.abs(dx) > 0.01) this.facing = Math.sign(dx);
+    this.walkAnim += dt * 12;
+    if (d <= step) {
+      this.x = nx; this.y = ny; this.pathI++;
+      if (!W.canStand(nx, ny)) { this.abortJob(); return; }    // ground vanished: fall next tick
+      if (this.pathI >= this.path.length) { this.arrive(); return; }
+      const [qx, qy] = this.path[this.pathI];
+      if (!W.canStand(qx, qy)) this.replan();
+    } else {
+      this.x += dx / d * step; this.y += dy / d * step;
+    }
+  }
+
+  arrive() {
+    const j = this.job;
+    this.path = null;
+    if (!j) { this.state = DSTATE.IDLE; return; }
+    switch (j.kind) {
+      case 'task': {
+        const t = j.task;
+        if (!t.active) { this.finishJob(); return; }
+        if (t.kind === 'dig') { this.state = DSTATE.DIGGING; this.game.log.add(`${this.name} started digging.`, 'info', 'dig' + this.name, 20); }
+        else if (t.kind === 'operate') this.state = DSTATE.OPERATING;
+        else if (t.kind === 'decon') this.state = DSTATE.BUILDING;
+        else {
+          if (!t.payment) {
+            t.payment = this.game.stock.pay(t.cost);
+            if (!t.payment) {
+              this.game.log.add(`Not enough materials to build ${BUILDINGS[t.buildType].name}.`, 'warn', 'mat' + t.buildType, 20);
+              t.blockedUntil = this.game.time + 5;
+              this.finishJob();
+              return;
+            }
+          }
+          this.state = DSTATE.BUILDING;
+          if (t.buildType !== 'wire' && t.buildType !== 'tile' && t.buildType !== 'ladder')
+            this.game.log.add(`${this.name} started building ${withArticle(BUILDINGS[t.buildType].name)}.`);
+        }
+        break;
+      }
+      case 'breathe': this.state = DSTATE.BREATHING; break;
+      case 'eat': this.state = DSTATE.EATING; this.game.log.add(`${this.name} is eating.`, 'info', 'eat' + this.name, 30); break;
+      default: this.job = null; this.state = DSTATE.IDLE;
+    }
+  }
+
+  inReach(t) {
+    const fx = this.fx, fy = this.fy;
+    if (t.kind === 'operate') return t.building.contains(fx, fy);
+    for (let y = t.y; y < t.y + t.h; y++)
+      for (let x = t.x; x < t.x + t.w; x++)
+        if (Math.abs(x - fx) <= 1 && y >= fy - 3 && y <= fy + 1) return true;
+    return false;
+  }
+
+  // ---------------------------------------------------------------- work states
+  workDig(dt) {
+    const t = this.job && this.job.task, g = this.game;
+    if (!t || !t.active) { this.finishJob(); return; }
+    if (!this.inReach(t)) { this.abortJob(); return; }
+    const c = this.world.cell(t.x, t.y);
+    if (c.phase !== PH.SOL) { g.tasks.remove(t, false); this.finishJob(); return; }
+    this.facing = Math.sign(t.x - this.x) || this.facing;
+    c.hp -= DIG_POWER * dt;
+    t.progress = 1 - Math.max(0, c.hp) / c.maxHp;
+    if (c.hp <= 0) { g.completeDig(t); this.finishJob(); }
+  }
+  workBuild(dt) {
+    const t = this.job && this.job.task, g = this.game;
+    if (!t || !t.active) { this.finishJob(); return; }
+    if (!this.inReach(t)) { this.abortJob(); return; }
+    this.facing = Math.sign(t.x + t.w / 2 - 0.5 - this.x) || this.facing;
+    t.progress += dt / t.workTime;
+    if (t.progress >= 1) {
+      if (t.kind === 'decon') g.completeDecon(t); else g.completeBuild(t, this);
+      this.finishJob();
+    }
+  }
+  workOperate(dt) {
+    const t = this.job && this.job.task, g = this.game;
+    if (!t || !t.active) { this.finishJob(); return; }
+    const b = t.building;
+    if (!g.buildings.includes(b) || !b.contains(this.fx, this.fy)) { this.abortJob(); return; }
+    b.operator = this; b.operatorTick = this.world.tick;
+    t.progress += dt;
+    this.walkAnim += dt * 14;
+    const st = g.power.stats[b.netId];
+    const full = !st || (st.cap > 0 ? st.stored >= st.cap * 0.98 : st.demand === 0);
+    if (full || t.progress > 60) { g.tasks.remove(t, false); b.operator = null; this.finishJob(); }
+  }
+  workBreathe(dt) {
+    if (this.breath >= 98 || this.headO2() < 0.1) this.finishJob();
+  }
+  workEat(dt) {
+    const g = this.game;
+    const want = Math.min(MAX_KCAL - this.calories, g.food);
+    if (want <= 1) { this.finishJob(); return; }
+    const e = Math.min(want, 500 * dt);
+    this.calories += e; g.food -= e;
+  }
+
+  // ---------------------------------------------------------------- searches
+  findTask() {
+    const g = this.game;
+    if (!g.pathfinder.bfs(this.fx, this.fy, this.dist, this.prev)) return false;
+    let best = null, bestD = Infinity;
+    for (const t of g.tasks.list) {
+      if (!t.active || t.claimedBy || t.blockedUntil > g.time) continue;
+      if (t.kind === 'build' && ((!t.payment && !g.stock.canAfford(t.cost)) || !g.siteClear(t))) continue;
+      // cheap lower bound to skip far tasks
+      if (Math.abs(t.x - this.fx) + Math.abs(t.y - this.fy) - 4 > bestD * 1.5) continue;
+      for (const i of g.tasks.workSpots(t)) {
+        const d = this.dist[i];
+        if (d >= 0 && d < bestD) { bestD = d; best = { t, i }; }
+      }
+    }
+    if (!best) return false;
+    return this.startJob({ kind: 'task', task: best.t }, best.i);
+  }
+  seekOxygen() {
+    const g = this.game, W = this.world;
+    if (!g.pathfinder.bfs(this.fx, this.fy, this.dist, this.prev)) return false;
+    let best = -1, bs = -Infinity;
+    for (let i = 0; i < N_CELLS; i++) {
+      const d = this.dist[i];
+      if (d < 0) continue;
+      const h = W.cells[i - COLS];
+      if (!h || h.element !== 'oxygen' || h.mass < 0.6) continue;
+      const s = Math.min(h.mass, 2.5) * 3 - d * 0.6;
+      if (s > bs) { bs = s; best = i; }
+    }
+    if (best < 0) {
+      g.log.add(`${this.name} can't find breathable air!`, 'bad', 'noair' + this.name, 30);
+      return false;
+    }
+    this.abortJob();
+    return this.startJob({ kind: 'breathe' }, best);
+  }
+  seekFood() {
+    const g = this.game, W = this.world;
+    if (!g.pathfinder.bfs(this.fx, this.fy, this.dist, this.prev)) return false;
+    let best = -1, bd = Infinity;
+    for (const b of g.buildings) {
+      if (b.type !== 'ration' && b.type !== 'pod') continue;
+      const yy = b.y + b.h - 1;
+      for (let x = b.x - 1; x <= b.x + b.w; x++) {
+        if (!W.canStand(x, yy)) continue;
+        const i = yy * COLS + x, d = this.dist[i];
+        const score = d + (b.type === 'pod' ? 15 : 0);
+        if (d >= 0 && score < bd) { bd = score; best = i; }
+      }
+    }
+    this.abortJob();
+    if (best < 0) {   // nowhere to eat: eat on the spot
+      this.job = { kind: 'eat' }; this.state = DSTATE.EATING; return true;
+    }
+    return this.startJob({ kind: 'eat' }, best);
+  }
+  wander() {
+    const g = this.game, W = this.world;
+    if (!g.pathfinder.bfs(this.fx, this.fy, this.dist, this.prev)) return false;
+    const cands = [];
+    for (let i = 0; i < N_CELLS; i++) {
+      const d = this.dist[i];
+      if (d < 1 || d > 6) continue;
+      const h = W.cells[i - COLS];
+      if (h && h.element === 'oxygen' && h.mass > 0.4) cands.push(i);
+    }
+    if (!cands.length) return false;
+    return this.startJob({ kind: 'wander' }, cands[(Math.random() * cands.length) | 0]);
+  }
+
+  // ---------------------------------------------------------------- physics
+  doFall(dt) {
+    const W = this.world;
+    if (!this.falling) {
+      this.abortJob();
+      this.falling = true; this.state = DSTATE.FALLING;
+      this.x = this.fx; this.y = Math.floor(this.y + 0.001);
+      this.fallTarget = this.y + 1; this.vy = 0;
+    }
+    this.vy = Math.min(14, this.vy + 30 * dt);
+    this.y += this.vy * dt;
+    while (this.y >= this.fallTarget) {
+      const ty = this.fallTarget;
+      if (W.isSolid(this.x, ty)) { this.y = ty - 1; this.land(); return; }
+      if (W.canStand(this.x, ty)) { this.y = ty; this.land(); return; }
+      this.fallTarget++;
+      if (this.fallTarget >= ROWS - 1) { this.y = ROWS - 2; this.land(); return; }
+    }
+  }
+  land() {
+    this.falling = false; this.vy = 0; this.state = DSTATE.IDLE; this.thinkT = 0.1;
+    if (!this.world.canStand(this.fx, this.fy)) this.unstick();
+  }
+  /** Teleport to the nearest standable cell (after being walled in). */
+  unstick() {
+    const W = this.world, fx = this.fx, fy = this.fy;
+    for (let r = 1; r < 10; r++) {
+      for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        if (W.canStand(fx + dx, fy + dy)) {
+          this.abortJob(); this.x = fx + dx; this.y = fy + dy; this.falling = false; this.state = DSTATE.IDLE; return;
+        }
+      }
+    }
+  }
+}
+
+/* =====================================================================
+ *  Event log with per-key throttling
+ * ===================================================================== */
+class EventLog {
+  constructor(game) { this.game = game; this.entries = []; this.throttle = new Map(); this.onAdd = null; }
+  add(msg, kind = 'info', key = null, cooldown = 30) {
+    if (key) {
+      const last = this.throttle.get(key);
+      if (last !== undefined && this.game.time - last < cooldown) return;
+      this.throttle.set(key, this.game.time);
+    }
+    const e = { msg, kind, cycle: this.game.cycle };
+    this.entries.push(e);
+    if (this.entries.length > 200) this.entries.shift();
+    if (this.onAdd) this.onAdd(e);
+  }
+}
+
+/* =====================================================================
+ *  Renderer
+ * ===================================================================== */
+class Renderer {
+  constructor(game, canvas) {
+    this.game = game; this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.overlay = 'materials';
+    this.time = 0;
+    // pre-computed shaded colours per element (8 levels)
+    this.shades = {};
+    for (const k in ELEMENTS) {
+      this.shades[k] = [];
+      for (let s = 0; s < 8; s++) this.shades[k].push(shade(ELEMENTS[k].color, 0.78 + s * 0.06));
+    }
+    // temperature palette 250K..360K
+    this.tempPal = [];
+    const stops = [[0, '#2b4cff'], [0.3, '#22c1ee'], [0.5, '#4cd964'], [0.72, '#ffd23f'], [1, '#ff3b30']];
+    for (let s = 0; s < 64; s++) {
+      const f = s / 63;
+      let k = 0; while (k < stops.length - 2 && f > stops[k + 1][0]) k++;
+      const [f0, c0] = stops[k], [f1, c1] = stops[k + 1];
+      const u = (f - f0) / (f1 - f0), a = hexToRgb(c0), b = hexToRgb(c1);
+      this.tempPal.push(`rgb(${a[0] + (b[0] - a[0]) * u | 0},${a[1] + (b[1] - a[1]) * u | 0},${a[2] + (b[2] - a[2]) * u | 0})`);
+    }
+  }
+  tempColor(T) { return this.tempPal[clamp(Math.round((T - 250) / 110 * 63), 0, 63)]; }
+
+  resize() {
+    const wrap = this.canvas.parentElement, stage = wrap.parentElement;
+    const sw = stage.clientWidth - 12, sh = stage.clientHeight - 12;
+    const scale = Math.max(0.2, Math.min(sw / (COLS * CS), sh / (ROWS * CS)));
+    const cw = Math.floor(COLS * CS * scale), ch = Math.floor(ROWS * CS * scale);
+    wrap.style.width = cw + 'px'; wrap.style.height = ch + 'px';
+    wrap.style.left = Math.floor((stage.clientWidth - cw) / 2) + 'px';
+    wrap.style.top = Math.floor((stage.clientHeight - ch) / 2) + 'px';
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = Math.round(cw * dpr); this.canvas.height = Math.round(ch * dpr);
+    this.ctx.setTransform(this.canvas.width / (COLS * CS), 0, 0, this.canvas.height / (ROWS * CS), 0, 0);
+    this.ctx.imageSmoothingEnabled = false;
+  }
+
+  draw(dt) {
+    this.time += dt;
+    const ctx = this.ctx, g = this.game;
+    ctx.clearRect(0, 0, COLS * CS, ROWS * CS);
+    this.drawCells(ctx);
+    const ov = this.overlay;
+    if (ov === 'power') { ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, COLS * CS, ROWS * CS); }
+    ctx.globalAlpha = ov === 'materials' || ov === 'power' ? 1 : 0.55;
+    for (const b of g.buildings) b.draw(ctx, this.time);
+    ctx.globalAlpha = 1;
+    this.drawWires(ctx);
+    if (ov === 'power') this.drawPowerInfo(ctx);
+    this.drawTasks(ctx);
+    for (const d of g.dupes) this.drawDupe(ctx, d);
+    this.drawToolPreview(ctx);
+  }
+
+  drawCells(ctx) {
+    const W = this.game.world, ov = this.overlay;
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        const c = W.cells[y * COLS + x], px = x * CS, py = y * CS;
+        if (ov === 'temperature') {
+          ctx.fillStyle = c.phase === PH.VAC ? '#000' : this.tempColor(c.temperature);
+          ctx.fillRect(px, py, CS, CS);
+          if (c.phase === PH.SOL) { ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(px, py, CS, CS); }
+          continue;
+        }
+        if (ov === 'oxygen') {
+          let col;
+          if (c.phase === PH.SOL) col = '#141922';
+          else if (c.element === 'oxygen') col = c.mass >= 1 ? '#2e9d4f' : c.mass >= 0.5 ? '#9fb83a' : c.mass >= 0.1 ? '#d9822b' : '#a33';
+          else if (c.element === 'co2') col = '#6d4c2f';
+          else if (c.phase === PH.LIQ) col = '#1d3e78';
+          else col = '#3a0d0d';
+          ctx.fillStyle = col; ctx.fillRect(px, py, CS, CS);
+          continue;
+        }
+        this.drawMaterial(ctx, W, c, x, y, px, py);
+      }
+    }
+    if (ov === 'oxygen' || ov === 'temperature') {   // faint grid for readability
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 0.5; ctx.beginPath();
+      for (let x = 0; x <= COLS; x++) { ctx.moveTo(x * CS, 0); ctx.lineTo(x * CS, ROWS * CS); }
+      for (let y = 0; y <= ROWS; y++) { ctx.moveTo(0, y * CS); ctx.lineTo(COLS * CS, y * CS); }
+      ctx.stroke();
+    }
+  }
+
+  drawMaterial(ctx, W, c, x, y, px, py) {
+    switch (c.phase) {
+      case PH.VAC:
+        ctx.fillStyle = '#04060a'; ctx.fillRect(px, py, CS, CS);
+        break;
+      case PH.GAS: {
+        ctx.fillStyle = '#0b1320'; ctx.fillRect(px, py, CS, CS);
+        if (c.element === 'oxygen') ctx.fillStyle = `rgba(70,160,230,${Math.min(0.3, c.mass * 0.13)})`;
+        else ctx.fillStyle = `rgba(150,140,80,${Math.min(0.55, 0.12 + c.mass * 0.25)})`;
+        ctx.fillRect(px, py, CS, CS);
+        break;
+      }
+      case PH.LIQ: {
+        ctx.fillStyle = '#0b1320'; ctx.fillRect(px, py, CS, CS);
+        const above = W.cell(x, y - 1);
+        const full = above && above.phase === PH.LIQ;
+        const h = full ? CS : Math.max(2, CS * Math.min(1, c.mass / c.def.maxMass));
+        ctx.fillStyle = 'rgba(40,110,220,0.88)'; ctx.fillRect(px, py + CS - h, CS, h);
+        if (!full) { ctx.fillStyle = 'rgba(150,210,255,0.75)'; ctx.fillRect(px, py + CS - h, CS, 1.5); }
+        break;
+      }
+      default: {
+        const lvl = (c.noise * 8) | 0;
+        ctx.fillStyle = this.shades[c.element][lvl]; ctx.fillRect(px, py, CS, CS);
+        if (c.element === 'tile') {
+          ctx.strokeStyle = '#7488a6'; ctx.lineWidth = 1; ctx.strokeRect(px + 0.5, py + 0.5, CS - 1, CS - 1);
+          ctx.fillStyle = '#5d6f88'; ctx.fillRect(px + 3, py + 3, CS - 6, CS - 6);
+        } else if (c.element === 'neutronium') {
+          ctx.strokeStyle = '#2f2342'; ctx.lineWidth = 1; ctx.beginPath();
+          ctx.moveTo(px, py + CS); ctx.lineTo(px + CS, py); ctx.stroke();
+        } else {
+          // ore speckles
+          if (c.element === 'copper' || c.element === 'algae' || c.element === 'granite') {
+            ctx.fillStyle = c.element === 'copper' ? '#e39a5c' : c.element === 'algae' ? '#72d17f' : '#b3a9bb';
+            const n = c.noise * 997;
+            ctx.fillRect(px + (n % 11) + 1, py + ((n * 7) % 11) + 1, 3, 2);
+            ctx.fillRect(px + ((n * 3) % 10) + 3, py + ((n * 13) % 9) + 4, 2, 2);
+          }
+          // lit top edge where exposed
+          const up = W.cell(x, y - 1);
+          if (up && up.phase !== PH.SOL) { ctx.fillStyle = 'rgba(255,255,255,0.13)'; ctx.fillRect(px, py, CS, 2); }
+        }
+        // dig damage cracks
+        if (c.maxHp > 0 && c.hp < c.maxHp) {
+          const f = 1 - c.hp / c.maxHp;
+          ctx.fillStyle = `rgba(0,0,0,${f * 0.5})`; ctx.fillRect(px, py, CS, CS);
+          ctx.strokeStyle = 'rgba(255,230,180,0.6)'; ctx.lineWidth = 1; ctx.beginPath();
+          ctx.moveTo(px + 3, py + 4); ctx.lineTo(px + 8, py + 8); ctx.lineTo(px + 6, py + 13);
+          if (f > 0.5) { ctx.moveTo(px + 8, py + 8); ctx.lineTo(px + 13, py + 6); }
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  drawWires(ctx) {
+    const W = this.game.world, power = this.overlay === 'power';
+    ctx.strokeStyle = power ? '#ffd34d' : 'rgba(212,167,58,0.75)';
+    ctx.lineWidth = power ? 3 : 1.5;
+    ctx.beginPath();
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      if (!W.wires[y * COLS + x]) continue;
+      const cx = x * CS + CS / 2, cy = y * CS + CS / 2;
+      let linked = false;
+      if (x + 1 < COLS && W.wires[y * COLS + x + 1]) { ctx.moveTo(cx, cy); ctx.lineTo(cx + CS, cy); linked = true; }
+      if (y + 1 < ROWS && W.wires[(y + 1) * COLS + x]) { ctx.moveTo(cx, cy); ctx.lineTo(cx, cy + CS); linked = true; }
+      if (!linked) { ctx.moveTo(cx - 3, cy); ctx.lineTo(cx + 3, cy); }
+    }
+    ctx.stroke();
+  }
+
+  drawPowerInfo(ctx) {
+    ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center';
+    for (const b of this.game.buildings) {
+      if (!b.def.electric) continue;
+      let col = '#ff5c5c', txt = 'NO WIRE';
+      if (b.netId >= 0) {
+        if (b.def.gen) { col = b.isGenerating() ? '#ffd34d' : '#8fa3bf'; txt = b.isGenerating() ? '+400W' : 'IDLE'; }
+        else if (b instanceof Battery) { col = '#66d17a'; txt = Math.round(b.charge / b.capacity * 100) + '%'; }
+        else { col = b.powered ? '#66d17a' : (b.wantsPower ? '#ff5c5c' : '#8fa3bf'); txt = b.powered ? '-' + b.def.use + 'W' : (b.wantsPower ? 'NO POWER' : 'IDLE'); }
+      }
+      ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+      ctx.strokeRect(b.px + 0.5, b.py + 0.5, b.w * CS - 1, b.h * CS - 1);
+      ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(b.px + b.w * CS / 2 - 18, b.py - 10, 36, 10);
+      ctx.fillStyle = col; ctx.fillText(txt, b.px + b.w * CS / 2, b.py - 2);
+    }
+  }
+
+  drawTasks(ctx) {
+    const g = this.game;
+    ctx.save();
+    for (const t of g.tasks.list) {
+      const x = t.x * CS, y = t.y * CS, w = t.w * CS, h = t.h * CS;
+      if (t.kind === 'dig') {
+        ctx.fillStyle = t.unreachable ? 'rgba(160,160,160,0.12)' : 'rgba(255,170,60,0.16)'; ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = t.claimedBy ? '#ffd34d' : t.unreachable ? '#8a8f99' : '#ff9f40'; ctx.lineWidth = 1;
+        ctx.setLineDash([3, 2]); ctx.strokeRect(x + 1.5, y + 1.5, w - 3, h - 3); ctx.setLineDash([]);
+        ctx.fillStyle = '#ffcf8a';
+        ctx.fillRect(x + 4, y + 4, 8, 1.5); ctx.fillRect(x + 7.3, y + 4, 1.5, 8);  // tiny pick glyph
+      } else if (t.kind === 'build') {
+        const ok = t.payment || g.stock.canAfford(t.cost);
+        if (t.buildType === 'wire') {
+          ctx.strokeStyle = ok ? 'rgba(255,211,77,0.8)' : 'rgba(255,92,92,0.8)';
+          ctx.setLineDash([2, 2]); ctx.strokeRect(x + 4.5, y + 4.5, CS - 9, CS - 9); ctx.setLineDash([]);
+        } else {
+          ctx.fillStyle = 'rgba(79,195,247,0.16)'; ctx.fillRect(x, y, w, h);
+          ctx.strokeStyle = ok ? '#59c8ff' : '#ff6b6b'; ctx.lineWidth = 1;
+          ctx.setLineDash([3, 2]); ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); ctx.setLineDash([]);
+          if (t.w > 1 || t.h > 1 || t.buildType === 'ration') {
+            ctx.font = (Math.min(w, h) * 0.55) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.globalAlpha = 0.65; ctx.fillText(BUILDINGS[t.buildType].icon, x + w / 2, y + h / 2 + 1); ctx.globalAlpha = 1;
+          } else if (t.buildType === 'ladder') {
+            ctx.fillStyle = 'rgba(201,164,107,0.5)'; ctx.fillRect(x + 3, y, 2, CS); ctx.fillRect(x + CS - 5, y, 2, CS);
+          }
+        }
+      } else if (t.kind === 'decon') {
+        ctx.strokeStyle = '#ff5c5c'; ctx.lineWidth = 1.5;
+        ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+        ctx.beginPath(); ctx.moveTo(x + 3, y + 3); ctx.lineTo(x + w - 3, y + h - 3); ctx.moveTo(x + w - 3, y + 3); ctx.lineTo(x + 3, y + h - 3); ctx.stroke();
+      }
+      if (t.progress > 0 && t.kind !== 'operate' && t.kind !== 'dig') {
+        ctx.fillStyle = '#000'; ctx.fillRect(x + 1, y + h - 3, w - 2, 2);
+        ctx.fillStyle = '#7ef0d0'; ctx.fillRect(x + 1, y + h - 3, (w - 2) * Math.min(1, t.progress), 2);
+      }
+    }
+    ctx.restore();
+  }
+
+  drawDupe(ctx, d) {
+    const p = d.palette;
+    const cx = d.x * CS + CS / 2, base = (d.y + 1) * CS;
+    if (!d.alive) {   // lying down, greyed
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = '#666'; rr(ctx, cx - 9, base - 7, 14, 6, 3); ctx.fill();
+      ctx.fillStyle = '#999'; ctx.beginPath(); ctx.arc(cx + 7, base - 5, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.font = 'bold 7px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#aaa';
+      ctx.fillText('✝ ' + d.name, cx, base - 13);
+      return;
+    }
+    const sel = this.game.selected === d;
+    const moving = d.state === DSTATE.MOVING || d.state === DSTATE.OPERATING;
+    const sw = moving ? Math.sin(d.walkAnim) * 2 : 0;
+    const f = d.facing;
+    const working = d.state === DSTATE.DIGGING || d.state === DSTATE.BUILDING;
+    const bob = working ? Math.abs(Math.sin(this.time * 10)) * 1 : 0;
+
+    if (sel) {
+      ctx.strokeStyle = 'rgba(79,195,247,0.9)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(cx, base - 1, 8, 2.5, 0, 0, Math.PI * 2); ctx.stroke();
+      if (d.path) {   // show planned route
+        ctx.strokeStyle = 'rgba(126,240,208,0.5)'; ctx.setLineDash([2, 3]); ctx.beginPath();
+        ctx.moveTo(cx, base - 8);
+        for (let k = d.pathI; k < d.path.length; k++) ctx.lineTo(d.path[k][0] * CS + CS / 2, (d.path[k][1] + 1) * CS - 8);
+        ctx.stroke(); ctx.setLineDash([]);
+      }
+    }
+    // legs
+    ctx.fillStyle = p.dark;
+    ctx.fillRect(cx - 4 + sw * 0.5, base - 6, 3, 6);
+    ctx.fillRect(cx + 1 - sw * 0.5, base - 6, 3, 6);
+    // backpack (oxygen tank)
+    ctx.fillStyle = '#9fb3c8'; rr(ctx, cx - 6.5 * f - 2, base - 15 + bob, 4, 8, 1.5); ctx.fill();
+    // body / suit
+    ctx.fillStyle = p.suit; rr(ctx, cx - 5, base - 15 + bob, 10, 10, 3.5); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fillRect(cx - 3, base - 12 + bob, 6, 1.5);
+    // arm
+    ctx.fillStyle = p.dark;
+    if (working) {
+      const a = Math.sin(this.time * 14) * 0.6;
+      ctx.save(); ctx.translate(cx + 2 * f, base - 12 + bob); ctx.rotate(f * (-0.6 + a));
+      ctx.fillRect(0, -1, 6 * f, 2.4);
+      ctx.fillStyle = d.state === DSTATE.DIGGING ? '#cfd8e3' : '#ffb347';
+      ctx.fillRect(6 * f - (f < 0 ? 2 : 0), -3, 2, 6);
+      ctx.restore();
+    } else ctx.fillRect(cx + (f > 0 ? 3 : -5), base - 12 + bob + sw * 0.3, 2, 5);
+    // helmet + face
+    const hy = base - 21 + bob;
+    ctx.fillStyle = 'rgba(190,230,255,0.22)';
+    ctx.beginPath(); ctx.arc(cx, hy, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = p.skin;
+    ctx.beginPath(); ctx.arc(cx, hy + 0.5, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = p.hair;
+    ctx.beginPath(); ctx.arc(cx, hy - 1, 6, Math.PI * 1.05, Math.PI * 1.95); ctx.fill();
+    // eyes
+    const blink = Math.sin(this.time * 1.7 + d.name.length) > 0.97;
+    ctx.fillStyle = '#1a1a22';
+    if (blink) { ctx.fillRect(cx - 3 + f, hy + 1, 2, 0.8); ctx.fillRect(cx + 1 + f, hy + 1, 2, 0.8); }
+    else { ctx.fillRect(cx - 3 + f, hy, 1.6, 2.4); ctx.fillRect(cx + 1.4 + f, hy, 1.6, 2.4); }
+    // blush + mouth (frowns when stressed or suffocating)
+    ctx.fillStyle = 'rgba(255,120,120,0.45)';
+    ctx.fillRect(cx - 5 + f, hy + 2.5, 2, 1.2); ctx.fillRect(cx + 3 + f, hy + 2.5, 2, 1.2);
+    ctx.strokeStyle = '#7a3b2e'; ctx.lineWidth = 0.8; ctx.beginPath();
+    if (d.stress > 60 || d.breath < 40) ctx.arc(cx + f, hy + 5.2, 1.5, Math.PI * 1.15, Math.PI * 1.85);
+    else ctx.arc(cx + f, hy + 3, 1.5, Math.PI * 0.15, Math.PI * 0.85);
+    ctx.stroke();
+    // helmet rim + glare
+    ctx.strokeStyle = 'rgba(220,240,255,0.85)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, hy, 8, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.arc(cx, hy, 6.4, Math.PI * 1.2, Math.PI * 1.45); ctx.stroke();
+    // antenna
+    ctx.strokeStyle = '#cfe0f0'; ctx.beginPath(); ctx.moveTo(cx + 3, hy - 7.5); ctx.lineTo(cx + 5, hy - 11); ctx.stroke();
+    ctx.fillStyle = d.breath < 40 ? '#ff5c5c' : '#7ef0d0'; ctx.beginPath(); ctx.arc(cx + 5, hy - 11, 1.3, 0, Math.PI * 2); ctx.fill();
+
+    // name tag
+    ctx.font = 'bold 7px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    const tw = ctx.measureText(d.name).width + 6;
+    ctx.fillStyle = sel ? 'rgba(79,195,247,0.9)' : 'rgba(5,10,18,0.75)';
+    rr(ctx, cx - tw / 2, hy - 20, tw, 8, 2); ctx.fill();
+    ctx.fillStyle = sel ? '#04121c' : '#e6f1ff'; ctx.fillText(d.name, cx, hy - 13.8);
+    // state bubble
+    const icon = d.breakdownT > 0 ? '😭' : (d.breath < 40 ? '😵' : STATE_ICON[d.state]);
+    if (icon) {
+      ctx.font = '8px sans-serif'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.arc(cx + tw / 2 + 5, hy - 16, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillText(icon, cx + tw / 2 + 5, hy - 15.5);
+      ctx.textBaseline = 'alphabetic';
+    }
+  }
+
+  drawToolPreview(ctx) {
+    const ui = this.game.ui, g = this.game;
+    if (!ui || !ui.hover) return;
+    const tool = ui.tool, hv = ui.hover;
+    ctx.save();
+    if (!tool) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1;
+      ctx.strokeRect(hv.x * CS + 0.5, hv.y * CS + 0.5, CS - 1, CS - 1);
+      ctx.restore(); return;
+    }
+    if (tool.mode === 'place') {
+      const d = BUILDINGS[tool.build];
+      const ax = hv.x, ay = hv.y - d.h + 1;
+      const ok = g.canPlace(tool.build, ax, ay);
+      ctx.fillStyle = ok ? 'rgba(102,209,122,0.3)' : 'rgba(255,92,92,0.3)';
+      ctx.fillRect(ax * CS, ay * CS, d.w * CS, d.h * CS);
+      ctx.strokeStyle = ok ? '#66d17a' : '#ff5c5c'; ctx.lineWidth = 1;
+      ctx.strokeRect(ax * CS + 0.5, ay * CS + 0.5, d.w * CS - 1, d.h * CS - 1);
+      ctx.font = (Math.min(d.w, d.h) * CS * 0.55) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(d.icon, (ax + d.w / 2) * CS, (ay + d.h / 2) * CS + 1);
+      ctx.restore(); return;
+    }
+    const cells = ui.dragCells();
+    const colors = { dig: '255,170,60', tile: '79,195,247', ladder: '201,164,107', wire: '255,211,77', decon: '255,92,92', cancel: '200,200,200' };
+    const col = colors[tool.id] || '255,255,255';
+    for (const [x, y] of cells) {
+      let valid = true;
+      if (tool.build) valid = g.canPlace(tool.build, x, y);
+      else if (tool.id === 'dig') { const c = g.world.cell(x, y); valid = c && c.phase === PH.SOL && !c.def.indestructible; }
+      ctx.fillStyle = `rgba(${col},${valid ? 0.32 : 0.08})`;
+      ctx.fillRect(x * CS, y * CS, CS, CS);
+    }
+    if (ui.drag) {
+      const r = ui.dragRect();
+      ctx.strokeStyle = `rgb(${col})`; ctx.lineWidth = 1;
+      if (tool.mode === 'rect') ctx.strokeRect(r.x0 * CS + 0.5, r.y0 * CS + 0.5, (r.x1 - r.x0 + 1) * CS - 1, (r.y1 - r.y0 + 1) * CS - 1);
+    }
+    ctx.restore();
+  }
+}
+
+/* =====================================================================
+ *  UI - DOM HUD, toolbar, log, input
+ * ===================================================================== */
+class UI {
+  constructor(game) {
+    this.game = game;
+    this.tool = null;
+    this.hover = null;          // {x,y} cell under the pointer
+    this.drag = null;           // {x0,y0,x1,y1}
+    this.canvas = document.getElementById('cv');
+    this.$ = id => document.getElementById(id);
+    this.dupeCards = new Map();
+    this.buildToolbar();
+    this.bindInput();
+    this.bindHud();
+  }
+
+  // ------------------------------------------------------------ toolbar
+  buildToolbar() {
+    const bar = this.$('toolbar');
+    bar.innerHTML = '';
+    for (const t of TOOLS) {
+      const b = document.createElement('button');
+      b.className = 'tool'; b.dataset.tool = t.id;
+      const d = t.build ? BUILDINGS[t.build] : null;
+      b.title = (d ? d.name + ' — ' + d.desc + '\nCost: ' + fmtCost(d.cost) : t.desc) + '  [' + t.key + ']';
+      b.innerHTML = `<span class="k">${t.key}</span><span class="ic">${t.icon}</span><span class="lb">${t.label}</span>`;
+      b.addEventListener('click', () => this.setTool(this.tool === t ? null : t));
+      bar.appendChild(b);
+    }
+    this.setTool(null);
+  }
+  setTool(t) {
+    this.tool = t; this.drag = null;
+    for (const el of document.querySelectorAll('.tool')) el.classList.toggle('on', !!t && el.dataset.tool === t.id);
+    const info = this.$('toolInfo');
+    if (!t) info.innerHTML = 'Select a tool (keys 1-0, M, X, C). Click a Duplicant to inspect. Right-click cancels orders.';
+    else if (t.build) {
+      const d = BUILDINGS[t.build];
+      info.innerHTML = `<b>${d.name}</b> · ${fmtCost(d.cost)} · ${d.desc} ${t.mode === 'place' ? '' : '(drag)'}`;
+    } else info.innerHTML = `<b>${t.label}</b> · ${t.desc}`;
+  }
+
+  // ------------------------------------------------------------ input
+  cellFromEvent(e) {
+    const r = this.canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - r.left) / r.width * COLS);
+    const y = Math.floor((e.clientY - r.top) / r.height * ROWS);
+    return { x: clamp(x, 0, COLS - 1), y: clamp(y, 0, ROWS - 1) };
+  }
+  dragRect() {
+    const d = this.drag;
+    return { x0: Math.min(d.x0, d.x1), y0: Math.min(d.y0, d.y1), x1: Math.max(d.x0, d.x1), y1: Math.max(d.y0, d.y1) };
+  }
+  /** Cells affected by the current rect / line drag (or the hover cell). */
+  dragCells() {
+    const out = [];
+    if (!this.tool) return out;
+    if (!this.drag) { if (this.hover) out.push([this.hover.x, this.hover.y]); return out; }
+    const d = this.drag;
+    if (this.tool.mode === 'line') {   // L-shaped: horizontal first, then vertical
+      const sx = Math.sign(d.x1 - d.x0) || 1, sy = Math.sign(d.y1 - d.y0) || 1;
+      for (let x = d.x0; x !== d.x1 + sx; x += sx) out.push([x, d.y0]);
+      for (let y = d.y0 + sy; y !== d.y1 + sy; y += sy) out.push([d.x1, y]);
+      if (d.y0 === d.y1) { /* already covered */ }
+      return out;
+    }
+    const r = this.dragRect();
+    for (let y = r.y0; y <= r.y1; y++) for (let x = r.x0; x <= r.x1; x++) out.push([x, y]);
+    return out;
+  }
+  bindInput() {
+    const cv = this.canvas, g = this.game;
+    cv.addEventListener('contextmenu', e => e.preventDefault());
+    cv.addEventListener('pointerdown', e => {
+      const c = this.cellFromEvent(e);
+      this.hover = c;
+      if (e.button === 2) {   // right click: drop tool or cancel orders here
+        if (this.tool) this.setTool(null); else g.cancelAt([[c.x, c.y]]);
+        return;
+      }
+      if (e.button !== 0) return;
+      cv.setPointerCapture(e.pointerId);
+      if (!this.tool) { g.selectAt(c.x, c.y); return; }
+      if (this.tool.mode === 'place') {
+        const d = BUILDINGS[this.tool.build];
+        g.orderBuild(this.tool.build, [[c.x, c.y - d.h + 1]]);
+        return;
+      }
+      this.drag = { x0: c.x, y0: c.y, x1: c.x, y1: c.y };
+    });
+    cv.addEventListener('pointermove', e => {
+      const c = this.cellFromEvent(e);
+      this.hover = c;
+      if (this.drag) { this.drag.x1 = c.x; this.drag.y1 = c.y; }
+      this.updateHover();
+    });
+    cv.addEventListener('pointerleave', () => { if (!this.drag) { this.hover = null; this.updateHover(); } });
+    const finish = () => {
+      if (!this.drag || !this.tool) { this.drag = null; return; }
+      const cells = this.dragCells(), t = this.tool;
+      this.drag = null;
+      if (t.id === 'dig') g.orderDig(cells);
+      else if (t.id === 'decon') g.orderDecon(cells);
+      else if (t.id === 'cancel') g.cancelAt(cells);
+      else if (t.build) g.orderBuild(t.build, cells);
+    };
+    cv.addEventListener('pointerup', finish);
+    cv.addEventListener('pointercancel', () => { this.drag = null; });
+
+    window.addEventListener('keydown', e => {
+      if (e.target && e.target.tagName === 'INPUT') return;
+      const k = e.key.toUpperCase();
+      if (k === ' ') { e.preventDefault(); g.setSpeed(g.speed === 0 ? (g.lastSpeed || 1) : 0); return; }
+      if (k === 'ESCAPE') { this.setTool(null); g.selected = null; this.hideModal(); return; }
+      if (k === 'O') return this.setOverlay('oxygen');
+      if (k === 'T') return this.setOverlay('temperature');
+      if (k === 'P') return this.setOverlay('power');
+      if (k === 'V') return this.setOverlay('materials');
+      const t = TOOLS.find(t => t.key === k);
+      if (t) this.setTool(this.tool === t ? null : t);
+    });
+    window.addEventListener('resize', () => g.renderer.resize());
+  }
+  bindHud() {
+    const g = this.game;
+    for (const b of document.querySelectorAll('#speed button')) b.addEventListener('click', () => g.setSpeed(+b.dataset.speed));
+    for (const b of document.querySelectorAll('#overlays button')) b.addEventListener('click', () => this.setOverlay(b.dataset.ov));
+    this.$('helpBtn').addEventListener('click', () => this.showHelp());
+    let lbSpeed = 0;
+    this.leaderboard = GameLeaderboard({
+      game: 'oxygen_colony', title: '🏆 Top 20 Colonies', format: s => s + (s === 1 ? ' cycle' : ' cycles'),
+      onOpen: () => { lbSpeed = g.speed; g.setSpeed(0); },
+      onClose: () => { if (lbSpeed && !g.over) g.setSpeed(lbSpeed); },
+    });
+    this.$('lbBtn').addEventListener('click', () => this.leaderboard.open());
+  }
+  setOverlay(ov) {
+    this.game.renderer.overlay = ov;
+    for (const b of document.querySelectorAll('#overlays button')) b.classList.toggle('on', b.dataset.ov === ov);
+  }
+  setSpeedButtons(s) { for (const b of document.querySelectorAll('#speed button')) b.classList.toggle('on', +b.dataset.speed === s); }
+
+  // ------------------------------------------------------------ hover panel
+  updateHover() {
+    const el = this.$('hover'), g = this.game, hv = this.hover;
+    if (!hv) { el.style.display = 'none'; return; }
+    const c = g.world.cell(hv.x, hv.y);
+    const lines = [];
+    lines.push(`<b>${c.def.name}</b>${c.phase !== PH.VAC ? ' · ' + fmtMass(c.mass) : ''}`);
+    if (c.phase !== PH.VAC) lines.push(`Temperature: ${K2C(c.temperature).toFixed(1)} °C`);
+    if (c.phase === PH.SOL && c.maxHp > 0) lines.push(`Hardness: ${Math.ceil(c.hp)} / ${c.maxHp}`);
+    if (c.element === 'oxygen') lines.push(c.mass >= 0.5 ? 'Breathable' : '<span class="w">Thin air</span>');
+    const b = g.world.building(hv.x, hv.y);
+    if (b) lines.push(`<b>${b.def.name}</b> — ${b.type === 'pod' ? 'Home' : b.status}`);
+    if (g.world.wires[g.world.idx(hv.x, hv.y)]) {
+      const n = g.power.netOf[g.world.idx(hv.x, hv.y)], s = g.power.stats[n];
+      if (s) lines.push(`Wire · Grid ${n + 1}: gen ${s.gen} W, load ${s.demand} W, ${(s.stored / 1000).toFixed(1)}/${(s.cap / 1000).toFixed(0)} kJ`);
+    }
+    for (const t of g.tasks.tasksAt(hv.x, hv.y)) {
+      const who = t.claimedBy ? ' (' + t.claimedBy.name + ')' : '';
+      lines.push(`<span class="w">Order: ${t.label}${who}${t.unreachable ? ' — unreachable (try a ladder)' : ''}</span>`);
+    }
+    for (const d of g.dupes) if (d.fx === hv.x && (d.fy === hv.y || d.fy - 1 === hv.y)) lines.push(`<b>${d.name}</b> — ${d.stateLabel}`);
+    el.innerHTML = lines.join('<br>');
+    el.style.display = 'block';
+  }
+
+  // ------------------------------------------------------------ periodic refresh
+  refresh() {
+    const g = this.game, $ = this.$;
+    $('sCycle').textContent = g.cycle;
+    $('sCycleBar').style.width = ((g.time % CYCLE_LEN) / CYCLE_LEN * 100).toFixed(1) + '%';
+    let o2 = 0, co2 = 0;
+    for (const c of g.world.cells) { if (c.element === 'oxygen') o2 += c.mass; else if (c.element === 'co2') co2 += c.mass; }
+    $('sO2').textContent = fmtMass(o2);
+    $('sCO2').textContent = fmtMass(co2);
+    $('sFood').textContent = Math.round(g.food).toLocaleString() + ' kcal';
+    $('sFood').style.color = g.food < 1500 ? 'var(--bad)' : '';
+    const alive = g.dupes.filter(d => d.alive);
+    const avgS = alive.length ? alive.reduce((s, d) => s + d.stress, 0) / alive.length : 0;
+    $('sStress').textContent = avgS.toFixed(0) + '%';
+    $('sStress').style.color = avgS > 70 ? 'var(--bad)' : avgS > 40 ? 'var(--warn)' : '';
+    const p = g.power.totals();
+    $('sPower').textContent = (p.stored / 1000).toFixed(1) + '/' + (p.cap / 1000).toFixed(0) + ' kJ';
+    $('sStore').textContent = Math.round(g.stock.total()) + '/' + g.storageCap() + ' kg';
+
+    // storage rows
+    const rows = [];
+    for (const k in RESOURCES) rows.push(`<div class="row"><span><i style="background:${RESOURCES[k].color}"></i>${RESOURCES[k].name}</span><span>${Math.floor(g.stock.items[k])}</span></div>`);
+    $('stockRows').innerHTML = rows.join('');
+
+    this.refreshDupes();
+    this.updateHover();
+  }
+  refreshDupes() {
+    const g = this.game, bar = this.$('dupeBar');
+    for (const d of g.dupes) {
+      let card = this.dupeCards.get(d);
+      if (!card) {
+        card = document.createElement('div');
+        card.className = 'dupe';
+        card.innerHTML = `<div class="top"><span class="name"><i style="background:${d.palette.suit}"></i>${d.name}</span><span class="state"></span></div>
+          <div class="bars">
+            <div class="bar">Health<div><i class="hp" style="background:#ff5c5c"></i></div></div>
+            <div class="bar">Stress<div><i class="st" style="background:#b388ff"></i></div></div>
+            <div class="bar">Calories<div><i class="ca" style="background:#ffb74d"></i></div></div>
+            <div class="bar">Breath<div><i class="br" style="background:#4fc3f7"></i></div></div>
+          </div>`;
+        card.addEventListener('click', () => { g.selected = g.selected === d ? null : d; this.refreshDupes(); });
+        bar.appendChild(card);
+        this.dupeCards.set(d, card);
+      }
+      card.classList.toggle('sel', g.selected === d);
+      card.classList.toggle('dead', !d.alive);
+      card.querySelector('.state').textContent = d.alive ? d.stateLabel : 'DEAD';
+      card.querySelector('.hp').style.width = d.hp + '%';
+      card.querySelector('.st').style.width = d.stress + '%';
+      card.querySelector('.ca').style.width = (d.calories / MAX_KCAL * 100) + '%';
+      card.querySelector('.br').style.width = d.breath + '%';
+      card.title = `${d.name}\nHealth ${d.hp.toFixed(0)}  Stress ${d.stress.toFixed(0)}%\nCalories ${Math.round(d.calories)} kcal  Breath ${d.breath.toFixed(0)}%`;
+    }
+  }
+  resetDupeCards() { this.$('dupeBar').innerHTML = ''; this.dupeCards.clear(); }
+
+  // ------------------------------------------------------------ log
+  appendLog(e) {
+    const log = this.$('log');
+    const div = document.createElement('div');
+    div.className = 'e ' + (e.kind === 'info' ? '' : e.kind);
+    const span = document.createElement('span'); span.textContent = 'C' + e.cycle;
+    div.appendChild(span); div.appendChild(document.createTextNode(e.msg));
+    log.appendChild(div);
+    while (log.childNodes.length > 80) log.removeChild(log.firstChild);
+    log.scrollTop = log.scrollHeight;
+  }
+  clearLog() { this.$('log').innerHTML = ''; }
+
+  // ------------------------------------------------------------ modal
+  showModal(html) { this.$('modalBox').innerHTML = html; this.$('modal').style.display = 'flex'; }
+  hideModal() { this.$('modal').style.display = 'none'; }
+  showHelp() {
+    const g = this.game;
+    const wasSpeed = g.speed;
+    g.setSpeed(0);
+    this.showModal(`<h2>OXYGEN COLONY</h2>
+      <p>Your two Duplicants have been printed deep inside an asteroid. Keep them <b>breathing</b>, <b>fed</b> and <b>sane</b> as long as you can.</p>
+      <ul>
+        <li><b>Dig</b> (1): drag over rock. Dug material goes to storage (50% of the tile's mass).</li>
+        <li><b>O₂ Diffuser</b> (4): burns Algae into Oxygen — your first priority. Mine the green algae deposit left of the base.</li>
+        <li><b>Power</b>: a Duplicant runs the <b>Manual Generator</b>; <b>Wire</b> (0) it to a <b>Battery</b> and consumers like the <b>Electrolyzer</b> or <b>Microbe Musher</b>.</li>
+        <li><b>Food</b>: rations run out after a few cycles. Dig down to the water cave and build a <b>Microbe Musher</b> next to the water (uses Dirt + Water).</li>
+        <li>Use <b>Ladders</b> (3) to reach deeper areas. Duplicants can only step up one tile.</li>
+        <li>CO₂ is heavy and pools in low areas. Deep rock is hot.</li>
+        <li>Overlays: <kbd>O</kbd> oxygen, <kbd>T</kbd> temperature, <kbd>P</kbd> power, <kbd>V</kbd> materials.</li>
+        <li><kbd>Space</kbd> pause · right-click cancels orders · <kbd>Esc</kbd> drops the tool.</li>
+      </ul>
+      <button class="go" id="modalGo">${g.time > 0 ? 'RESUME' : 'START COLONY'}</button>`);
+    this.$('modalGo').addEventListener('click', () => { this.hideModal(); g.setSpeed(wasSpeed || 1); });
+  }
+  showGameOver() {
+    const g = this.game;
+    this.showModal(`<h2>COLONY LOST</h2>
+      <p>All Duplicants have perished on cycle <b>${g.cycle}</b>.</p>
+      <p>Tip: build an Oxygen Diffuser early, and secure food before the rations run out.</p>
+      <button class="go" id="modalGo">NEW COLONY</button> <button class="go" id="modalLb">🏆 TOP 20</button>`);
+    this.$('modalGo').addEventListener('click', () => { this.hideModal(); g.newGame(); g.setSpeed(1); });
+    this.$('modalLb').addEventListener('click', () => this.leaderboard.open());
+    this.leaderboard.gameOver(g.cycle);
+  }
+}
+
+/* =====================================================================
+ *  Game - owns world, entities and the main loop
+ * ===================================================================== */
+class Game {
+  constructor() {
+    this.canvas = document.getElementById('cv');
+    this.speed = 0; this.lastSpeed = 1;
+    this.newGame();
+    this.renderer = new Renderer(this, this.canvas);
+    this.ui = new UI(this);
+    this.log.onAdd = e => this.ui.appendLog(e);
+    for (const e of this.log.entries) this.ui.appendLog(e);
+    this.renderer.resize();
+    this.acc = 0; this.last = performance.now(); this.uiT = 0;
+    this.ui.setSpeedButtons(this.speed);
+    this.ui.showHelp();
+    requestAnimationFrame(ts => this.frame(ts));
+  }
+
+  newGame(seed = (Math.random() * 1e9) | 0) {
+    this.world = new World(COLS, ROWS);
+    this.world.generate(seed);
+    this.pathfinder = new Pathfinder(this.world);
+    this.buildings = [];
+    this.power = new PowerGrid(this);
+    this.tasks = new TaskManager(this);
+    this.stock = new Stockpile();
+    this.food = 8000;
+    this.time = 0; this.cycle = 1;
+    this.over = false;
+    this.selected = null;
+    this.dupes = [];
+    if (this.log) this.log.onAdd = null;
+    this.log = new EventLog(this);
+    if (this.ui) { this.ui.resetDupeCards(); this.ui.clearLog(); this.log.onAdd = e => this.ui.appendLog(e); }
+
+    // starting base
+    this.addBuilding(createBuilding(this, 'pod', 29, 20));
+    this.addBuilding(createBuilding(this, 'storage', 23, 21));
+    this.addBuilding(createBuilding(this, 'ration', 25, 22));
+    this.addBuilding(createBuilding(this, 'generator', 34, 21));
+    const bat = createBuilding(this, 'battery', 37, 21); bat.charge = 8000;
+    this.addBuilding(bat);
+    for (let x = 34; x <= 37; x++) this.world.wires[this.world.idx(x, 22)] = 1;
+    Object.assign(this.stock.items, { sandstone: 450, copper: 160, algae: 300, dirt: 100 });
+
+    this.spawnDupe(27, 22);
+    this.spawnDupe(32, 22);
+    this.log.add('Colony established. Two Duplicants were printed.', 'good');
+    this.log.add('Priority: dig the algae deposit (west) and build an Oxygen Diffuser.', 'warn');
+  }
+
+  spawnDupe(x, y) {
+    const k = this.dupes.length;
+    const d = new Duplicant(this, DUPE_NAMES[k % DUPE_NAMES.length], x, y, DUPE_PALETTES[k % DUPE_PALETTES.length]);
+    this.dupes.push(d);
+    return d;
+  }
+
+  // ------------------------------------------------------------ buildings
+  addBuilding(b) {
+    this.buildings.push(b);
+    b.forCells((x, y) => { this.world.buildings[this.world.idx(x, y)] = b; });
+    this.power.dirty = true;
+  }
+  removeBuilding(b) {
+    const i = this.buildings.indexOf(b);
+    if (i < 0) return;
+    this.buildings.splice(i, 1);
+    b.forCells((x, y) => { const k = this.world.idx(x, y); if (this.world.buildings[k] === b) this.world.buildings[k] = null; });
+    if (b.task) this.tasks.remove(b.task, false);
+    for (const d of this.dupes) if (d.job && d.job.task && d.job.task.building === b) d.abortJob();
+    this.power.dirty = true;
+  }
+  storageCap() { return this.buildings.filter(b => b.type === 'storage').length * BIN_CAP; }
+
+  /** Placement rules shared by preview and orders. */
+  /**
+   * Placement rules shared by preview, orders and completion.
+   * Non-strict: natural rock in the footprint is allowed (it gets dug first, like in ONI).
+   */
+  canPlace(type, x, y, strict = false) {
+    const W = this.world, d = BUILDINGS[type];
+    if (x < 1 || y < 1 || x + d.w > COLS - 1 || y + d.h > ROWS - 1) return false;
+    for (let yy = y; yy < y + d.h; yy++) {
+      for (let xx = x; xx < x + d.w; xx++) {
+        const i = W.idx(xx, yy), c = W.cells[i];
+        const natural = c.phase === PH.SOL && !c.def.constructed && !c.def.indestructible;
+        if (type === 'wire') {
+          if (c.phase === PH.SOL && c.element !== 'tile' && (strict || !natural)) return false;
+          if (W.wires[i] || W.wirePlan[i]) return false;
+          continue;
+        }
+        if (W.buildings[i] || W.plan[i]) return false;
+        if (c.phase === PH.SOL && (strict || type === 'tile' || !natural)) return false;
+      }
+    }
+    if (d.floor) for (let xx = x; xx < x + d.w; xx++) if (!W.isSolid(xx, y + d.h)) return false;
+    return true;
+  }
+  /** Is a build task's footprint free of rock (so construction can start)? */
+  siteClear(t) {
+    const W = this.world;
+    for (let y = t.y; y < t.y + t.h; y++) for (let x = t.x; x < t.x + t.w; x++) {
+      const c = W.cell(x, y);
+      if (c.phase === PH.SOL && !(t.buildType === 'wire' && c.element === 'tile')) return false;
+    }
+    return true;
+  }
+
+  // ------------------------------------------------------------ player orders
+  orderDig(cells) {
+    let n = 0;
+    for (const [x, y] of cells) if (this.tasks.addDig(x, y)) n++;
+    if (n) this.log.add(`Queued ${n} dig order${n > 1 ? 's' : ''}.`);
+  }
+  orderBuild(type, cells) {
+    let n = 0;
+    const d = BUILDINGS[type];
+    for (const [x, y] of cells) {
+      const t = this.tasks.addBuild(type, x, y);
+      if (!t) continue;
+      n++;
+      // natural rock in the footprint is queued for digging automatically
+      for (let yy = y; yy < y + d.h; yy++) for (let xx = x; xx < x + d.w; xx++) {
+        const c = this.world.cell(xx, yy);
+        if (c.phase === PH.SOL && !(type === 'wire' && c.element === 'tile')) this.tasks.addDig(xx, yy);
+      }
+    }
+    if (!n) return;
+    if (type !== 'wire' && type !== 'tile' && type !== 'ladder') this.log.add(`Planned ${withArticle(d.name)}.`);
+    else this.log.add(`Planned ${n} × ${d.name}.`);
+    if (!this.stock.canAfford(d.cost)) this.log.add(`Not enough materials for ${d.name} (${fmtCost(d.cost)}).`, 'warn', 'mat' + type, 10);
+  }
+  orderDecon(cells) {
+    const W = this.world;
+    let n = 0;
+    for (const [x, y] of cells) {
+      const i = W.idx(x, y);
+      if (W.wires[i]) { W.wires[i] = 0; this.stock.refund({ copper: 5 }); this.power.dirty = true; n++; }
+      const b = W.buildings[i];
+      if (b && this.tasks.addDecon(b)) n++;
+      if (W.cells[i].element === 'tile' && this.tasks.addDig(x, y)) n++;
+    }
+    if (n) this.log.add(`Queued ${n} deconstruction order${n > 1 ? 's' : ''}.`);
+  }
+  cancelAt(cells) {
+    const set = new Set();
+    for (const [x, y] of cells) for (const t of this.tasks.tasksAt(x, y)) if (t.kind !== 'operate') set.add(t);
+    for (const t of set) this.tasks.remove(t, true);
+    if (set.size) this.log.add(`Cancelled ${set.size} order${set.size > 1 ? 's' : ''}.`);
+  }
+  selectAt(x, y) {
+    this.selected = this.dupes.find(d => Math.abs(d.x - x) <= 0.7 && y >= Math.round(d.y) - 1 && y <= Math.round(d.y)) || null;
+    this.ui.refreshDupes();
+  }
+
+  // ------------------------------------------------------------ task completion
+  completeDig(t) {
+    const W = this.world, c = W.cell(t.x, t.y);
+    const res = c.def.res, amount = c.mass * 0.5;
+    this.tasks.remove(t, false);
+    t.done = true;
+    if (res) {
+      const stored = this.stock.add(res, amount, this.storageCap());
+      if (stored < amount - 0.01) this.log.add('Storage is full! Mined material was lost. Build more Storage Bins.', 'warn', 'storefull', 30);
+    }
+    c.clear();
+    if (res === 'algae') this.log.add('Algae mined and stored.', 'good', 'algaemined', 60);
+  }
+  completeBuild(t, dupe) {
+    const W = this.world, type = t.buildType, d = BUILDINGS[type];
+    this.tasks.remove(t, false);
+    t.done = true;
+    if (!this.canPlace(type, t.x, t.y, true)) {
+      this.stock.refund(t.payment);
+      this.log.add(`Construction of ${d.name} failed: site obstructed.`, 'warn');
+      return;
+    }
+    if (type === 'tile') {
+      W.displace(t.x, t.y);
+      const c = W.cell(t.x, t.y);
+      c.set('tile', 50, c.temperature || 295);
+      for (const dp of this.dupes) if (dp.alive && dp.fx === t.x && (dp.fy === t.y || dp.fy - 1 === t.y)) dp.unstick();
+    } else if (type === 'wire') {
+      W.wires[W.idx(t.x, t.y)] = 1;
+      this.power.dirty = true;
+    } else {
+      const b = createBuilding(this, type, t.x, t.y);
+      b.payment = t.payment;
+      this.addBuilding(b);
+      if (type !== 'ladder') this.log.add(`${dupe.name} finished building ${withArticle(d.name)}.`, 'good');
+    }
+  }
+  completeDecon(t) {
+    const b = t.building;
+    this.tasks.remove(t, false);
+    t.done = true;
+    this.stock.refund(b.payment);
+    this.removeBuilding(b);
+    this.log.add(`${b.def.name} deconstructed.`);
+  }
+
+  // ------------------------------------------------------------ loop
+  setSpeed(s) {
+    if (s > 0) this.lastSpeed = s;
+    this.speed = s;
+    if (this.ui) this.ui.setSpeedButtons(s);
+  }
+
+  step(dt) {
+    this.time += dt;
+    const W = this.world;
+    W.updateLiquids();
+    W.updateGases();
+    W.updateHeat(dt);
+    for (const b of this.buildings) b.preUpdate(dt);
+    this.power.update(dt);
+    for (const b of this.buildings) b.update(dt);
+    for (const d of this.dupes) d.update(dt);
+
+    // cycle rollover, printing pod
+    const cyc = Math.floor(this.time / CYCLE_LEN) + 1;
+    if (cyc !== this.cycle) {
+      this.cycle = cyc;
+      this.log.add(`— Cycle ${cyc} begins —`, 'good');
+      const alive = this.dupes.filter(d => d.alive).length;
+      if (cyc % 3 === 1 && alive > 0 && alive < MAX_DUPES && this.food >= 2000) {
+        const pod = this.buildings.find(b => b.type === 'pod');
+        if (pod) {
+          const nd = this.spawnDupe(pod.x + 1, pod.y + pod.h - 1);
+          this.log.add(`The Printing Pod printed a new Duplicant: ${nd.name}!`, 'good');
+        }
+      }
+    }
+    if ((this.world.tick % 20) === 0) this.tasks.updateReachability();
+    // colony-wide alerts
+    if (this.food < 1500) this.log.add('Food is running low! Build a Microbe Musher.', 'warn', 'lowfood', 150);
+    if (this.stock.items.algae < 1 && this.buildings.some(b => b.type === 'diffuser'))
+      this.log.add('Out of Algae! Oxygen Diffusers have stopped.', 'warn', 'noalgae', 60);
+    if (!this.over && this.dupes.length && this.dupes.every(d => !d.alive)) {
+      this.over = true;
+      this.ui.showGameOver();
+    }
+  }
+
+  frame(ts) {
+    const dt = Math.min(0.25, Math.max(0, (ts - this.last) / 1000));
+    this.last = ts;
+    if (!this.over && this.speed > 0) {
+      this.acc += dt * this.speed;
+      let n = 0;
+      while (this.acc >= SIM_DT && n < 12) { this.step(SIM_DT); this.acc -= SIM_DT; n++; }
+      if (n >= 12) this.acc = 0;
+    }
+    try { this.renderer.draw(this.speed > 0 ? dt : 0); }
+    catch (err) { console.error(err); }
+    this.uiT -= dt;
+    if (this.uiT <= 0) { this.uiT = 0.25; this.ui.refresh(); }
+    requestAnimationFrame(t => this.frame(t));
+  }
+}
+
+window.game = new Game();
+</script>
+</body>
+</html>
